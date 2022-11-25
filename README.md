@@ -9,7 +9,7 @@ It uses fabric8 for communication with Kubernetes API.
 The core of this test suite is re-used from [Strimzi systemtest module](https://github.com/strimzi/strimzi-kafka-operator).
 
 # TODO
-- [ ] Play a little with the code base (see how fabric8 works, how it handles individual resources, etc.)
+- [x] Play a little with the code base (see how fabric8 works, how it handles individual resources, etc.)
 - [ ] Create simple ResourceManager which will managed resources creation/deletion in tests. 
 You can find something similar in [strimzi 0.22](https://github.com/strimzi/strimzi-kafka-operator/blob/release-0.22.x/systemtest/src/main/java/io/strimzi/systemtest/resources/ResourceManager.java).
 Current implementation in Strimzi main is more focused on Parallel test execution, and it's overkill for this test suite now!
@@ -44,4 +44,4 @@ Current implementation in Strimzi main is more focused on Parallel test executio
 - Use hamcrest matchers for asserts
 - Maybe reuse `Constants` and `Environment` classes if needed
 - keep code clean
-- 
+

@@ -1,5 +1,5 @@
 /*
- * Copyright Broker-QE authors.
+ * Copyright Strimzi and Broker QE authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.brokerqe.smoke;
@@ -12,7 +12,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.is;
 
-public class SmoteST extends AbstractST {
+public class SmokeST extends AbstractST {
 
     @Test
     void getNamespaceTest() {
