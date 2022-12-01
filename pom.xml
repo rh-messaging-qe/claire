@@ -8,7 +8,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <operator.version>v0.20.1</operator.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
@@ -18,6 +17,7 @@
         <checkstyle.version>9.0.1</checkstyle.version>
         <spotbugs.version>4.0.3</spotbugs.version>
         <fabric8.version>6.2.0</fabric8.version>
+<!--        <fabric8.version>6.3-SNAPSHOT</fabric8.version>-->
         <hamcrest.version>2.2</hamcrest.version>
         <junit.version>5.9.0</junit.version>
         <slf4j.version>1.7.33</slf4j.version>
@@ -236,59 +236,6 @@
                 </configuration>
             </plugin>
 
-            <!-- haven't found any other useful downloader -->
-            <plugin>
-                <groupId>com.googlecode.maven-download-plugin</groupId>
-                <artifactId>download-maven-plugin</artifactId>
-                <version>${download-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>Download broker_activemqartemis_crd</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${operator.version}/deploy/crds/broker_activemqartemis_crd.yaml</url>
-                            <outputDirectory>${project.build.directory}/crds</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>Download broker_activemqartemisaddress_crd</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${operator.version}/deploy/crds/broker_activemqartemisaddress_crd.yaml</url>
-                            <outputDirectory>${project.build.directory}/crds</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>Download broker_activemqartemisscaledown_crd</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${operator.version}/deploy/crds/broker_activemqartemisscaledown_crd.yaml</url>
-                            <outputDirectory>${project.build.directory}/crds</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>Download broker_activemqartemissecurity_crd</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>wget</goal>
-                        </goals>
-                        <configuration>
-                            <url>https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${operator.version}/deploy/crds/broker_activemqartemissecurity_crd.yaml</url>
-                            <outputDirectory>${project.build.directory}/crds</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>java-generator-maven-plugin</artifactId>
@@ -302,7 +249,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <source>${project.build.directory}/crds</source>
+                    <source>${project.basedir}/artemis/crds</source>
                     <extraAnnotations>true</extraAnnotations>
                 </configuration>
             </plugin>

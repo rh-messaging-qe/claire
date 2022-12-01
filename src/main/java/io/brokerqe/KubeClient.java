@@ -7,6 +7,7 @@ package io.brokerqe;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -42,8 +43,8 @@ public class KubeClient {
         this.namespace = namespace;
     }
 
-    public KubeClient(KubernetesClient client, String namespace) {
-        LOGGER.debug("Creating client in namespace: {}", namespace);
+    public KubeClient(KubernetesClient client, String namespaceName) {
+        LOGGER.debug("Creating client in namespace: {}", namespaceName);
         this.client = client;
         this.namespace = namespace;
     }
@@ -52,7 +53,7 @@ public class KubeClient {
     // ---------> CLIENT <---------
     // ============================
 
-    public KubernetesClient getClient() {
+    public KubernetesClient getKubernetesClient() {
         return client;
     }
 
@@ -60,23 +61,35 @@ public class KubeClient {
     // ---------> NAMESPACE <---------
     // ===============================
 
-    public KubeClient inNamespace(String namespace) {
-        LOGGER.debug("Using namespace: {}", namespace);
-        this.namespace = namespace;
+    public KubeClient inNamespace(String namespaceName) {
+        LOGGER.debug("Using namespace: {}", namespaceName);
+        this.namespace = namespaceName;
         return this;
+    }
+
+    public Namespace createNamespace(String namespaceName) {
+        return this.createNamespace(namespaceName, false);
+    }
+    public Namespace createNamespace(String namespaceName, boolean setNamespace) {
+        LOGGER.debug("Creating new namespace: {}", namespaceName);
+        Namespace ns = this.getKubernetesClient().resource(new NamespaceBuilder().withNewMetadata().withName(namespaceName).endMetadata().build()).createOrReplace();
+        if (setNamespace) {
+            this.namespace = namespaceName;
+        }
+        return ns;
     }
 
     public String getNamespace() {
         return namespace;
     }
 
-    public Namespace getNamespace(String namespace) {
-        return client.namespaces().withName(namespace).get();
+    public Namespace getNamespace(String namespaceName) {
+        return client.namespaces().withName(namespaceName).get();
     }
 
-    public boolean namespaceExists(String namespace) {
+    public boolean namespaceExists(String namespaceName) {
         return client.namespaces().list().getItems().stream().map(n -> n.getMetadata().getName())
-            .collect(Collectors.toList()).contains(namespace);
+            .collect(Collectors.toList()).contains(namespaceName);
     }
 
     /**
