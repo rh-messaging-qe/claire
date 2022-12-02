@@ -38,23 +38,7 @@ public class AbstractSystemTests implements TestSeparator {
         ResourceManager resourceManager = ResourceManager.getInstance();
     }
 
-    /*******************************************************************************************************************
-     *  Deploy ActiveMQ Artemis Operator
-     ******************************************************************************************************************/
-    @Disabled("Not yet implemented")
-    protected void deployClusterOperator(String namespace) {
-        String installDir = System.getProperty("user.dir") + "/artemis/install";
-        System.out.println("oc apply -f " + installDir);
-        LOGGER.info("[TODO] Deploying Artemis Cluster Operator in namespace {}", namespace);
-    }
 
-    @Disabled("Not yet implemented")
-    protected void undeployClusterOperator(String namespace) {
-        String installDir = System.getProperty("user.dir") + "/artemis/install";
-        System.out.println("oc delete -f " + installDir);
-        LOGGER.info("[TODO] Undeploying Artemis Cluster Operator from namespace {}", namespace);
-
-    }
 
     /*******************************************************************************************************************
      *  TYPED API - bug, but fixed and will be available in 6.3x (works in local build)
@@ -126,6 +110,7 @@ public class AbstractSystemTests implements TestSeparator {
     }
     protected GenericKubernetesResource createArtemisTypeless(String namespace, String filePath, boolean waitForDeployment) {
         CustomResourceDefinitionContext brokerCrdContextFromCrd = getArtemisCRDContext(Constants.CRD_ACTIVEMQ_ARTEMIS);
+        LOGGER.debug("[{}] Deploying broker using file {}", namespace, filePath);
         GenericKubernetesResource brokerCR = getKubernetesClient().genericKubernetesResources(brokerCrdContextFromCrd).load(filePath).get();
         brokerCR = getKubernetesClient().genericKubernetesResources(brokerCrdContextFromCrd).inNamespace(namespace).resource(brokerCR).createOrReplace();
 

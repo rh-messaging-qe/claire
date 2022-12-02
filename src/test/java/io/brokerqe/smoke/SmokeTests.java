@@ -6,11 +6,13 @@ package io.brokerqe.smoke;
 
 import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.ActiveMQArtemisClusterOperator;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -18,30 +20,37 @@ import static org.hamcrest.Matchers.is;
 
 public class SmokeTests extends AbstractSystemTests {
 
-    static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
-
     @Test
     void simpleBrokerDeploymentTest() {
-        String myNamespace = "lala";
         Namespace ns = getClient().getKubernetesClient().namespaces().withName("default").get();
         assertThat(ns, is(notNullValue()));
+        assertThat(getClient().namespaceExists("lala"), is(false));
 
+        String myNamespace = "lala";
+        LOGGER.info("[{}] Creating new namespace to {}", ns, myNamespace);
         Namespace lalaNs = getClient().createNamespace(myNamespace);
         assertThat(lalaNs, is(notNullValue()));
         LOGGER.info(getClient().getNamespace());
-        deployClusterOperator(myNamespace);
 
-        String artemisExampleFilePath = "artemis/examples/artemis/artemis-basic-deployment.yaml";
-        String artemisAddressQueueExampleFilePath = "artemis/examples/address/address-queue-create.yaml";
-        GenericKubernetesResource broker = createArtemisTypeless(myNamespace, artemisExampleFilePath);
+        ActiveMQArtemisClusterOperator operator = getClient().deployClusterOperator(myNamespace);
+
+        GenericKubernetesResource broker = createArtemisTypeless(myNamespace, operator.getArtemisSingleExamplePath());
 //        ActiveMQArtemis broker = createArtemisTyped(myNamespace, artemisExampleFilePath, true);
         LOGGER.info(String.valueOf(broker));
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(myNamespace, artemisAddressQueueExampleFilePath);
-
-        deleteArtemisTypeless(myNamespace, broker.getMetadata().getName());
+        String brokerName = broker.getMetadata().getName();
+        LOGGER.info("[{}] Check if broker pod with name {} is present.", myNamespace, brokerName);
+        List<Pod> brokerPods = getClient().listPodsByPrefixInName(myNamespace, brokerName);
+        assertThat(brokerPods.size(), is(1));
+        ActiveMQArtemisAddress myAddress = createArtemisAddress(myNamespace, operator.getArtemisAddressQueueExamplePath());
+//
+        deleteArtemisTypeless(myNamespace, brokerName);
 //        deleteArtemisTyped(myNamespace, broker, true);
 
         deleteArtemisAddress(myNamespace, myAddress);
-        undeployClusterOperator(myNamespace);
+        getClient().undeployClusterOperator(operator);
+
+        LOGGER.info("[{}] Deleting namespace to {}", myNamespace, myNamespace);
+        getClient().deleteNamespace(myNamespace);
+        assertThat(getClient().namespaceExists(myNamespace), is(false));
     }
 }

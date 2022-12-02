@@ -27,11 +27,6 @@ Set <fabric8.version>6.3-SNAPSHOT</fabric8.version in claire/pom.xml
 make build_downstream # or build_upstream
 ```
 
-### Deploy Cluster Operator from files
-```shell
-cd artemis/tmp/amq-broker-operator-7.10.1-ocp-install-examples/deploy && ./install_opr.sh && cd -
-```
-
 The very core of this test suite is re-used from [Strimzi systemtest module](https://github.com/strimzi/strimzi-kafka-operator).
 
 # TODO
@@ -60,8 +55,8 @@ Current implementation in Strimzi main is more focused on Parallel test executio
     ```
   - This should be done for all CRs and probably in different class than `KubeClient`
   - Create a simple test which will get Broker CR from OpenShift and check if it has some values
-- [ ] Add way how to deploy AMQ Broker Operator from code
-- [ ] Add way how to easily create different CRs for the Operator
+- [x] Add way how to deploy AMQ Broker Operator from code
+- [x] Add way how to easily create different CRs for the Operator
 - [x] Find a way how to remove [crds](crds) folder and download CRDs as part of every build
 - [ ] Add option to build dockerfile with the tests inside
 - [x] Add some job which will automatically build the code to avoid introducing failures

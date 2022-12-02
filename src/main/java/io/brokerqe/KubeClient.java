@@ -73,10 +73,21 @@ public class KubeClient {
     public Namespace createNamespace(String namespaceName, boolean setNamespace) {
         LOGGER.debug("Creating new namespace: {}", namespaceName);
         Namespace ns = this.getKubernetesClient().resource(new NamespaceBuilder().withNewMetadata().withName(namespaceName).endMetadata().build()).createOrReplace();
+        TestUtils.waitFor("Creating namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+            return this.namespaceExists(namespaceName);
+        });
         if (setNamespace) {
             this.namespace = namespaceName;
         }
+
         return ns;
+    }
+
+    public void deleteNamespace(String namespaceName) {
+        this.getKubernetesClient().namespaces().withName(namespaceName).delete();
+        TestUtils.waitFor("Deleting namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+            return !this.namespaceExists(namespaceName);
+        });
     }
 
     public String getNamespace() {
@@ -147,6 +158,14 @@ public class KubeClient {
 
     public Pod getPod(String name) {
         return getPod(namespace, name);
+    }
+
+    public Pod getFirstPodByPrefixName(String namespaceName, String podNamePrefix) {
+        List<Pod> pods = listPodsByPrefixInName(namespaceName, podNamePrefix);
+        if (pods.size() > 1) {
+            LOGGER.warn("[{}] Returning first found pod with name '{}' of many!", namespaceName, pods.size());
+        }
+        return pods.get(0);
     }
 
     // ==================================
@@ -265,4 +284,18 @@ public class KubeClient {
         return client.batch().v1().jobs().inNamespace(getNamespace()).list().getItems().stream()
             .filter(job -> job.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
     }
+
+
+    /*******************************************************************************************************************
+     *  Deploy ActiveMQ Artemis Operator
+     ******************************************************************************************************************/
+    public ActiveMQArtemisClusterOperator deployClusterOperator(String namespace) {
+        ActiveMQArtemisClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperator(namespace);
+        return clusterOperator;
+    }
+
+    public void undeployClusterOperator(ActiveMQArtemisClusterOperator operator) {
+        ResourceManager.removeArtemisClusterOperator(operator);
+    }
+
 }

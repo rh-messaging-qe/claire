@@ -12,7 +12,7 @@
         </encoder>
     </appender>
 
-    <root level="info">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="RP" />
     </root>
