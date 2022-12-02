@@ -33,10 +33,10 @@ public interface Constants {
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";
     String EXAMPLES_DIR_PATH = PROJECT_USER_DIR + "/artemis/examples/";
-    String EXAMPLE_ADDRESS_QUEUE_PATH = EXAMPLES_DIR_PATH + "address/address-queue-create.yaml";
-//    String EXAMPLE_ADDRESS_QUEUE_PATH = EXAMPLES_DIR_PATH + "address/address_queue.yaml";
-//    String EXAMPLE_ADDRESS_TOPIC_PATH = EXAMPLES_DIR_PATH + "address/address_topic.yaml";
-    String EXAMPLE_ARTEMIS_SINGLE_PATH = EXAMPLES_DIR_PATH + "artemis/artemis-basic-deployment.yaml";
+
+    String EXAMPLE_ADDRESS_QUEUE_PATH = EXAMPLES_DIR_PATH + "address/address_queue.yaml";
+    String EXAMPLE_ADDRESS_TOPIC_PATH = EXAMPLES_DIR_PATH + "address/address_topic.yaml";
+    String EXAMPLE_ARTEMIS_SINGLE_PATH = EXAMPLES_DIR_PATH + "artemis/artemis_single.yaml";
 
     String INSTALL_ARTEMIS_CO_010_CRD_ARTEMIS_PATH = OPERATOR_CRDS_DIR_PATH + "broker_activemqartemis_crd.yaml";             // 010_crd_artemis.yaml
     String INSTALL_ARTEMIS_CO_020_CRD_SECURITY_PATH = OPERATOR_CRDS_DIR_PATH + "broker_activemqartemissecurity_crd.yaml";    // 020_crd_artemis_security.yaml
