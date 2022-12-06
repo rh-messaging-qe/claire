@@ -4,12 +4,14 @@
  */
 package io.brokerqe;
 
+import io.brokerqe.operator.ActiveMQArtemisClusterOperator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
@@ -223,6 +225,20 @@ public class KubeClient {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get().getSpec().getSelector();
     }
 
+    // ==============================
+    // ---------> SERVICES <---------
+    // ==============================
+
+    public Service getServiceByNames(String namespaceName, String serviceName) {
+        return client.services().inNamespace(namespaceName).withName(serviceName).get();
+    }
+
+    public Service getServiceBrokerAcceptor(String namespaceName, String brokerName, String acceptorName) {
+        return client.services().inNamespace(namespaceName).list().getItems().stream()
+                .filter(svc -> svc.getMetadata().getName().startsWith(brokerName + "-" + acceptorName)
+                ).findFirst().get();
+    }
+
     // ==========================
     // ---------> NODE <---------
     // ==========================
@@ -295,7 +311,7 @@ public class KubeClient {
     }
 
     public void undeployClusterOperator(ActiveMQArtemisClusterOperator operator) {
-        ResourceManager.removeArtemisClusterOperator(operator);
+        ResourceManager.undeployArtemisClusterOperator(operator);
     }
 
 }

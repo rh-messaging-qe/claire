@@ -2,7 +2,9 @@
  * Copyright Broker QE authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.brokerqe;
+package io.brokerqe.operator;
+
+import io.brokerqe.Constants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +24,6 @@ public class AMQClusterOperator extends ActiveMQArtemisClusterOperator {
             Constants.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH
     );
 
-    // TODO Temporary solution
     static final String EXAMPLE_ADDRESS_QUEUE_PATH = Constants.EXAMPLES_DIR_PATH + "address/address-queue-create.yaml";
     static final String EXAMPLE_ARTEMIS_SINGLE_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis-basic-deployment.yaml";
 

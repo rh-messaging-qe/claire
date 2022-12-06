@@ -8,6 +8,9 @@ import io.amq.broker.v1alpha1.ActiveMQArtemisSecurity;
 import io.amq.broker.v2alpha1.ActiveMQArtemisScaledown;
 import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
 import io.amq.broker.v2alpha5.ActiveMQArtemis;
+import io.brokerqe.operator.AMQClusterOperator;
+import io.brokerqe.operator.ActiveMQArtemisClusterOperator;
+import io.brokerqe.operator.ArtemisClusterOperator;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -31,6 +34,7 @@ public class ResourceManager {
 
     private static List<ActiveMQArtemisClusterOperator> operatorList = new ArrayList<>();
     private static String projectSettingsType;
+    private static Boolean projectCODeploy;
     private static final ResourceManager RESOURCE_MANAGER = new ResourceManager();
 
     private ResourceManager() {
@@ -67,38 +71,56 @@ public class ResourceManager {
         try {
             projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
             projectSettings.load(projectSettingsFile);
-            projectSettingsType = String.valueOf(projectSettings.get("project.type"));
+            projectSettingsType = String.valueOf(projectSettings.get(Constants.PROJECT_TYPE_KEY));
+            projectCODeploy = Boolean.valueOf(projectSettings.getProperty(Constants.PROJECT_CO_MANAGE_KEY));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static ActiveMQArtemisClusterOperator deployArtemisClusterOperator(String namespace) {
-        ActiveMQArtemisClusterOperator clusterOperator = null;
-        switch (projectSettingsType) {
-            case Constants.PROJECT_TYPE_AMQ:
-                clusterOperator = new AMQClusterOperator(namespace);
-                break;
-            case Constants.PROJECT_TYPE_ARTEMIS:
-                clusterOperator = new ArtemisClusterOperator(namespace);
-                break;
-            default:
-                LOGGER.error("Unknown projectType! Exiting.");
-                System.exit(5);
+        if (projectCODeploy) {
+            LOGGER.info("Deploying Artemis CO");
+            ActiveMQArtemisClusterOperator clusterOperator = null;
+            switch (projectSettingsType) {
+                case Constants.PROJECT_TYPE_AMQ:
+                    clusterOperator = new AMQClusterOperator(namespace);
+                    break;
+                case Constants.PROJECT_TYPE_ARTEMIS:
+                    clusterOperator = new ArtemisClusterOperator(namespace);
+                    break;
+                default:
+                    LOGGER.error("Unknown projectType! Exiting.");
+                    System.exit(5);
+            }
+            clusterOperator.deployOperator(true);
+            operatorList.add(clusterOperator);
+            return clusterOperator;
+        } else {
+            LOGGER.warn("Not deploying operator! " + "'" + Constants.PROJECT_CO_MANAGE_KEY + "' is 'false'");
+            return null;
         }
-        clusterOperator.deployOperator(true);
-        operatorList.add(clusterOperator);
-        return clusterOperator;
     }
 
-    public static void removeArtemisClusterOperator(ActiveMQArtemisClusterOperator clusterOperator) {
-        clusterOperator.undeployOperator(true);
-        operatorList.remove(clusterOperator);
+    public static void undeployArtemisClusterOperator(ActiveMQArtemisClusterOperator clusterOperator) {
+        if (projectCODeploy) {
+            clusterOperator.undeployOperator(true);
+            operatorList.remove(clusterOperator);
+        } else {
+            LOGGER.warn("Not deploying operator! " + "'" + Constants.PROJECT_CO_MANAGE_KEY + "' is 'false'");
+        }
+    }
+
+    public static boolean isClusterOperatorManaged() {
+        return projectCODeploy;
     }
 
     public static List<ActiveMQArtemisClusterOperator> getArtemisClusterOperators() {
         return operatorList;
     }
 
+    public static ActiveMQArtemisClusterOperator getArtemisClusterOperator(String namespace) {
+        return operatorList.stream().filter(operator -> operator.getNamespace().equals(namespace)).findFirst().orElse(null);
+    }
 
 }

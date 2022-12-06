@@ -9,10 +9,13 @@ import java.time.Duration;
 public interface Constants {
 
     // Platform related strings
+    String NEW_LINE_SEPARATOR = System.getProperty("line.separator");
 
     // Project related strings
     String PROJECT_TYPE_ARTEMIS = "activemq-artemis";
     String PROJECT_TYPE_AMQ = "amq-broker";
+    String PROJECT_TYPE_KEY = "project.type";
+    String PROJECT_CO_MANAGE_KEY = "project.cluster_operator.manage";
 
     // Artemis Operator strings
     String CRD_ACTIVEMQ_ARTEMIS_GROUP = "broker.amq.io";

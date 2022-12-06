@@ -2,16 +2,17 @@ ROOT_DIR 						= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ARTEMIS_VERSION 				= 7.10.1
 OPERATOR_VERSION_UPSTREAM 		= main
 ARTEMIS_PROPERTIES_FILE 		= ${ROOT_DIR}/artemis/project-settings.properties
+CLUSTER_OPERATOR_MANAGED		= true
 
-all: downstream_files build_java
+all: test_smoke_downstream
 
-build_downstream: prepare_dirs downstream_files build_java
+build_downstream: prepare_dirs fill_project_properties downstream_files build_java
 
-build_upstream: prepare_dirs upstream_files build_java
+build_upstream: prepare_dirs fill_project_properties upstream_files build_java
 
-test_smoke_downstream: prepare_dirs downstream_files test_smoke
+test_smoke_downstream: prepare_dirs fill_project_properties downstream_files test_smoke
 
-test_smoke_upstream: prepare_dirs upstream_files test_smoke
+test_smoke_upstream: prepare_dirs fill_project_properties upstream_files test_smoke
 
 
 clean: clean_all
@@ -31,8 +32,11 @@ prepare_dirs:
 	mkdir -p ${ROOT_DIR}/artemis/{crds,examples,install}
 	mkdir -p ${ROOT_DIR}/artemis/examples/{artemis,address}
 
+fill_project_properties:
+	echo "project.cluster_operator.manage=${CLUSTER_OPERATOR_MANAGED}" > ${ARTEMIS_PROPERTIES_FILE}
+
 downstream_files:
-	echo "project.type=amq-broker" > ${ARTEMIS_PROPERTIES_FILE}
+	echo "project.type=amq-broker" >> ${ARTEMIS_PROPERTIES_FILE}
 	# TODO use new structure of examples/install for downstream once 7.11 is out. Current is ugly
 	# Download ocp-install-examples candidate files
 	wget http://download.lab.bos.redhat.com/devel/candidates/amq/AMQ-BROKER-${ARTEMIS_VERSION}/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples-rhel8.zip -O ${ROOT_DIR}/artemis/ocp_install_examples.zip
@@ -46,7 +50,7 @@ downstream_files:
 	rm -rf ${ROOT_DIR}/artemis/tmp ${ROOT_DIR}/artemis/ocp_install_examples.zip
 
 upstream_files:
-	echo "project.type=activemq-artemis" > ${ARTEMIS_PROPERTIES_FILE}
+	echo "project.type=activemq-artemis" >> ${ARTEMIS_PROPERTIES_FILE}
 	# CRDs
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/install/010_crd_artemis.yaml -P ${ROOT_DIR}/artemis/crds/
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/install/020_crd_artemis_security.yaml -P ${ROOT_DIR}/artemis/crds/

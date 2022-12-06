@@ -2,8 +2,11 @@
  * Copyright Broker QE authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.brokerqe;
+package io.brokerqe.operator;
 
+import io.brokerqe.Constants;
+import io.brokerqe.KubeClient;
+import io.brokerqe.TestUtils;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import org.slf4j.Logger;
@@ -50,7 +53,7 @@ public abstract class ActiveMQArtemisClusterOperator {
     protected abstract List<String> getClusteredOperatorInstallFiles();
     protected abstract List<String> getNamespacedOperatorInstallFiles();
 
-    protected void deployOperator(boolean waitForDeployment) {
+    public void deployOperator(boolean waitForDeployment) {
         // TODO where to deploy it properly for cluster-wide?
         LOGGER.info("Deploying Artemis Cluster Operator in namespace {}", namespace);
 //        List<HasMetadata> deployedFilesResults = new ArrayList<>();
@@ -85,7 +88,7 @@ public abstract class ActiveMQArtemisClusterOperator {
         });
     }
 
-    public boolean undeployOperator(boolean waitForUndeployment) {
+    public void undeployOperator(boolean waitForUndeployment) {
         filesToDeploy.forEach(fileName -> {
             try {
                 LOGGER.debug("[{}] Undeploying file {}", namespace, fileName);
@@ -98,7 +101,10 @@ public abstract class ActiveMQArtemisClusterOperator {
             waitForCoUndeployment();
         }
         LOGGER.info("[{}] Undeployed Cluster operator {}!", namespace, operatorName);
-        return true;
+    }
+
+    public String getNamespace() {
+        return namespace;
     }
 
     // TODO Temporary solution
