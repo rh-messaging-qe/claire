@@ -28,46 +28,67 @@ public class Executor implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
 
     private final KubernetesClient client;
+    private SimpleListener listener;
+
 
     public Executor() {
         Config config = new ConfigBuilder().build();
         this.client = new KubernetesClientBuilder().withConfig(config).build();
     }
 
-    @Override
-    public void close() {
-        client.close();
+    public CompletableFuture<String> getListenerData() {
+        return listener.data;
     }
 
-    public String execCommandOnPod(String podName, String namespace, String... cmd) {
+    @Override
+    public void close() {
+        if (listener.data == null || listener.data.isDone()) {
+            client.close();
+            LOGGER.debug("Closed client");
+        } else {
+            LOGGER.debug("Not yet closing client");
+        }
+    }
+
+    public String execCommandOnPod(String podName, String namespace, int maxExecSeconds, String... cmd) {
         Pod pod = client.pods().inNamespace(namespace).withName(podName).get();
-        System.out.printf("Running command: [%s] on pod [%s] in namespace [%s]%n",
-                Arrays.toString(cmd), pod.getMetadata().getName(), namespace);
+        LOGGER.info("[{}] {} Running command: {}",
+                namespace, pod.getMetadata().getName(), Arrays.toString(cmd).replaceAll(",", ""));
 
         CompletableFuture<String> data = new CompletableFuture<>();
-        try (ExecWatch execWatch = execCmd(pod, data, cmd)) {
-            return data.get(30, TimeUnit.SECONDS);
+        try (ExecWatch execWatch = execCmdOnPod(pod, data, cmd)) {
+            return data.get(maxExecSeconds, TimeUnit.SECONDS);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             LOGGER.error("Failed to finish execution in time!");
             return null;
         }
     }
 
-    private ExecWatch execCmd(Pod pod, CompletableFuture<String> data, String... command) {
+    public ExecWatch execBackgroundCommandOnPod(String podName, String namespace, String... cmd) {
+        Pod pod = client.pods().inNamespace(namespace).withName(podName).get();
+        LOGGER.info("[{}] {} Running background command: {}",
+                namespace, pod.getMetadata().getName(), Arrays.toString(cmd).replaceAll(",", ""));
+
+        CompletableFuture<String> data = new CompletableFuture<>();
+        return execCmdOnPod(pod, data, cmd);
+    }
+
+    private ExecWatch execCmdOnPod(Pod pod, CompletableFuture<String> data, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        listener = new SimpleListener(data, baos);
         return client.pods()
                 .inNamespace(pod.getMetadata().getNamespace())
                 .withName(pod.getMetadata().getName())
                 .writingOutput(baos)
                 .writingError(baos)
-                .usingListener(new SimpleListener(data, baos))
+                .usingListener(listener)
                 .exec(command);
     }
 
     static class SimpleListener implements ExecListener {
 
-        private CompletableFuture<String> data;
-        private ByteArrayOutputStream baos;
+        private final CompletableFuture<String> data;
+        private final ByteArrayOutputStream baos;
 
         public SimpleListener(CompletableFuture<String> data, ByteArrayOutputStream baos) {
             this.data = data;
@@ -76,18 +97,18 @@ public class Executor implements AutoCloseable {
 
         @Override
         public void onOpen() {
-            System.out.println("Reading data... ");
+            LOGGER.debug("Opened executor client, waiting for data... ");
         }
 
         @Override
         public void onFailure(Throwable t, Response failureResponse) {
-            System.err.println(t.getMessage());
+            LOGGER.error("Failed with {}", t.getMessage());
             data.completeExceptionally(t);
         }
 
         @Override
         public void onClose(int code, String reason) {
-            System.out.println("Exit with: " + code + " and with reason: " + reason);
+            LOGGER.info("Exit with: " + code + " and with reason: " + reason);
             data.complete(baos.toString());
         }
     }

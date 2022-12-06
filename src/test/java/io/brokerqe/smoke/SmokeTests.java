@@ -33,6 +33,22 @@ public class SmokeTests extends AbstractSystemTests {
 
     private String testNamespace = "smoke-lala";
 
+    @BeforeAll
+    void setupClusterOperator() {
+        getClient().createNamespace(testNamespace, true);
+        LOGGER.info("[{}] Creating new namespace to {}", testNamespace, testNamespace);
+        operator = getClient().deployClusterOperator(testNamespace);
+    }
+
+    @AfterAll
+    void teardownClusterOperator() {
+        getClient().undeployClusterOperator(ResourceManager.getArtemisClusterOperator(testNamespace));
+        if (!ResourceManager.isClusterOperatorManaged()) {
+            LOGGER.info("[{}] Deleting namespace to {}", testNamespace, testNamespace);
+            getClient().deleteNamespace(testNamespace);
+        }
+    }
+
     @Test
     void simpleBrokerDeploymentTest() {
         GenericKubernetesResource broker = createArtemisTypeless(testNamespace, operator.getArtemisSingleExamplePath());
@@ -61,7 +77,6 @@ public class SmokeTests extends AbstractSystemTests {
         int received = messagingClientCore.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
         assertThat(messagingClientCore.compareMessages(), is(true));
-
     }
 
     public String brokerAcceptorConfigJoin() {
@@ -114,19 +129,22 @@ public class SmokeTests extends AbstractSystemTests {
         deleteArtemisTypeless(testNamespace, brokerName);
     }
 
-    @BeforeAll
-    void setupClusterOperator() {
-        getClient().createNamespace(testNamespace, true);
-        LOGGER.info("[{}] Creating new namespace to {}", testNamespace, testNamespace);
-        operator = getClient().deployClusterOperator(testNamespace);
-    }
+    @Test
+    void subscriberMessageTest() {
+        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, operator.getArtemisSingleExamplePath());
+        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, operator.getArtemisAddressQueueExamplePath());
 
-    @AfterAll
-    void teardownClusterOperator() {
-        getClient().undeployClusterOperator(ResourceManager.getArtemisClusterOperator(testNamespace));
-        if (!ResourceManager.isClusterOperatorManaged()) {
-            LOGGER.info("[{}] Deleting namespace to {}", testNamespace, testNamespace);
-            getClient().deleteNamespace(testNamespace);
-        }
+        String brokerName = broker.getMetadata().getName();
+        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
+
+        int msgsExpected = 100;
+        MessagingClient messagingClientCore = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(), "61616", myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
+        messagingClientCore.subscribe();
+        int sent = messagingClientCore.sendMessages();
+        int received = messagingClientCore.receiveMessages();
+
+        LOGGER.info("[{}] Sent {} - Received {}", testNamespace, sent, received);
+        assertThat(sent, equalTo(msgsExpected));
+        assertThat(messagingClientCore.compareMessages(), is(true));
     }
 }

@@ -21,4 +21,7 @@ public interface MessagingClient {
     Object getMessages();
 
     boolean compareMessages();
+
+    void subscribe();
+
 }

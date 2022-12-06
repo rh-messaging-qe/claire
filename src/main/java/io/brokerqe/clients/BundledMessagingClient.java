@@ -7,6 +7,9 @@ package io.brokerqe.clients;
 import io.brokerqe.KubeClient;
 import io.brokerqe.executor.Executor;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
+
+import java.util.concurrent.ExecutionException;
 
 public abstract class BundledMessagingClient implements MessagingClient {
     private final Pod brokerPod;
@@ -20,8 +23,10 @@ public abstract class BundledMessagingClient implements MessagingClient {
     String clientDestination;
     private int receivedMessages = 0;
     private int sentMessages = 0;
-
+    private ExecWatch receiverExecWatch;
+    private Executor backgroundExecutor;
     private KubeClient client;
+
     public BundledMessagingClient(Pod sourcePod, String destinationUrl, String destinationPort, String destinationAddress, String destinationQueue, int messageCount) {
         this.brokerPod = sourcePod;
         this.destinationUrl = destinationUrl;
@@ -68,14 +73,13 @@ public abstract class BundledMessagingClient implements MessagingClient {
             return messageCount;
         } else {
             LOGGER.error("Unable to parse number of messages!\n" + clientStdout);
-            return 0;
+            return -1;
         }
     }
 
     private String constructClientCommand(String clientType) {
         // ./amq-broker/bin/artemis producer --url tcp://10.129.2.15:61616 --destination queue://demoQueue --message-count=50
         // ./amq-broker/bin/artemis consumer --url tcp://10.129.2.129:61616 --destination queue://demoQueue --message-count=50
-        String messageCountParam = "";
         if (destinationAddress.equals(destinationQueue)) {
             clientDestination = "queue://" + destinationAddress;
         } else {
@@ -97,7 +101,8 @@ public abstract class BundledMessagingClient implements MessagingClient {
         String cmdOutput;
         String command = constructClientCommand(PRODUCER);
         try (Executor example = new Executor()) {
-            cmdOutput = example.execCommandOnPod(this.brokerPod.getMetadata().getName(), this.brokerPod.getMetadata().getNamespace(), command.split(" "));
+            cmdOutput = example.execCommandOnPod(this.brokerPod.getMetadata().getName(),
+                    this.brokerPod.getMetadata().getNamespace(), 180, command.split(" "));
             LOGGER.debug(cmdOutput);
         }
         return parseMessageCount(cmdOutput, PRODUCER);
@@ -105,13 +110,64 @@ public abstract class BundledMessagingClient implements MessagingClient {
 
     @Override
     public int receiveMessages() {
-        String cmdOutput;
-        String command = constructClientCommand(CONSUMER);
-        try (Executor example = new Executor()) {
-            cmdOutput = example.execCommandOnPod(this.brokerPod.getMetadata().getName(), this.brokerPod.getMetadata().getNamespace(), command.split(" "));
-            LOGGER.debug(cmdOutput);
+        if (receiverExecWatch != null) {
+            // executed client on background
+            return getSubscribedMessages();
+        } else {
+            // executed client on foreground
+            String cmdOutput;
+            String command = constructClientCommand(CONSUMER);
+            try (Executor example = new Executor()) {
+                cmdOutput = example.execCommandOnPod(this.brokerPod.getMetadata().getName(),
+                        this.brokerPod.getMetadata().getNamespace(), 180, command.split(" "));
+                LOGGER.debug(cmdOutput);
+            }
+            return parseMessageCount(cmdOutput, CONSUMER);
         }
+    }
+
+    /**
+     * Subscribe to the address and wait for messages.
+     * This is definitely not thread safe, nor reusable solution for multiple client calls.
+     * Please spawn new instance when you need more background consumers.
+     */
+    public void subscribe() {
+        String command = constructClientCommand(CONSUMER);
+        backgroundExecutor = new Executor();
+        receiverExecWatch = backgroundExecutor.execBackgroundCommandOnPod(this.brokerPod.getMetadata().getName(),
+                this.brokerPod.getMetadata().getNamespace(), command.split(" "));
+    }
+
+    public int getSubscribedMessages() {
+        String cmdOutput = waitUntilClientFinishes(5);
         return parseMessageCount(cmdOutput, CONSUMER);
+    }
+
+    public String getClientBackgroundCommandData() {
+        String cmdOutput = null;
+        if (receiverExecWatch.exitCode().isDone()) {
+            try {
+                cmdOutput = backgroundExecutor.getListenerData().get().toString();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            backgroundExecutor.close();
+        }
+        return cmdOutput;
+    }
+
+    public String waitUntilClientFinishes(int waitSeconds) {
+        String cmdOutput;
+        while ((cmdOutput = getClientBackgroundCommandData()) == null) {
+            LOGGER.debug("Waiting for client to finish (checking every {}s)", waitSeconds);
+            try {
+                Thread.sleep(waitSeconds * 1000L);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        LOGGER.debug(cmdOutput);
+        return cmdOutput;
     }
 
     public Object getMessages() {
