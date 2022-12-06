@@ -23,7 +23,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     String clientDestination;
     private int receivedMessages = 0;
     private int sentMessages = 0;
-    private ExecWatch receiverExecWatch;
+    private ExecWatch subscriberExecWatch;
     private Executor backgroundExecutor;
     private KubeClient client;
 
@@ -110,7 +110,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
 
     @Override
     public int receiveMessages() {
-        if (receiverExecWatch != null) {
+        if (subscriberExecWatch != null) {
             // executed client on background
             return getSubscribedMessages();
         } else {
@@ -134,7 +134,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     public void subscribe() {
         String command = constructClientCommand(CONSUMER);
         backgroundExecutor = new Executor();
-        receiverExecWatch = backgroundExecutor.execBackgroundCommandOnPod(this.brokerPod.getMetadata().getName(),
+        subscriberExecWatch = backgroundExecutor.execBackgroundCommandOnPod(this.brokerPod.getMetadata().getName(),
                 this.brokerPod.getMetadata().getNamespace(), command.split(" "));
     }
 
@@ -145,13 +145,15 @@ public abstract class BundledMessagingClient implements MessagingClient {
 
     public String getClientBackgroundCommandData() {
         String cmdOutput = null;
-        if (receiverExecWatch.exitCode().isDone()) {
+        if (subscriberExecWatch.exitCode().isDone()) {
             try {
                 cmdOutput = backgroundExecutor.getListenerData().get().toString();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
             backgroundExecutor.close();
+            backgroundExecutor = null;
+            subscriberExecWatch = null;
         }
         return cmdOutput;
     }
