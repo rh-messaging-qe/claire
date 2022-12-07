@@ -108,7 +108,7 @@ public class Executor implements AutoCloseable {
 
         @Override
         public void onClose(int code, String reason) {
-            LOGGER.info("Exit with: " + code + " and with reason: " + reason);
+            LOGGER.debug("Exit with: " + code + " and with reason: " + reason);
             data.complete(baos.toString());
         }
     }

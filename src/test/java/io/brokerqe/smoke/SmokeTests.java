@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.is;
 public class SmokeTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
-    private String testNamespace = "smoke-lala";
+    private final String testNamespace = getRandomNamespaceName("smoke-tests", 6);
 
     @BeforeAll
     void setupClusterOperator() {

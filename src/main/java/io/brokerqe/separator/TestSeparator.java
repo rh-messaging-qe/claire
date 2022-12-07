@@ -16,7 +16,7 @@ import java.util.Collections;
 @ExtendWith(ExtensionContextParameterResolver.class)
 public interface TestSeparator {
     Logger LOGGER = LoggerFactory.getLogger(TestSeparator.class);
-    String SEPARATOR_CHAR = "#";
+    String SEPARATOR_CHAR = "-";
 
     @BeforeEach
     default void beforeEachTest(ExtensionContext testContext) {

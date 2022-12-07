@@ -24,8 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AbstractSystemTests implements TestSeparator {
@@ -41,6 +43,23 @@ public class AbstractSystemTests implements TestSeparator {
     }
     public KubernetesClient getKubernetesClient() {
         return this.client.getKubernetesClient();
+    }
+
+    public String getRandomNamespaceName(String nsPrefix, int randomLength) {
+        return nsPrefix + "-" + getRandomString(randomLength);
+    }
+
+    public static String getRandomString(int length) {
+        if (length > 96) {
+            LOGGER.warn("Trimming to max size of 96 chars");
+            length = 96;
+        }
+        StringBuilder randomStr = new StringBuilder(UUID.randomUUID().toString());
+        while (randomStr.length() < length) {
+            randomStr.append(UUID.randomUUID().toString());
+        }
+        randomStr = new StringBuilder(randomStr.toString().replace("-", ""));
+        return randomStr.substring(0, length);
     }
 
     @BeforeAll
