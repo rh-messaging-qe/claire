@@ -7,6 +7,9 @@ package io.brokerqe;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,13 +17,31 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
+//@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public final class TestUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
+
+    public static String getRandomString(int length) {
+        if (length > 96) {
+            LOGGER.warn("Trimming to max size of 96 chars");
+            length = 96;
+        }
+        StringBuilder randomStr = new StringBuilder(UUID.randomUUID().toString());
+        while (randomStr.length() < length) {
+            randomStr.append(UUID.randomUUID().toString());
+        }
+        randomStr = new StringBuilder(randomStr.toString().replace("-", ""));
+        return randomStr.substring(0, length);
+    }
 
     /**
      * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
@@ -109,4 +130,55 @@ public final class TestUtils {
         }
     }
 
+
+    public static void configToYaml(File yamlOutputFile, Object yamlData) {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        try {
+            mapper.writeValue(yamlOutputFile, yamlData);
+//            Files.write(copyPath, updatedCO.toString().getBytes());
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String updateClusterRoleBindingFileNamespace(Path yamlFile, String namespace) {
+        String newCRBFileName = "cluster_role_binding_" + TestUtils.getRandomString(3) + ".yaml";
+        Path copyPath = Paths.get(yamlFile.toAbsolutePath().toString().replace("cluster_role_binding.yaml", newCRBFileName));
+        ClusterRoleBinding updatedCRB = configFromYaml(yamlFile.toFile(), ClusterRoleBinding.class);
+        updatedCRB.getSubjects().get(0).setNamespace(namespace);
+        configToYaml(copyPath.toFile(), updatedCRB);
+        return copyPath.toString();
+    }
+
+
+    public static String updateOperatorFileWatchNamespaces(Path yamlFile, List<String> watchedNamespaces) {
+        String newCOFileName = "operator_cw_" + TestUtils.getRandomString(3) + ".yaml";
+        Path copyPath = Paths.get(yamlFile.toAbsolutePath().toString().replace("operator.yaml", newCOFileName));
+
+        // Load Deployment from yaml file
+        Deployment updatedCO = configFromYaml(yamlFile.toFile(), Deployment.class);
+
+        // Get and update WATCH_NAMESPACE value
+        updatedCO.getSpec().getAdditionalProperties().get("containers");
+        List<EnvVar> envVars = updatedCO.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        EnvVar watchNamespaceEV = envVars.stream().filter(envVar -> envVar.getName().equals("WATCH_NAMESPACE")).findFirst().get();
+        watchNamespaceEV.setValue(String.join(",", watchedNamespaces));
+        watchNamespaceEV.setValueFrom(null);
+        updatedCO.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
+
+        // Write updated Deployment into file
+        // mapper.writeValue(copyPath.toFile(), updatedCO);
+        configToYaml(copyPath.toFile(), updatedCO);
+        return copyPath.toString();
+    }
+
+    public static void deleteFile(String fileName) {
+        try {
+            Files.delete(Paths.get(fileName));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

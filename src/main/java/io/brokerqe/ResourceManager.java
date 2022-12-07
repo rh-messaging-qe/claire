@@ -79,19 +79,31 @@ public class ResourceManager {
     }
 
     public static ActiveMQArtemisClusterOperator deployArtemisClusterOperator(String namespace) {
+        return deployArtemisClusterOperator(namespace, true, null);
+    }
+
+    public static ActiveMQArtemisClusterOperator deployArtemisClusterOperatorClustered(String namespace, List<String> watchedNamespaces) {
+        return deployArtemisClusterOperator(namespace, false, watchedNamespaces);
+    }
+
+    public static ActiveMQArtemisClusterOperator deployArtemisClusterOperator(String namespace, boolean isNamespaced, List<String> watchedNamespaces) {
         if (projectCODeploy) {
             LOGGER.info("Deploying Artemis CO");
             ActiveMQArtemisClusterOperator clusterOperator = null;
             switch (projectSettingsType) {
                 case Constants.PROJECT_TYPE_AMQ:
-                    clusterOperator = new AMQClusterOperator(namespace);
+                    clusterOperator = new AMQClusterOperator(namespace, isNamespaced);
                     break;
                 case Constants.PROJECT_TYPE_ARTEMIS:
-                    clusterOperator = new ArtemisClusterOperator(namespace);
+                    clusterOperator = new ArtemisClusterOperator(namespace, isNamespaced);
                     break;
                 default:
                     LOGGER.error("Unknown projectType! Exiting.");
                     System.exit(5);
+            }
+            if (!isNamespaced) {
+                clusterOperator.watchNamespaces(watchedNamespaces);
+                clusterOperator.updateClusterRoleBinding(namespace);
             }
             clusterOperator.deployOperator(true);
             operatorList.add(clusterOperator);

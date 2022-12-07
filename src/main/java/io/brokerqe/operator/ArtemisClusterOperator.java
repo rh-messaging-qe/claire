@@ -9,6 +9,7 @@ import io.brokerqe.Constants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class ArtemisClusterOperator extends ActiveMQArtemisClusterOperator {
 
@@ -37,9 +38,17 @@ public class ArtemisClusterOperator extends ActiveMQArtemisClusterOperator {
             INSTALL_ARTEMIS_CO_100_OPERATOR_CONFIG_PATH,
             INSTALL_ARTEMIS_CO_110_OPERATOR_PATH
     );
+    // Used if updated DEFAULT_OPERATOR_INSTALL_FILES
+    private List<String> operatorInstallFiles;
+    private String operatorUpdatedFile;
+    private String clusterRoleBindingUpdatedFile;
 
     public ArtemisClusterOperator(String namespace) {
         this(namespace, false, true);
+    }
+
+    public ArtemisClusterOperator(String namespace, boolean isNamespaced) {
+        this(namespace, false, isNamespaced);
     }
 
     public ArtemisClusterOperator(String namespace, boolean isOlmInstallation, boolean isNamespaced) {
@@ -60,6 +69,41 @@ public class ArtemisClusterOperator extends ActiveMQArtemisClusterOperator {
         temp.add(INSTALL_ARTEMIS_CO_060_NAMESPACE_ROLE_PATH);
         temp.add(INSTALL_ARTEMIS_CO_070_NAMESPACE_ROLE_BINDING_PATH);
         return temp;
+    }
+
+    @Override
+    protected List<String> getUsedOperatorInstallFiles() {
+        return operatorInstallFiles;
+    }
+
+    @Override
+    public String getArtemisOperatorFile() {
+        return Objects.requireNonNullElse(this.operatorUpdatedFile, INSTALL_ARTEMIS_CO_110_OPERATOR_PATH);
+    }
+
+    @Override
+    public void setArtemisOperatorFile(String operatorFile) {
+        if (operatorInstallFiles == null) {
+            operatorInstallFiles = new ArrayList<>(List.copyOf(DEFAULT_OPERATOR_INSTALL_FILES));
+        }
+        operatorInstallFiles.remove(Constants.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH);
+        operatorInstallFiles.add(operatorFile);
+        this.operatorUpdatedFile = operatorFile;
+    }
+
+    @Override
+    public String getArtemisClusterRoleBindingFile() {
+        return Objects.requireNonNullElse(this.clusterRoleBindingUpdatedFile, INSTALL_ARTEMIS_CO_070_CLUSTER_ROLE_BINDING_PATH);
+    }
+
+    @Override
+    public void setArtemisClusterRoleBindingFile(String clusterRoleBindingFile) {
+        if (operatorInstallFiles == null) {
+            operatorInstallFiles = new ArrayList<>(List.copyOf(DEFAULT_OPERATOR_INSTALL_FILES));
+        }
+        operatorInstallFiles.remove(INSTALL_ARTEMIS_CO_070_CLUSTER_ROLE_BINDING_PATH);
+        operatorInstallFiles.add(clusterRoleBindingFile);
+        this.clusterRoleBindingUpdatedFile = clusterRoleBindingFile;
     }
 
     @Override

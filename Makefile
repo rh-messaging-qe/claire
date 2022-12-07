@@ -21,7 +21,7 @@ build_java:
 	mvn clean install -DskipTests --no-transfer-progress
 
 test_smoke:
-	mvn test -Dtest=SmokeTests
+	mvn test -Dtest=SmokeTests,ClusteredOperatorSmokeTests
 
 clean_all:
 	mvn clean

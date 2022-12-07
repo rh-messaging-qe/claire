@@ -310,6 +310,11 @@ public class KubeClient {
         return clusterOperator;
     }
 
+    public ActiveMQArtemisClusterOperator deployClusterOperator(String namespace, List<String> watchedNamespaces) {
+        ActiveMQArtemisClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperatorClustered(namespace, watchedNamespaces);
+        return clusterOperator;
+    }
+
     public void undeployClusterOperator(ActiveMQArtemisClusterOperator operator) {
         ResourceManager.undeployArtemisClusterOperator(operator);
     }
