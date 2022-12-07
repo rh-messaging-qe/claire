@@ -17,6 +17,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -31,6 +33,7 @@ import static org.hamcrest.Matchers.is;
 
 public class SmokeTests extends AbstractSystemTests {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
     private String testNamespace = "smoke-lala";
 
     @BeforeAll

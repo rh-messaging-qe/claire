@@ -10,6 +10,11 @@ For details of usage fabric8 client see perfect [Cheatsheet](https://github.com/
 [CRDs](crds) contains Either upstream or downstream CRDs for AMQ Broker 7.10.x. Currently we only support downstream, as upstream versions are different (imports are different) and 
 we need to solve this problem nicely. If you're using upstream, please update all imports manually (find all and replace) accordingly.
 
+## Setting log level
+
+Currently there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
+By default we use `INFO` level. Supported values are `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
+
 ## How to run tests
 Currently ActiveMQArtemis CRD is not working properly in Typed CRD way. Please use typeless or perform following commands
 ```shell

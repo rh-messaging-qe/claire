@@ -9,6 +9,7 @@ import io.brokerqe.executor.Executor;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 public abstract class BundledMessagingClient implements MessagingClient {
@@ -47,7 +48,6 @@ public abstract class BundledMessagingClient implements MessagingClient {
         this.sentMessages = messageCount;
     }
 
-    @SuppressWarnings("checkstyle:Regexp")
     int parseMessageCount(String clientStdout, String clientType) {
         int messageCount;
         String expectedLine;
@@ -59,7 +59,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
             expectedLine = lines[lines.length - 3];
         }
 
-        if (expectedLine.toLowerCase().contains(clientType) && expectedLine.contains("message") &&
+        if (expectedLine.toLowerCase(Locale.ROOT).contains(clientType) && expectedLine.contains("message") &&
                 (expectedLine.contains(destinationQueue) || expectedLine.contains(destinationAddress))) {
             String messageCountText = expectedLine.substring(expectedLine.lastIndexOf(":") + 2, expectedLine.lastIndexOf(" messages"));
             messageCount = Integer.parseInt(messageCountText);

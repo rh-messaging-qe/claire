@@ -7,8 +7,8 @@ package io.brokerqe;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.function.BooleanSupplier;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public final class TestUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(TestUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
     /**
      * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
