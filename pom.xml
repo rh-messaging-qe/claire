@@ -215,6 +215,9 @@
                     <properties>
                         <configurationParameters>
                             junit.jupiter.extensions.autodetection.enabled = true
+                            <!--  junit.platform.reporting.open.xml.enabled = true // use legacy format -->
+                            junit.platform.reporting.open.xml.enabled = false
+                            junit.platform.reporting.output.dir = target/surefire-reports
                         </configurationParameters>
                     </properties>
                 </configuration>
