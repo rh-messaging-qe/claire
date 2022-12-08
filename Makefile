@@ -1,8 +1,8 @@
-ROOT_DIR 						= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-ARTEMIS_VERSION 				= 7.10.1
-OPERATOR_VERSION_UPSTREAM 		= main
+ROOT_DIR 				= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+ARTEMIS_VERSION 			?= 7.10.1
+OPERATOR_VERSION_UPSTREAM 		?= main
 ARTEMIS_PROPERTIES_FILE 		= ${ROOT_DIR}/artemis/project-settings.properties
-CLUSTER_OPERATOR_MANAGED		= true
+CLUSTER_OPERATOR_MANAGED		?= true
 
 all: test_smoke_downstream
 
