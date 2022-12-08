@@ -44,7 +44,12 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     public String getRandomNamespaceName(String nsPrefix, int randomLength) {
-        return nsPrefix + "-" + TestUtils.getRandomString(randomLength);
+        boolean disabledRandomNs = Boolean.parseBoolean(System.getenv("DISABLE_RANDOM_NAMESPACES"));
+        if (disabledRandomNs) {
+            return nsPrefix;
+        } else {
+            return nsPrefix + "-" + TestUtils.getRandomString(randomLength);
+        }
     }
 
     @BeforeAll

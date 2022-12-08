@@ -15,6 +15,10 @@ we need to solve this problem nicely. If you're using upstream, please update al
 Currently there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
 By default we use `INFO` level. Supported values are `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
 
+## Disable generating random suffices for namespaces
+Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.
+Example `test-namespace-2a6c` will be always `test-namespace`.
+
 ## How to run tests
 Currently ActiveMQArtemis CRD is not working properly in Typed CRD way. Please use typeless or perform following commands
 ```shell
