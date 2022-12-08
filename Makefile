@@ -1,7 +1,9 @@
 ROOT_DIR 				= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-ARTEMIS_VERSION 			?= 7.10.1
-OPERATOR_VERSION_UPSTREAM 		?= main
 ARTEMIS_PROPERTIES_FILE 		= ${ROOT_DIR}/artemis/project-settings.properties
+
+ARTEMIS_VERSION 			?= 7.10.1
+OPERATOR_INSTALL_ZIP			?= https://download.eng.bos.redhat.com/released/jboss/amq/broker/${ARTEMIS_VERSION}/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples-rhel8.zip
+OPERATOR_VERSION_UPSTREAM 		?= main
 CLUSTER_OPERATOR_MANAGED		?= true
 
 all: test_smoke_downstream
@@ -39,7 +41,7 @@ downstream_files:
 	echo "project.type=amq-broker" >> ${ARTEMIS_PROPERTIES_FILE}
 	# TODO use new structure of examples/install for downstream once 7.11 is out. Current is ugly
 	# Download ocp-install-examples candidate files
-	wget http://download.lab.bos.redhat.com/devel/candidates/amq/AMQ-BROKER-${ARTEMIS_VERSION}/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples-rhel8.zip -O ${ROOT_DIR}/artemis/ocp_install_examples.zip
+	wget ${OPERATOR_INSTALL_ZIP} -O ${ROOT_DIR}/artemis/ocp_install_examples.zip
 	unzip -o ${ROOT_DIR}/artemis/ocp_install_examples.zip -d ${ROOT_DIR}/artemis/tmp/
 	cp -r ${ROOT_DIR}/artemis/tmp/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples/deploy/crds/* ${ROOT_DIR}/artemis/crds/
 	cp ${ROOT_DIR}/artemis/tmp/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples/deploy/examples/artemis-basic-deployment.yaml ${ROOT_DIR}/artemis/examples/artemis/
