@@ -53,6 +53,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
     @Test
     void simpleBrokerClusteredDeploymentTest() {
         // testNamespace & testNamespaceA should work, testNamespaceB should fail
+        LOGGER.info("[{}] Expected pass - Deploy broker in namespace {}", testNamespace, testNamespaceA);
         GenericKubernetesResource broker = createArtemisTypeless(testNamespace, operator.getArtemisSingleExamplePath());
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
@@ -64,7 +65,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         assertThat(brokerPods.size(), is(0));
 
         // testNamespaceA - should work
-        LOGGER.info("[{}] Deploy broker in different namespace {}", testNamespace, testNamespaceA);
+        LOGGER.info("[{}] Expected pass - Deploy broker in namespace {}", testNamespace, testNamespaceA);
         GenericKubernetesResource brokerA = createArtemisTypeless(testNamespaceA, operator.getArtemisSingleExamplePath());
         String brokerNameA = brokerA.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespaceA, brokerNameA);
@@ -75,7 +76,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         assertThat(brokerPods.size(), is(0));
 
         // testNamespaceB - should fail
-        LOGGER.info("[{}] Deploy broker in different namespace {}", testNamespace, testNamespaceB);
+        LOGGER.info("[{}] Expected fail - deploy broker in namespace {}", testNamespace, testNamespaceB);
         assertThrows(WaitException.class, () -> createArtemisTypeless(testNamespaceB, operator.getArtemisSingleExamplePath()));
         assertNull(getClient().getStatefulSet(testNamespaceB, brokerName + "-ss"));
     }

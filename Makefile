@@ -8,11 +8,11 @@ CLUSTER_OPERATOR_MANAGED		?= true
 
 all: test_smoke_downstream
 
-build_downstream: prepare_dirs fill_project_properties downstream_files build_java
+build_downstream: prepare_dirs fill_project_properties downstream_files copy_ocp_zip_files build_java
 
 build_upstream: prepare_dirs fill_project_properties upstream_files build_java
 
-test_smoke_downstream: prepare_dirs fill_project_properties downstream_files test_smoke
+test_smoke_downstream: prepare_dirs fill_project_properties downstream_files copy_ocp_zip_files test_smoke
 
 test_smoke_upstream: prepare_dirs fill_project_properties upstream_files test_smoke
 
@@ -43,12 +43,15 @@ downstream_files:
 	# Download ocp-install-examples candidate files
 	wget ${OPERATOR_INSTALL_ZIP} -O ${ROOT_DIR}/artemis/ocp_install_examples.zip
 	unzip -o ${ROOT_DIR}/artemis/ocp_install_examples.zip -d ${ROOT_DIR}/artemis/tmp/
-	cp -r ${ROOT_DIR}/artemis/tmp/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples/deploy/crds/* ${ROOT_DIR}/artemis/crds/
-	cp ${ROOT_DIR}/artemis/tmp/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples/deploy/examples/artemis-basic-deployment.yaml ${ROOT_DIR}/artemis/examples/artemis/
-	cp ${ROOT_DIR}/artemis/tmp/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples/deploy/examples/address-queue-create.yaml ${ROOT_DIR}/artemis/examples/address/
 
-	# Install files
-	cp -r ${ROOT_DIR}/artemis/tmp/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples/deploy/*yaml ${ROOT_DIR}/artemis/install/
+copy_ocp_zip_files:
+	# Copy CRDs, examples and install files; Execute as one shell command
+	set -e ;\
+	EXAMPLES_ZIP_DIR=$$(find ${ROOT_DIR} -iname "*ocp-install-examples" -type d ) ;\
+	cp -r $${EXAMPLES_ZIP_DIR}/deploy/crds/* ${ROOT_DIR}/artemis/crds/ ;\
+	cp $${EXAMPLES_ZIP_DIR}/deploy/examples/artemis-basic-deployment.yaml ${ROOT_DIR}/artemis/examples/artemis/ ;\
+	cp $${EXAMPLES_ZIP_DIR}/deploy/examples/address-queue-create.yaml ${ROOT_DIR}/artemis/examples/address/ ;\
+	cp -r $${EXAMPLES_ZIP_DIR}/deploy/*yaml ${ROOT_DIR}/artemis/install/
 	rm -rf ${ROOT_DIR}/artemis/tmp ${ROOT_DIR}/artemis/ocp_install_examples.zip
 
 upstream_files:

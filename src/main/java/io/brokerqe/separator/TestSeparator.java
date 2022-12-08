@@ -26,7 +26,7 @@ public interface TestSeparator {
 
     @AfterEach
     default void afterEachTest(ExtensionContext testContext) {
-        LOGGER.info(String.format("%s.%s-FINISHED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()));
-        LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
+        LOGGER.info(String.format("[FINISHED] %s.%s", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()));
+        LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + System.lineSeparator());
     }
 }
