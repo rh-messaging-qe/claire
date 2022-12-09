@@ -12,15 +12,15 @@ we need to solve this problem nicely. If you're using upstream, please update al
 
 ## Setting log level
 
-Currently there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
-By default we use `INFO` level. Supported values are `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
+Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
+By default, we use `INFO` level. Supported values are `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
 
 ## Disable generating random suffices for namespaces
 Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.
 Example `test-namespace-2a6c` will be always `test-namespace`.
 
 ## How to run tests
-Currently ActiveMQArtemis CRD is not working properly in Typed CRD way. Please use typeless or perform following commands
+Currently ActiveMQArtemis CRD is not working properly in Typed CRD way, because of [bug](https://github.com/fabric8io/kubernetes-client/pull/4612). Please use typeless or perform following commands
 ```shell
 # Build custom kubernetes-client version from https://github.com/fabric8io/kubernetes-client/pull/4612
 git clone https://github.com/fabric8io/kubernetes-client
@@ -36,41 +36,14 @@ Set <fabric8.version>6.3-SNAPSHOT</fabric8.version in claire/pom.xml
 make build_downstream # or build_upstream
 ```
 
-The very core of this test suite is re-used from [Strimzi systemtest module](https://github.com/strimzi/strimzi-kafka-operator).
-
 # TODO
-- [x] Play a little with the code base (see how fabric8 works, how it handles individual resources, etc.)
-- [x] Create simple ResourceManager which will managed resources creation/deletion in tests. 
-You can find something similar in [strimzi 0.22](https://github.com/strimzi/strimzi-kafka-operator/blob/release-0.22.x/systemtest/src/main/java/io/strimzi/systemtest/resources/ResourceManager.java).
-Current implementation in Strimzi main is more focused on Parallel test execution, and it's overkill for this test suite now!
-  - This manager should at first handle just Deployments, Secrets, ConfigMaps, etc. Not CRs yet.
-- [x] Add `waitFor` for dynamic wait from [Strimzi test module](https://github.com/strimzi/strimzi-kafka-operator/blob/main/test/src/main/java/io/strimzi/test/TestUtils.java)
-  - Guess more method from this class could be useful
-- [x] Add Broker CRDs into code to make it available in fabric8 client
-  ```java
-  /**
-    * Check why this is not generated because it is needed by client
-      */
-      public class ArtemisList extends DefaultKubernetesResourceList<ActiveMQArtemis> {
-      private static final long serialVersionUID = 1L;
-      }
-
-  /**
-    * Usage: artemisV1BetaV1().inNamespace(namespace).withName(broker).dostuff()
-      */
-      public MixedOperation<ActiveMQArtemis, ArtemisList, Resource<ActiveMQArtemis>> artemisV1BetaV1() {
-      return client.resources(ActiveMQArtemis.class, ArtemisList.class);
-      }
-    ```
-  - This should be done for all CRs and probably in different class than `KubeClient`
-  - Create a simple test which will get Broker CR from OpenShift and check if it has some values
-- [x] Add way how to deploy AMQ Broker Operator from code
-- [x] Add way how to easily create different CRs for the Operator
-- [x] Find a way how to remove [crds](crds) folder and download CRDs as part of every build
+- [ ] Add OLM installation
+- [?] use Velocity project to manage usage of ArtemisCloud CRD versions
 - [ ] Add option to build dockerfile with the tests inside
-- [x] Add some job which will automatically build the code to avoid introducing failures
 
 # Hints
 - Use hamcrest matchers for asserts
-- Maybe reuse `Constants` and `Environment` classes if needed
 - keep code clean
+
+# Attribution
+The very core of this test suite is based on [Strimzi systemtest module](https://github.com/strimzi/strimzi-kafka-operator).
