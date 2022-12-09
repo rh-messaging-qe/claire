@@ -17,11 +17,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class ResourceManager {
 
@@ -35,18 +32,22 @@ public class ResourceManager {
     private static List<ActiveMQArtemisClusterOperator> operatorList = new ArrayList<>();
     private static String projectSettingsType;
     private static Boolean projectCODeploy;
-    private static final ResourceManager RESOURCE_MANAGER = new ResourceManager();
+    private static ResourceManager resourceManager = null;
 
-    private ResourceManager() {
+    private ResourceManager(Environment environment) {
         KubeClient kubeClient = new KubeClient("default");
         artemisClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemis.class);
         artemisAddressClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisAddress.class);
         artemisSecurityClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisSecurity.class);
         artemisScaledownClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisScaledown.class);
-        setProjectProperties();
+        projectSettingsType = environment.getProjectType();
+        projectCODeploy = environment.isProjectClusterOperatorManage();
     }
-    public static ResourceManager getInstance() {
-        return RESOURCE_MANAGER;
+    public static ResourceManager getInstance(Environment environment) {
+        if (resourceManager == null) {
+            resourceManager = new ResourceManager(environment);
+        }
+        return resourceManager;
     }
 
     public static MixedOperation<ActiveMQArtemis, KubernetesResourceList<ActiveMQArtemis>, Resource<ActiveMQArtemis>> getArtemisClient() {
@@ -65,18 +66,6 @@ public class ResourceManager {
         return artemisScaledownClient;
     }
 
-    private void setProjectProperties() {
-        Properties projectSettings = new Properties();
-        FileInputStream projectSettingsFile = null;
-        try {
-            projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
-            projectSettings.load(projectSettingsFile);
-            projectSettingsType = String.valueOf(projectSettings.get(Constants.PROJECT_TYPE_KEY));
-            projectCODeploy = Boolean.valueOf(projectSettings.getProperty(Constants.PROJECT_CO_MANAGE_KEY));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public static ActiveMQArtemisClusterOperator deployArtemisClusterOperator(String namespace) {
         return deployArtemisClusterOperator(namespace, true, null);

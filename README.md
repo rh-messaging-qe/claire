@@ -10,15 +10,6 @@ For details of usage fabric8 client see perfect [Cheatsheet](https://github.com/
 [CRDs](crds) contains Either upstream or downstream CRDs for AMQ Broker 7.10.x. Currently we only support downstream, as upstream versions are different (imports are different) and 
 we need to solve this problem nicely. If you're using upstream, please update all imports manually (find all and replace) accordingly.
 
-## Setting log level
-
-Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
-By default, we use `INFO` level. Supported values are `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
-
-## Disable generating random suffices for namespaces
-Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.
-Example `test-namespace-2a6c` will be always `test-namespace`.
-
 ## How to run tests
 Currently ActiveMQArtemis CRD is not working properly in Typed CRD way, because of [bug](https://github.com/fabric8io/kubernetes-client/pull/4612). Please use typeless or perform following commands
 ```shell
@@ -36,14 +27,33 @@ Set <fabric8.version>6.3-SNAPSHOT</fabric8.version in claire/pom.xml
 make build_downstream # or build_upstream
 ```
 
-# TODO
+## List of available Environment Variables
+| Name                      | Description                           | Default                     | Possible values |
+|---------------------------|---------------------------------------|-----------------------------|-----------------|
+| ARTEMIS_VERSION           | ArtemisCloud Version to be used       | 7.10.1                      | <url>           |
+| OPERATOR_IMAGE            | ArtemisCloud Operator image url       | not set                     | <url>           |
+| BROKER_IMAGE              | Broker image url                      | not set                     | <url>           |
+| BROKER_INIT_IMAGE         | Broker init image url                 | not set                     | <url>           |
+| BUNDLE_IMAGE              | Bundle image url                      | not set                     | <url>           |
+| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices | not set (`false`)           | `true`, `false` |
+| TEST_LOG_LEVEL            | Set logging level of test suite       | `INFO` set in `logback.xml` | `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+
+## Setting log level
+Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
+By default, we use `INFO` level. Supported values are `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
+
+## Disable generating random suffices for namespaces
+Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.
+Example `test-namespace-2a6c` will be always `test-namespace`.
+
+## TODO
 - [ ] Add OLM installation
-- [?] use Velocity project to manage usage of ArtemisCloud CRD versions
+- [ ] (?) Use Velocity project to manage usage of ArtemisCloud CRD versions
 - [ ] Add option to build dockerfile with the tests inside
 
-# Hints
+## Hints
 - Use hamcrest matchers for asserts
 - keep code clean
 
-# Attribution
+## Attribution
 The very core of this test suite is based on [Strimzi systemtest module](https://github.com/strimzi/strimzi-kafka-operator).

@@ -109,7 +109,7 @@ public abstract class ActiveMQArtemisClusterOperator {
 
     private void waitForCoDeployment() {
         // operator pod/deployment name activemq-artemis-controller-manager vs amq-broker-controller-manager
-        TestUtils.waitFor("ClusterOperator to start", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+        TestUtils.waitFor("ClusterOperator to start in " + namespace, Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return kubeClient.getDeployment(namespace, operatorName).getStatus().getReadyReplicas().equals(kubeClient.getDeployment(namespace, operatorName).getSpec().getReplicas())
                 && kubeClient.getFirstPodByPrefixName(namespace, operatorName) != null
                 && kubeClient.getFirstPodByPrefixName(namespace, operatorName).getStatus().getPhase().equals("Running");
@@ -118,7 +118,7 @@ public abstract class ActiveMQArtemisClusterOperator {
 
     private void waitForCoUndeployment() {
         Deployment amqCoDeployment = kubeClient.getDeployment(namespace, operatorName);
-        TestUtils.waitFor("ClusterOperator to start", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+        TestUtils.waitFor("ClusterOperator to stop", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return amqCoDeployment == null && kubeClient.listPodsByPrefixInName(namespace, operatorName).size() == 0;
         });
     }

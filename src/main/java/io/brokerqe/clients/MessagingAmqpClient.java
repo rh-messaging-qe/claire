@@ -6,7 +6,7 @@ package io.brokerqe.clients;
 
 import org.apache.commons.lang.NotImplementedException;
 
-public class MessagingAmqpClient implements MessagingClient {
+public abstract class MessagingAmqpClient implements MessagingClient {
 
     @Override
     public int sendMessages() {

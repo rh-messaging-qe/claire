@@ -36,6 +36,8 @@ public class AbstractSystemTests implements TestSeparator {
 
     protected ActiveMQArtemisClusterOperator operator;
 
+    protected Environment testEnvironment;
+
     public KubeClient getClient() {
         return this.client;
     }
@@ -44,8 +46,10 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     public String getRandomNamespaceName(String nsPrefix, int randomLength) {
-        boolean disabledRandomNs = Boolean.parseBoolean(System.getenv("DISABLE_RANDOM_NAMESPACES"));
-        if (disabledRandomNs) {
+        if (testEnvironment == null) {
+            testEnvironment = new Environment();
+        }
+        if (testEnvironment.isDisabledRandomNs()) {
             return nsPrefix;
         } else {
             return nsPrefix + "-" + TestUtils.getRandomString(randomLength);
@@ -54,13 +58,16 @@ public class AbstractSystemTests implements TestSeparator {
 
     @BeforeAll
     void setupTestEnvironment() {
+        if (testEnvironment == null) {
+            testEnvironment = new Environment();
+        }
         setupLoggingLevel();
         client = new KubeClient("default");
-        ResourceManager resourceManager = ResourceManager.getInstance();
+        ResourceManager resourceManager = ResourceManager.getInstance(testEnvironment);
     }
 
     void setupLoggingLevel() {
-        String envLogLevel = System.getenv("TEST_LOG_LEVEL");
+        String envLogLevel = testEnvironment.getTestLogLevel();
         if (envLogLevel == null || envLogLevel.equals("")) {
             LOGGER.debug("Not setting log level at all.");
         } else {

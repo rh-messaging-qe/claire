@@ -83,7 +83,7 @@ public class SmokeTests extends AbstractSystemTests {
     }
 
     public String brokerAcceptorConfigJoin() {
-        return String.join(Constants.NEW_LINE_SEPARATOR,
+        return String.join(Constants.LINE_SEPARATOR,
                 "apiVersion: broker.amq.io/v1beta1",
                 "kind: ActiveMQArtemis",
                 "metadata:",

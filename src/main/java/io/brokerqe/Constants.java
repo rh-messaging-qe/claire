@@ -9,7 +9,20 @@ import java.time.Duration;
 public interface Constants {
 
     // Platform related strings
-    String NEW_LINE_SEPARATOR = System.getProperty("line.separator");
+    String LINE_SEPARATOR = System.getProperty("line.separator");
+
+    // Environment Variables
+    String EV_ARTEMIS_VERSION = "ARTEMIS_VERSION";
+    String EV_DISABLE_RANDOM_NAMESPACES = "DISABLE_RANDOM_NAMESPACES";
+    String EV_TEST_LOG_LEVEL = "TEST_LOG_LEVEL";
+    String EV_OPERATOR_IMAGE = "OPERATOR_IMAGE";
+    String EV_BROKER_IMAGE = "BROKER_IMAGE";
+    String EV_BROKER_INIT_IMAGE = "BROKER_INIT_IMAGE";
+    String EV_BUNDLE_IMAGE = "BUNDLE_IMAGE";
+
+    String BROKER_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Kubernetes_";
+    String BROKER_INIT_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Init_";
+    String OPERATOR_IMAGE_OPERATOR_PREFIX = "image";
 
     // Project related strings
     String PROJECT_TYPE_ARTEMIS = "activemq-artemis";

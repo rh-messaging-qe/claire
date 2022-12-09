@@ -181,4 +181,27 @@ public final class TestUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static void updateImagesInOperatorFile(Path operatorFile, String imageType, String imageUrl, String version) {
+        List<EnvVar> envVars;
+        String imageTypeVersion = null;
+        if (version != null) {
+            imageTypeVersion = imageType + version.replace(".", "");
+        }
+        Deployment operator = configFromYaml(operatorFile.toFile(), Deployment.class);
+
+        if (imageType.equals(Constants.OPERATOR_IMAGE_OPERATOR_PREFIX)) {
+            operator.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(imageUrl);
+        }
+
+        if (imageType.equals(Constants.BROKER_IMAGE_OPERATOR_PREFIX) || imageType.equals(Constants.BROKER_INIT_IMAGE_OPERATOR_PREFIX)) {
+            envVars = operator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+            String finalImageTypeVersion = imageTypeVersion;
+            EnvVar brokerImageEV = envVars.stream().filter(envVar -> envVar.getName().equals(finalImageTypeVersion)).findFirst().get();
+            brokerImageEV.setValue(imageUrl);
+        }
+
+        configToYaml(operatorFile.toFile(), operator);
+
+    }
 }

@@ -25,7 +25,7 @@ public class ArtemisClusterOperator extends ActiveMQArtemisClusterOperator {
     static final String INSTALL_ARTEMIS_CO_080_ELECTION_ROLE_PATH = Constants.OPERATOR_INSTALL_DIR_PATH + "080_election_role.yaml";
     static final String INSTALL_ARTEMIS_CO_090_ELECTION_ROLE_BINDING_PATH = Constants.OPERATOR_INSTALL_DIR_PATH + "090_election_role_binding.yaml";
     static final String INSTALL_ARTEMIS_CO_100_OPERATOR_CONFIG_PATH = Constants.OPERATOR_INSTALL_DIR_PATH + "100_operator_config.yaml";
-    static final String INSTALL_ARTEMIS_CO_110_OPERATOR_PATH = Constants.OPERATOR_INSTALL_DIR_PATH + "110_operator.yaml";
+    public static final String INSTALL_ARTEMIS_CO_110_OPERATOR_PATH = Constants.OPERATOR_INSTALL_DIR_PATH + "110_operator.yaml";
 
     static final List<String> DEFAULT_OPERATOR_INSTALL_FILES = Arrays.asList(
             INSTALL_ARTEMIS_CO_010_CRD_ARTEMIS_PATH,
