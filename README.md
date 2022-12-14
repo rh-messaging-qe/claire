@@ -28,15 +28,15 @@ make build_downstream # or build_upstream
 ```
 
 ## List of available Environment Variables
-| Name                      | Description                           | Default                     | Possible values |
-|---------------------------|---------------------------------------|-----------------------------|-----------------|
-| ARTEMIS_VERSION           | ArtemisCloud Version to be used       | 7.10.1                      | <url>           |
-| OPERATOR_IMAGE            | ArtemisCloud Operator image url       | not set                     | <url>           |
-| BROKER_IMAGE              | Broker image url                      | not set                     | <url>           |
-| BROKER_INIT_IMAGE         | Broker init image url                 | not set                     | <url>           |
-| BUNDLE_IMAGE              | Bundle image url                      | not set                     | <url>           |
-| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices | not set (`false`)           | `true`, `false` |
-| TEST_LOG_LEVEL            | Set logging level of test suite       | `INFO` set in `logback.xml` | `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+| Name                      | Description                                              | Default                     | Possible values |
+|---------------------------|----------------------------------------------------------|-----------------------------|-----------------|
+| ARTEMIS_VERSION           | ArtemisCloud Version to be used                          | 7.10.1                      | <url>           |
+| OPERATOR_IMAGE            | ArtemisCloud Operator image url                          | not set                     | <url>           |
+| BROKER_IMAGE              | Broker image url                                         | not set                     | <url>           |
+| BROKER_INIT_IMAGE         | Broker init image url                                    | not set                     | <url>           |
+| BUNDLE_IMAGE              | Bundle image url                                         | not set                     | <url>           |
+| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices in namespace names | not set (`false`)           | `true`, `false` |
+| TEST_LOG_LEVEL            | Set logging level of test suite                          | `INFO` set in `logback.xml` | `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
 
 ## Setting log level
 Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
@@ -48,6 +48,8 @@ Example `test-namespace-2a6c` will be always `test-namespace`.
 
 ## TODO
 - [ ] Add OLM installation
+- [ ] Implement management client (amqx)
+- [ ] Implement usage of [containerized clients](https://github.com/rh-messaging/cli-java)
 - [ ] (?) Use Velocity project to manage usage of ArtemisCloud CRD versions
 - [ ] Add option to build dockerfile with the tests inside
 
