@@ -4,13 +4,12 @@
  */
 package io.brokerqe;
 
-import io.brokerqe.operator.ArtemisClusterOperator;
+import io.brokerqe.operator.ArtemisFileProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
@@ -85,15 +84,7 @@ public class Environment {
     }
 
     private void checkSetProvidedImages() {
-        String operatorFile = null;
-        if (Files.exists(Paths.get(Constants.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH))) {
-            operatorFile = Constants.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH;
-        } else if (Files.exists(Paths.get(ArtemisClusterOperator.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH))) {
-            operatorFile = ArtemisClusterOperator.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH;
-        } else {
-            LOGGER.error("Can't find any operator file! Exiting.");
-            System.exit(2);
-        }
+        String operatorFile = ArtemisFileProvider.getOperatorInstallFile();
 
         Path operatorFilePath = Paths.get(operatorFile);
         if (brokerImage != null && !brokerImage.equals("")) {

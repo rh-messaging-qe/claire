@@ -8,9 +8,7 @@ import io.amq.broker.v1alpha1.ActiveMQArtemisSecurity;
 import io.amq.broker.v2alpha1.ActiveMQArtemisScaledown;
 import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
 import io.amq.broker.v2alpha5.ActiveMQArtemis;
-import io.brokerqe.operator.AMQClusterOperator;
-import io.brokerqe.operator.ActiveMQArtemisClusterOperator;
-import io.brokerqe.operator.ArtemisClusterOperator;
+import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -29,7 +27,7 @@ public class ResourceManager {
     private static MixedOperation<ActiveMQArtemisSecurity, KubernetesResourceList<ActiveMQArtemisSecurity>, Resource<ActiveMQArtemisSecurity>> artemisSecurityClient;
     private static MixedOperation<ActiveMQArtemisScaledown, KubernetesResourceList<ActiveMQArtemisScaledown>, Resource<ActiveMQArtemisScaledown>> artemisScaledownClient;
 
-    private static List<ActiveMQArtemisClusterOperator> operatorList = new ArrayList<>();
+    private static List<ArtemisCloudClusterOperator> operatorList = new ArrayList<>();
     private static String projectSettingsType;
     private static Boolean projectCODeploy;
     private static ResourceManager resourceManager = null;
@@ -67,29 +65,20 @@ public class ResourceManager {
     }
 
 
-    public static ActiveMQArtemisClusterOperator deployArtemisClusterOperator(String namespace) {
+    public static ArtemisCloudClusterOperator deployArtemisClusterOperator(String namespace) {
         return deployArtemisClusterOperator(namespace, true, null);
     }
 
-    public static ActiveMQArtemisClusterOperator deployArtemisClusterOperatorClustered(String namespace, List<String> watchedNamespaces) {
+    public static ArtemisCloudClusterOperator deployArtemisClusterOperatorClustered(String namespace, List<String> watchedNamespaces) {
         return deployArtemisClusterOperator(namespace, false, watchedNamespaces);
     }
 
-    public static ActiveMQArtemisClusterOperator deployArtemisClusterOperator(String namespace, boolean isNamespaced, List<String> watchedNamespaces) {
+    public static ArtemisCloudClusterOperator deployArtemisClusterOperator(String namespace, boolean isNamespaced, List<String> watchedNamespaces) {
         if (projectCODeploy) {
             LOGGER.info("Deploying Artemis CO");
-            ActiveMQArtemisClusterOperator clusterOperator = null;
-            switch (projectSettingsType) {
-                case Constants.PROJECT_TYPE_AMQ:
-                    clusterOperator = new AMQClusterOperator(namespace, isNamespaced);
-                    break;
-                case Constants.PROJECT_TYPE_ARTEMIS:
-                    clusterOperator = new ArtemisClusterOperator(namespace, isNamespaced);
-                    break;
-                default:
-                    LOGGER.error("Unknown projectType! Exiting.");
-                    System.exit(5);
-            }
+            ArtemisCloudClusterOperator clusterOperator = null;
+            clusterOperator = new ArtemisCloudClusterOperator(namespace, isNamespaced);
+
             if (!isNamespaced) {
                 clusterOperator.watchNamespaces(watchedNamespaces);
                 clusterOperator.updateClusterRoleBinding(namespace);
@@ -103,7 +92,7 @@ public class ResourceManager {
         }
     }
 
-    public static void undeployArtemisClusterOperator(ActiveMQArtemisClusterOperator clusterOperator) {
+    public static void undeployArtemisClusterOperator(ArtemisCloudClusterOperator clusterOperator) {
         if (projectCODeploy) {
             clusterOperator.undeployOperator(true);
             operatorList.remove(clusterOperator);
@@ -116,11 +105,11 @@ public class ResourceManager {
         return projectCODeploy;
     }
 
-    public static List<ActiveMQArtemisClusterOperator> getArtemisClusterOperators() {
+    public static List<ArtemisCloudClusterOperator> getArtemisClusterOperators() {
         return operatorList;
     }
 
-    public static ActiveMQArtemisClusterOperator getArtemisClusterOperator(String namespace) {
+    public static ArtemisCloudClusterOperator getArtemisClusterOperator(String namespace) {
         return operatorList.stream().filter(operator -> operator.getNamespace().equals(namespace)).findFirst().orElse(null);
     }
 

@@ -11,32 +11,26 @@ For details of usage fabric8 client see perfect [Cheatsheet](https://github.com/
 we need to solve this problem nicely. If you're using upstream, please update all imports manually (find all and replace) accordingly.
 
 ## How to run tests
-Currently ActiveMQArtemis CRD is not working properly in Typed CRD way, because of [bug](https://github.com/fabric8io/kubernetes-client/pull/4612). Please use typeless or perform following commands
-```shell
-# Build custom kubernetes-client version from https://github.com/fabric8io/kubernetes-client/pull/4612
-git clone https://github.com/fabric8io/kubernetes-client
-git fetch origin pull/4612/head:artemis
-git checkout artemis
-mvn clean install -DskipTests=true -f generator-annotations/pom.xml
-#mvn clean install -f java-generator/pom.xml -DskipTests=true
-mvn clean install -DskipTests=true
 
-# import this locally build version into claire project
-Set <fabric8.version>6.3-SNAPSHOT</fabric8.version in claire/pom.xml
+Currently, we support running `test_smoke_downstream` and `test_smoke_upstream` (which executes `SmokeTests` and `ClusteredOperatorSmokeTests`) tests using `make`.
+These targets will execute all necessary steps - clean, download files, build and generate needed code and finally execute tests.
+Review `Makefile` for more details.
 
-make build_downstream # or build_upstream
-```
 
 ## List of available Environment Variables
-| Name                      | Description                                              | Default                     | Possible values |
-|---------------------------|----------------------------------------------------------|-----------------------------|-----------------|
-| ARTEMIS_VERSION           | ArtemisCloud Version to be used                          | 7.10.1                      | <url>           |
-| OPERATOR_IMAGE            | ArtemisCloud Operator image url                          | not set                     | <url>           |
-| BROKER_IMAGE              | Broker image url                                         | not set                     | <url>           |
-| BROKER_INIT_IMAGE         | Broker init image url                                    | not set                     | <url>           |
-| BUNDLE_IMAGE              | Bundle image url                                         | not set                     | <url>           |
-| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices in namespace names | not set (`false`)           | `true`, `false` |
-| TEST_LOG_LEVEL            | Set logging level of test suite                          | `INFO` set in `logback.xml` | `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+
+| Name                      | Description                           | Default                     | Possible values                         |
+|---------------------------|---------------------------------------|-----------------------------|-----------------------------------------|
+| ARTEMIS_VERSION           | ArtemisCloud Version to be used       | 7.10.1                      | <url>                                   |
+| OPERATOR_IMAGE            | ArtemisCloud Operator image url       | not set                     | <url>                                   |
+| BROKER_IMAGE              | Broker image url                      | not set                     | <url>                                   |
+| BROKER_INIT_IMAGE         | Broker init image url                 | not set                     | <url>                                   |
+| BUNDLE_IMAGE              | Bundle image url                      | not set                     | <url>                                   |
+| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices | not set (`false`)           | `true`, `false`                         |
+| TEST_LOG_LEVEL            | Set logging level of test suite       | `INFO` set in `logback.xml` | `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+| CLUSTER_OPERATOR_MANAGED  | Whether test suite managed CO or not  | true                        | `false`                                 |
+| OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples | 7.10.1 url                  | <url>                                   |
+| OPERATOR_VERSION_UPSTREAM | Version/branch of repository          | main                        | <branch>                                |
 
 ## Setting log level
 Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.

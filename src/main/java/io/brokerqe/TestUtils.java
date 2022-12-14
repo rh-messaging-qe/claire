@@ -143,6 +143,11 @@ public final class TestUtils {
         }
     }
 
+    public static String getOperatorControllerManagerName(Path yamlFile) {
+        Deployment operatorCODeployment = configFromYaml(yamlFile.toFile(), Deployment.class);
+        return operatorCODeployment.getMetadata().getName();
+    }
+
     public static String updateClusterRoleBindingFileNamespace(Path yamlFile, String namespace) {
         String newCRBFileName = "cluster_role_binding_" + TestUtils.getRandomString(3) + ".yaml";
         Path copyPath = Paths.get(yamlFile.toAbsolutePath().toString().replace("cluster_role_binding.yaml", newCRBFileName));

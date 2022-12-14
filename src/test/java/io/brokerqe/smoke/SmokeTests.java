@@ -5,12 +5,14 @@
 package io.brokerqe.smoke;
 
 import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
+import io.amq.broker.v2alpha5.ActiveMQArtemis;
 import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.clients.BundledAmqpMessagingClient;
 import io.brokerqe.clients.BundledCoreMessagingClient;
 import io.brokerqe.clients.MessagingClient;
+import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
@@ -54,22 +56,22 @@ public class SmokeTests extends AbstractSystemTests {
 
     @Test
     void simpleBrokerDeploymentTest() {
-        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, operator.getArtemisSingleExamplePath());
-//        ActiveMQArtemis broker = createArtemisTyped(testNamespace, artemisExampleFilePath, true);
+//        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemis broker = createArtemisTyped(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         LOGGER.info(String.valueOf(broker));
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
         List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(1));
 
-        deleteArtemisTypeless(testNamespace, brokerName);
-//        deleteArtemisTyped(testNamespace, broker, true);
+//        deleteArtemisTypeless(testNamespace, brokerName);
+        deleteArtemisTyped(testNamespace, broker, true);
     }
 
     @Test
     void sendReceiveCoreMessageTest() {
-        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, operator.getArtemisSingleExamplePath());
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, operator.getArtemisAddressQueueExamplePath());
+        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
@@ -108,7 +110,7 @@ public class SmokeTests extends AbstractSystemTests {
         final String brokerWithAmqpAcceptor = brokerAcceptorConfigJoin();
         InputStream targetStream = new ByteArrayInputStream(brokerWithAmqpAcceptor.getBytes());
         GenericKubernetesResource broker = createArtemisTypelessFromString(testNamespace, targetStream, true);
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, operator.getArtemisAddressQueueExamplePath());
+        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         // sending & receiving messages
         String brokerName = broker.getMetadata().getName();
@@ -134,8 +136,8 @@ public class SmokeTests extends AbstractSystemTests {
 
     @Test
     void subscriberMessageTest() {
-        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, operator.getArtemisSingleExamplePath());
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, operator.getArtemisAddressQueueExamplePath());
+        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);

@@ -7,6 +7,7 @@ package io.brokerqe.smoke;
 import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.WaitException;
+import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -54,7 +55,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
     void simpleBrokerClusteredDeploymentTest() {
         // testNamespace & testNamespaceA should work, testNamespaceB should fail
         LOGGER.info("[{}] Expected pass - Deploy broker in namespace {}", testNamespace, testNamespaceA);
-        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, operator.getArtemisSingleExamplePath());
+        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
         List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
@@ -66,7 +67,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
 
         // testNamespaceA - should work
         LOGGER.info("[{}] Expected pass - Deploy broker in namespace {}", testNamespace, testNamespaceA);
-        GenericKubernetesResource brokerA = createArtemisTypeless(testNamespaceA, operator.getArtemisSingleExamplePath());
+        GenericKubernetesResource brokerA = createArtemisTypeless(testNamespaceA, ArtemisFileProvider.getArtemisSingleExampleFile());
         String brokerNameA = brokerA.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespaceA, brokerNameA);
         brokerPods = getClient().listPodsByPrefixInName(testNamespaceA, brokerNameA);
@@ -77,7 +78,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
 
         // testNamespaceB - should fail
         LOGGER.info("[{}] Expected fail - deploy broker in namespace {}", testNamespace, testNamespaceB);
-        assertThrows(WaitException.class, () -> createArtemisTypeless(testNamespaceB, operator.getArtemisSingleExamplePath()));
+        assertThrows(WaitException.class, () -> createArtemisTypeless(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile()));
         assertNull(getClient().getStatefulSet(testNamespaceB, brokerName + "-ss"));
     }
 

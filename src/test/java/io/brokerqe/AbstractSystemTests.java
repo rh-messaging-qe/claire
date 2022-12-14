@@ -9,7 +9,7 @@ import ch.qos.logback.classic.LoggerContext;
 import io.amq.broker.v1alpha1.ActiveMQArtemisSecurity;
 import io.amq.broker.v2alpha5.ActiveMQArtemis;
 import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
-import io.brokerqe.operator.ActiveMQArtemisClusterOperator;
+import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.separator.TestSeparator;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.StatusDetails;
@@ -34,7 +34,7 @@ public class AbstractSystemTests implements TestSeparator {
 
     private KubeClient client;
 
-    protected ActiveMQArtemisClusterOperator operator;
+    protected ArtemisCloudClusterOperator operator;
 
     protected Environment testEnvironment;
 

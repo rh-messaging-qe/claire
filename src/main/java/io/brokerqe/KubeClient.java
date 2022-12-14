@@ -4,7 +4,7 @@
  */
 package io.brokerqe;
 
-import io.brokerqe.operator.ActiveMQArtemisClusterOperator;
+import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
@@ -305,17 +305,17 @@ public class KubeClient {
     /*******************************************************************************************************************
      *  Deploy ActiveMQ Artemis Operator
      ******************************************************************************************************************/
-    public ActiveMQArtemisClusterOperator deployClusterOperator(String namespace) {
-        ActiveMQArtemisClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperator(namespace);
+    public ArtemisCloudClusterOperator deployClusterOperator(String namespace) {
+        ArtemisCloudClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperator(namespace);
         return clusterOperator;
     }
 
-    public ActiveMQArtemisClusterOperator deployClusterOperator(String namespace, List<String> watchedNamespaces) {
-        ActiveMQArtemisClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperatorClustered(namespace, watchedNamespaces);
+    public ArtemisCloudClusterOperator deployClusterOperator(String namespace, List<String> watchedNamespaces) {
+        ArtemisCloudClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperatorClustered(namespace, watchedNamespaces);
         return clusterOperator;
     }
 
-    public void undeployClusterOperator(ActiveMQArtemisClusterOperator operator) {
+    public void undeployClusterOperator(ArtemisCloudClusterOperator operator) {
         ResourceManager.undeployArtemisClusterOperator(operator);
     }
 

@@ -16,12 +16,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
-// make this class abstract (ArtemisClusterOperator, AMQClusterOperator) --> ActiveMQArtemisClusterOperator
-public abstract class ActiveMQArtemisClusterOperator {
+public class ArtemisCloudClusterOperator {
 
-    final static Logger LOGGER = LoggerFactory.getLogger(ActiveMQArtemisClusterOperator.class);
+    final static Logger LOGGER = LoggerFactory.getLogger(ArtemisCloudClusterOperator.class);
 
     private final String namespace;
     private final boolean isNamespaced;
@@ -31,17 +32,38 @@ public abstract class ActiveMQArtemisClusterOperator {
 
     private final KubeClient kubeClient;
 
-    // TODO: abstract -> default downstream for now
     private final String operatorName;
 
-    public ActiveMQArtemisClusterOperator(String namespace, String operatorName) {
-        this(namespace, false, true, operatorName);
+    static final List<String> DEFAULT_OPERATOR_INSTALL_FILES = Arrays.asList(
+            ArtemisFileProvider.getArtemisCrdFile(),
+            ArtemisFileProvider.getSecurityCrdFile(),
+            ArtemisFileProvider.getAddressCrdFile(),
+            ArtemisFileProvider.getScaledownCrdFile(),
+            ArtemisFileProvider.getServiceAccountInstallFile(),
+            ArtemisFileProvider.getElectionRoleInstallFile(),
+            ArtemisFileProvider.getElectionRoleBindingInstallFile(),
+            ArtemisFileProvider.getOperatorConfigInstallFile(),
+            ArtemisFileProvider.getOperatorInstallFile()
+    );
+
+    // Used if updated DEFAULT_OPERATOR_INSTALL_FILES
+    private List<String> operatorInstallFiles;
+    private String operatorUpdatedFile;
+    private String clusterRoleBindingUpdatedFile;
+
+    public ArtemisCloudClusterOperator(String namespace) {
+        this(namespace, false, true);
     }
-    public ActiveMQArtemisClusterOperator(String namespace, boolean isOlmInstallation, boolean isNamespaced, String operatorName) {
+
+    public ArtemisCloudClusterOperator(String namespace, boolean isNamespaced) {
+        this(namespace, false, isNamespaced);
+    }
+
+    public ArtemisCloudClusterOperator(String namespace, boolean isOlmInstallation, boolean isNamespaced) {
         this.namespace = namespace;
         this.isOlmInstallation = isOlmInstallation;
         this.isNamespaced = isNamespaced;
-        this.operatorName = operatorName;
+        this.operatorName = TestUtils.getOperatorControllerManagerName(Paths.get(ArtemisFileProvider.getOperatorInstallFile()));
         if (isNamespaced) {
             this.filesToDeploy = new ArrayList<>(getNamespacedOperatorInstallFiles());
         } else {
@@ -149,19 +171,48 @@ public abstract class ActiveMQArtemisClusterOperator {
     }
 
 
-    protected abstract List<String> getClusteredOperatorInstallFiles();
-    protected abstract List<String> getNamespacedOperatorInstallFiles();
-    protected abstract List<String> getUsedOperatorInstallFiles();
+    protected List<String> getClusteredOperatorInstallFiles() {
+        List<String> temp = new ArrayList<String>(DEFAULT_OPERATOR_INSTALL_FILES);
+        temp.add(ArtemisFileProvider.getClusterRoleInstallFile());
+        temp.add(ArtemisFileProvider.getClusterRoleBindingInstallFile());
+        return temp;
+    }
 
-    public abstract void setArtemisOperatorFile(String operatorFile);
+    protected List<String> getNamespacedOperatorInstallFiles() {
+        List<String> temp = new ArrayList<String>(DEFAULT_OPERATOR_INSTALL_FILES);
+        temp.add(ArtemisFileProvider.getNamespaceRoleInstallFile());
+        temp.add(ArtemisFileProvider.getNamespaceRoleBindingInstallFile());
+        return temp;
+    }
 
-    public abstract String getArtemisOperatorFile();
-    public abstract String getArtemisClusterRoleBindingFile();
-    public abstract void setArtemisClusterRoleBindingFile(String clusterRoleBindingFile);
+    protected List<String> getUsedOperatorInstallFiles() {
+        return operatorInstallFiles;
+    }
 
-    // TODO Temporary solution
-    public abstract String getArtemisSingleExamplePath();
+    public String getArtemisOperatorFile() {
+        return Objects.requireNonNullElse(this.operatorUpdatedFile, ArtemisFileProvider.getOperatorInstallFile());
+    }
 
-    public abstract String getArtemisAddressQueueExamplePath();
+    public void setArtemisOperatorFile(String operatorFile) {
+        if (operatorInstallFiles == null) {
+            operatorInstallFiles = new ArrayList<>(List.copyOf(DEFAULT_OPERATOR_INSTALL_FILES));
+        }
+        operatorInstallFiles.remove(ArtemisFileProvider.getOperatorInstallFile());
+        operatorInstallFiles.add(operatorFile);
+        this.operatorUpdatedFile = operatorFile;
+    }
+
+    public String getArtemisClusterRoleBindingFile() {
+        return Objects.requireNonNullElse(this.clusterRoleBindingUpdatedFile, ArtemisFileProvider.getClusterRoleBindingInstallFile());
+    }
+
+    public void setArtemisClusterRoleBindingFile(String clusterRoleBindingFile) {
+        if (operatorInstallFiles == null) {
+            operatorInstallFiles = new ArrayList<>(List.copyOf(DEFAULT_OPERATOR_INSTALL_FILES));
+        }
+        operatorInstallFiles.remove(ArtemisFileProvider.getClusterRoleBindingInstallFile());
+        operatorInstallFiles.add(clusterRoleBindingFile);
+        this.clusterRoleBindingUpdatedFile = clusterRoleBindingFile;
+    }
 
 }
