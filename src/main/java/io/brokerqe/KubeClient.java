@@ -166,8 +166,12 @@ public class KubeClient {
         List<Pod> pods = listPodsByPrefixInName(namespaceName, podNamePrefix);
         if (pods.size() > 1) {
             LOGGER.warn("[{}] Returning first found pod with name '{}' of many!", namespaceName, pods.size());
+            return pods.get(0);
+        } else if (pods.size() > 0) {
+            return pods.get(0);
+        } else {
+            return null;
         }
-        return pods.get(0);
     }
 
     // ==================================

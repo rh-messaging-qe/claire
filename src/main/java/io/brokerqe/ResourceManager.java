@@ -4,10 +4,11 @@
  */
 package io.brokerqe;
 
-import io.amq.broker.v1alpha1.ActiveMQArtemisSecurity;
-import io.amq.broker.v2alpha1.ActiveMQArtemisScaledown;
-import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
-import io.amq.broker.v2alpha5.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
+import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -99,6 +100,10 @@ public class ResourceManager {
         } else {
             LOGGER.warn("Not deploying operator! " + "'" + Constants.PROJECT_CO_MANAGE_KEY + "' is 'false'");
         }
+    }
+
+    public static void undeployAllClientsContainers() {
+        MessagingAmqpClient.undeployAllClientsContainers();
     }
 
     public static boolean isClusterOperatorManaged() {

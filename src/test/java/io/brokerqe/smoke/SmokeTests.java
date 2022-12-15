@@ -4,18 +4,24 @@
  */
 package io.brokerqe.smoke;
 
-import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
-import io.amq.broker.v2alpha5.ActiveMQArtemis;
+import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
+
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
+import io.brokerqe.TestUtils;
+import io.brokerqe.clients.AmqpQpidClient;
 import io.brokerqe.clients.BundledAmqpMessagingClient;
 import io.brokerqe.clients.BundledCoreMessagingClient;
+import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.clients.MessagingClient;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -52,6 +58,7 @@ public class SmokeTests extends AbstractSystemTests {
             LOGGER.info("[{}] Deleting namespace to {}", testNamespace, testNamespace);
             getClient().deleteNamespace(testNamespace);
         }
+        ResourceManager.undeployAllClientsContainers();
     }
 
     @Test
@@ -65,7 +72,7 @@ public class SmokeTests extends AbstractSystemTests {
         assertThat(brokerPods.size(), is(1));
 
 //        deleteArtemisTypeless(testNamespace, brokerName);
-        deleteArtemisTyped(testNamespace, broker, true);
+        deleteArtemis(testNamespace, broker, true);
     }
 
     @Test
@@ -151,5 +158,51 @@ public class SmokeTests extends AbstractSystemTests {
         LOGGER.info("[{}] Sent {} - Received {}", testNamespace, sent, received);
         assertThat(sent, equalTo(msgsExpected));
         assertThat(messagingClientCore.compareMessages(), is(true));
+    }
+
+    @Test
+    void sendReceiveSystemTestsClientMessageTest() {
+        Deployment clients = MessagingAmqpClient.deployClientsContainer(testNamespace);
+        Pod clientsPod = getClient().getFirstPodByPrefixName(testNamespace, "systemtests-clients");
+
+        Acceptors amqpAcceptors = new Acceptors();
+        amqpAcceptors.setName("amqp-owire-acceptor");
+        amqpAcceptors.setProtocols("amqp,openwire");
+        amqpAcceptors.setPort(5672);
+
+        ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(ArtemisFileProvider.getArtemisSingleExampleFile(), ActiveMQArtemis.class);
+//        List<Acceptors> acceptors = List.of(new AcceptorsBuilder().withName("amqp-owire-acceptor").withProtocols("amqp,openwire").withPort(5672).build());
+        artemisBroker.getSpec().setAcceptors(List.of(amqpAcceptors));
+        artemisBroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(artemisBroker).createOrReplace();
+        waitForBrokerDeployment(testNamespace, artemisBroker);
+
+        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        String brokerName = artemisBroker.getMetadata().getName();
+        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
+
+        int msgsExpected = 100;
+        int sent = -1;
+        int received = 0;
+
+        // Publisher - Receiver
+        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, brokerPod.getStatus().getPodIP(), "5672", myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
+        sent = messagingClient.sendMessages();
+        received = messagingClient.receiveMessages();
+        assertThat(sent, equalTo(msgsExpected));
+        assertThat(sent, equalTo(received));
+        assertThat(messagingClient.compareMessages(), is(true));
+
+        // Subscriber - Publisher
+        MessagingClient messagingSubscriberClient = new AmqpQpidClient(clientsPod, brokerPod.getStatus().getPodIP(), "5672", myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
+        messagingSubscriberClient.subscribe();
+        sent = messagingSubscriberClient.sendMessages();
+        received = messagingSubscriberClient.receiveMessages();
+        assertThat(sent, equalTo(msgsExpected));
+        assertThat(sent, equalTo(received));
+        assertThat(messagingSubscriberClient.compareMessages(), is(true));
+
+        MessagingAmqpClient.undeployClientsContainer(testNamespace, clients);
+        deleteArtemisAddress(testNamespace, myAddress);
+        deleteArtemis(testNamespace, artemisBroker);
     }
 }

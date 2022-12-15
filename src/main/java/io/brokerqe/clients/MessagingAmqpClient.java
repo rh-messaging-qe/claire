@@ -4,9 +4,79 @@
  */
 package io.brokerqe.clients;
 
+import io.brokerqe.KubeClient;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import org.apache.commons.lang.NotImplementedException;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 public abstract class MessagingAmqpClient implements MessagingClient {
+
+    static Map<Deployment, String> deployedContainers = new HashMap<>();
+    static KubeClient kubeClient = new KubeClient("default");
+
+    static Deployment deploymentSystemClients = new DeploymentBuilder()
+        .withNewMetadata()
+            .withName("systemtests-clients")
+        .endMetadata()
+        .withNewSpec()
+            .withReplicas(1)
+            .withNewSelector()
+                .addToMatchLabels("app", "systemtests-clients")
+            .endSelector()
+            .withNewTemplate()
+                .withNewMetadata()
+                    .addToLabels("app", "systemtests-clients")
+                .endMetadata()
+                .withNewSpec()
+                    .editOrNewSecurityContext()
+                        .withNewSeccompProfile()
+                            .withType("RuntimeDefault") // localhost
+                        .endSeccompProfile()
+                    .endSecurityContext()
+                    .addNewContainer()
+                        .withName("systemtests-clients")
+                        .withImage("quay.io/messaging/cli-java:latest")
+                        .withCommand("sleep")
+                        .withArgs("infinity")
+                        .withImagePullPolicy("Always")
+                        .editOrNewSecurityContext()
+                            .withPrivileged(false)
+                            .withAllowPrivilegeEscalation(false)
+                            .withRunAsNonRoot(true)
+                            .withRunAsUser(1000L)
+                            .withNewCapabilities()
+                                .withDrop("ALL")
+                            .endCapabilities()
+                        .endSecurityContext()
+                    .endContainer()
+                .endSpec()
+            .endTemplate()
+        .endSpec()
+        .build();
+
+    public static Deployment deployClientsContainer(String namespace) {
+        Deployment deployment = kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).resource(deploymentSystemClients).createOrReplace();
+        LOGGER.debug("[{}] Wait 30s for systemtest-clients deployment to be ready", namespace);
+        kubeClient.getKubernetesClient().resource(deployment).inNamespace(namespace).waitUntilReady(30, TimeUnit.SECONDS);
+        deployedContainers.put(deployment, namespace);
+        return deployment;
+    }
+
+    public static void undeployClientsContainer(String namespace, Deployment deployment) {
+        kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).resource(deployment).delete();
+        deployedContainers.remove(deployment);
+    }
+
+    public static void undeployAllClientsContainers() {
+        LOGGER.info("Removing all deployed Messaging client containers.");
+        for (Deployment deployment : deployedContainers.keySet()) {
+            kubeClient.getKubernetesClient().apps().deployments().inNamespace(deployedContainers.get(deployment)).resource(deployment).delete();
+        }
+    }
 
     @Override
     public int sendMessages() {

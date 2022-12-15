@@ -13,6 +13,8 @@ public interface MessagingClient {
 
     final String CONSUMER = "consumer";
     final String PRODUCER = "producer";
+    final String SENDER = "sender";
+    final String RECEIVER = "receiver";
 
     int sendMessages();
 

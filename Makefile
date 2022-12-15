@@ -1,7 +1,7 @@
 ROOT_DIR 				= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ARTEMIS_PROPERTIES_FILE 		= ${ROOT_DIR}/artemis/project-settings.properties
 
-ARTEMIS_VERSION 			?= 7.10.1
+ARTEMIS_VERSION 			?= 7.10.2
 OPERATOR_INSTALL_ZIP			?= https://download.eng.bos.redhat.com/released/jboss/amq/broker/${ARTEMIS_VERSION}/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples-rhel8.zip
 OPERATOR_VERSION_UPSTREAM 		?= main
 CLUSTER_OPERATOR_MANAGED		?= true
@@ -55,7 +55,6 @@ copy_ocp_zip_files:
 	rm -rf ${ROOT_DIR}/artemis/tmp ${ROOT_DIR}/artemis/ocp_install_examples.zip
 
 upstream_files:
-	echo "project.type=activemq-artemis" >> ${ARTEMIS_PROPERTIES_FILE}
 	# CRDs
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/install/010_crd_artemis.yaml -P ${ROOT_DIR}/artemis/crds/
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/install/020_crd_artemis_security.yaml -P ${ROOT_DIR}/artemis/crds/

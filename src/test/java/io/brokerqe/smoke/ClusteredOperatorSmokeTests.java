@@ -49,6 +49,8 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
             getClient().deleteNamespace(testNamespaceA);
             getClient().deleteNamespace(testNamespaceB);
         }
+
+        ResourceManager.undeployAllClientsContainers();
     }
 
     @Test

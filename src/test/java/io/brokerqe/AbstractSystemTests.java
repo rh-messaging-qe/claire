@@ -6,9 +6,9 @@ package io.brokerqe;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
-import io.amq.broker.v1alpha1.ActiveMQArtemisSecurity;
-import io.amq.broker.v2alpha5.ActiveMQArtemis;
-import io.amq.broker.v2alpha3.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
+import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.separator.TestSeparator;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
@@ -90,24 +90,20 @@ public class AbstractSystemTests implements TestSeparator {
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
         LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
         if (waitForDeployment) {
-            LOGGER.info("Waiting for creation of broker {} in namespace {}", artemisBroker.getMetadata().getName(), namespace);
-//            GenericKubernetesResource finalBrokerCR = brokerCR;
-            String brokerName = artemisBroker.getMetadata().getName();
-            TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
-                StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
-                return ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas())
-                        && ResourceManager.getArtemisClient().inNamespace(namespace).withName(brokerName).get()
-                        .getStatus().getPodStatus().getReady().size() == ss.getSpec().getReplicas();
-            });
+            waitForBrokerDeployment(namespace, artemisBroker);
         }
         return artemisBroker;
     }
 
-    protected void deleteArtemisTyped(String namespace, ActiveMQArtemis broker, boolean waitForDeletion) {
+    protected void deleteArtemis(String namespace, ActiveMQArtemis broker) {
+        deleteArtemis(namespace, broker, true);
+    }
+
+    protected void deleteArtemis(String namespace, ActiveMQArtemis broker, boolean waitForDeletion) {
         String brokerName = broker.getMetadata().getName();
         ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).delete();
         if (waitForDeletion) {
-            TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+            TestUtils.waitFor("StatefulSet to be removed", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
                 StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
                 return ss == null && getClient().listPodsByPrefixInName(namespace, brokerName).size() == 0;
             });
@@ -181,6 +177,15 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     private void waitForBrokerDeployment(String namespace, GenericKubernetesResource brokerCR) {
+        LOGGER.info("Waiting for creation of broker {} in namespace {}", brokerCR.getMetadata().getName(), namespace);
+        String brokerName = brokerCR.getMetadata().getName();
+        TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+            StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
+            return ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
+        });
+    }
+
+    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis brokerCR) {
         LOGGER.info("Waiting for creation of broker {} in namespace {}", brokerCR.getMetadata().getName(), namespace);
         String brokerName = brokerCR.getMetadata().getName();
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
