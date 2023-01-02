@@ -38,7 +38,6 @@ fill_project_properties:
 	echo "project.cluster_operator.manage=${CLUSTER_OPERATOR_MANAGED}" > ${ARTEMIS_PROPERTIES_FILE}
 
 downstream_files:
-	echo "project.type=amq-broker" >> ${ARTEMIS_PROPERTIES_FILE}
 	# TODO use new structure of examples/install for downstream once 7.11 is out. Current is ugly
 	# Download ocp-install-examples candidate files
 	wget ${OPERATOR_INSTALL_ZIP} -O ${ROOT_DIR}/artemis/ocp_install_examples.zip

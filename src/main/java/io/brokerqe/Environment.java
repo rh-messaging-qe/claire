@@ -24,7 +24,6 @@ public class Environment {
     private final String brokerInitImage;
     private final String operatorImage;
     private final String bundleImage;
-    private final String projectType;
     private final boolean projectClusterOperatorManage;
 
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
@@ -44,7 +43,6 @@ public class Environment {
         try {
             projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
             projectSettings.load(projectSettingsFile);
-            projectType = String.valueOf(projectSettings.get(Constants.PROJECT_TYPE_KEY));
             projectClusterOperatorManage = Boolean.valueOf(projectSettings.getProperty(Constants.PROJECT_CO_MANAGE_KEY));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -74,9 +72,6 @@ public class Environment {
         }
         if (bundleImage != null) {
             envVarsSB.append(Constants.EV_ARTEMIS_VERSION).append("=").append(bundleImage).append(Constants.LINE_SEPARATOR);
-        }
-        if (projectType != null) {
-            envVarsSB.append(Constants.PROJECT_TYPE_KEY).append("=").append(projectType).append(Constants.LINE_SEPARATOR);
         }
         envVarsSB.append(Constants.PROJECT_CO_MANAGE_KEY).append("=").append(projectClusterOperatorManage).append(Constants.LINE_SEPARATOR);
 
@@ -109,10 +104,6 @@ public class Environment {
 
     public String getArtemisVersion() {
         return artemisVersion;
-    }
-
-    public String getProjectType() {
-        return projectType;
     }
 
     public boolean isProjectClusterOperatorManage() {

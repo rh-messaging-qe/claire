@@ -29,7 +29,6 @@ public class ResourceManager {
     private static MixedOperation<ActiveMQArtemisScaledown, KubernetesResourceList<ActiveMQArtemisScaledown>, Resource<ActiveMQArtemisScaledown>> artemisScaledownClient;
 
     private static List<ArtemisCloudClusterOperator> operatorList = new ArrayList<>();
-    private static String projectSettingsType;
     private static Boolean projectCODeploy;
     private static ResourceManager resourceManager = null;
 
@@ -39,7 +38,6 @@ public class ResourceManager {
         artemisAddressClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisAddress.class);
         artemisSecurityClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisSecurity.class);
         artemisScaledownClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisScaledown.class);
-        projectSettingsType = environment.getProjectType();
         projectCODeploy = environment.isProjectClusterOperatorManage();
     }
     public static ResourceManager getInstance(Environment environment) {
