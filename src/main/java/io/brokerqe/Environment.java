@@ -24,7 +24,8 @@ public class Environment {
     private final String brokerInitImage;
     private final String operatorImage;
     private final String bundleImage;
-    private final boolean projectClusterOperatorManage;
+    private final boolean projectManagedClusterOperator;
+    private final String logsDirLocation;
 
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
 
@@ -36,6 +37,7 @@ public class Environment {
         brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
         operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE);
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
+        logsDirLocation = System.getProperty(Constants.LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR);
 
         // Properties files
         Properties projectSettings = new Properties();
@@ -43,7 +45,7 @@ public class Environment {
         try {
             projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
             projectSettings.load(projectSettingsFile);
-            projectClusterOperatorManage = Boolean.valueOf(projectSettings.getProperty(Constants.PROJECT_CO_MANAGE_KEY));
+            projectManagedClusterOperator = Boolean.valueOf(projectSettings.getProperty(Constants.PROJECT_CO_MANAGE_KEY));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -73,7 +75,10 @@ public class Environment {
         if (bundleImage != null) {
             envVarsSB.append(Constants.EV_ARTEMIS_VERSION).append("=").append(bundleImage).append(Constants.LINE_SEPARATOR);
         }
-        envVarsSB.append(Constants.PROJECT_CO_MANAGE_KEY).append("=").append(projectClusterOperatorManage).append(Constants.LINE_SEPARATOR);
+        if (logsDirLocation != null) {
+            envVarsSB.append(Constants.LOGS_LOCATION).append("=").append(logsDirLocation).append(Constants.LINE_SEPARATOR);
+        }
+        envVarsSB.append(Constants.PROJECT_CO_MANAGE_KEY).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
 
         LOGGER.debug(envVarsSB.toString());
     }
@@ -106,8 +111,8 @@ public class Environment {
         return artemisVersion;
     }
 
-    public boolean isProjectClusterOperatorManage() {
-        return projectClusterOperatorManage;
+    public boolean isProjectManagedClusterOperator() {
+        return projectManagedClusterOperator;
     }
 
     public String getTestLogLevel() {
@@ -128,5 +133,9 @@ public class Environment {
 
     public String getBundleImage() {
         return bundleImage;
+    }
+
+    public String getLogsDirLocation() {
+        return logsDirLocation;
     }
 }

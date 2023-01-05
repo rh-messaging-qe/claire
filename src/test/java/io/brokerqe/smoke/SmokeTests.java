@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -62,6 +63,16 @@ public class SmokeTests extends AbstractSystemTests {
     }
 
     @Test
+    void brokerErrorTest() {
+        ActiveMQArtemis broker = createArtemisTyped(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        broker.getSpec().getDeploymentPlan().setSize(3);
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
+        TestUtils.threadSleep(Constants.DURATION_5_SECONDS); // give time to StatefulSet to update itself
+        getKubernetesClient().resource(broker).inNamespace(testNamespace).waitUntilReady(2L, TimeUnit.MINUTES);
+        throw new RuntimeException("Throwing random exception, to trigger TestDataCollection.");
+    }
+
+    @Test
     void simpleBrokerDeploymentTest() {
 //        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         ActiveMQArtemis broker = createArtemisTyped(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
@@ -71,7 +82,6 @@ public class SmokeTests extends AbstractSystemTests {
         List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(1));
 
-//        deleteArtemisTypeless(testNamespace, brokerName);
         deleteArtemis(testNamespace, broker, true);
     }
 
@@ -89,6 +99,9 @@ public class SmokeTests extends AbstractSystemTests {
         int received = messagingClientCore.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
         assertThat(messagingClientCore.compareMessages(), is(true));
+
+        deleteArtemisAddress(testNamespace, myAddress);
+        deleteArtemisTypeless(testNamespace, brokerName);
     }
 
     public String brokerAcceptorConfigJoin() {
@@ -158,6 +171,9 @@ public class SmokeTests extends AbstractSystemTests {
         LOGGER.info("[{}] Sent {} - Received {}", testNamespace, sent, received);
         assertThat(sent, equalTo(msgsExpected));
         assertThat(messagingClientCore.compareMessages(), is(true));
+
+        deleteArtemisAddress(testNamespace, myAddress);
+        deleteArtemisTypeless(testNamespace, brokerName);
     }
 
     @Test

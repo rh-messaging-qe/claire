@@ -115,6 +115,14 @@ public final class TestUtils {
         }
     }
 
+    public static void threadSleep(long sleepTime) {
+        try {
+            Thread.sleep(sleepTime);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static <T> T configFromYaml(String yamlPath, Class<T> c) {
         return configFromYaml(new File(yamlPath), c);
     }
@@ -182,6 +190,23 @@ public final class TestUtils {
     public static void deleteFile(String fileName) {
         try {
             Files.delete(Paths.get(fileName));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void createFile(String fileName, String content) {
+        try {
+            Files.createFile(Paths.get(fileName));
+            Files.write(Paths.get(fileName), content.getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void createDirectory(String directoryName) {
+        try {
+            Files.createDirectories(Paths.get(directoryName));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

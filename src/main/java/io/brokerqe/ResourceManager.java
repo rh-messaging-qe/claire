@@ -38,7 +38,7 @@ public class ResourceManager {
         artemisAddressClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisAddress.class);
         artemisSecurityClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisSecurity.class);
         artemisScaledownClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisScaledown.class);
-        projectCODeploy = environment.isProjectClusterOperatorManage();
+        projectCODeploy = environment.isProjectManagedClusterOperator();
     }
     public static ResourceManager getInstance(Environment environment) {
         if (resourceManager == null) {

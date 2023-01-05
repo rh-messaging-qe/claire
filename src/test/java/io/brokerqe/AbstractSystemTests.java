@@ -18,8 +18,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import org.apache.commons.lang.NotImplementedException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ExtendWith({TestDataCollector.class})
 public class AbstractSystemTests implements TestSeparator {
 
     static final Logger LOGGER = LoggerFactory.getLogger(AbstractSystemTests.class);
@@ -82,9 +83,8 @@ public class AbstractSystemTests implements TestSeparator {
 
 
     /*******************************************************************************************************************
-     *  TYPED API - bug, but fixed and will be available in 6.3x (works in local build)
+     *  TYPED API
      ******************************************************************************************************************/
-    @Disabled("Does not work yet! Use Typeless way https://github.com/fabric8io/kubernetes-client/pull/4612")
     protected ActiveMQArtemis createArtemisTyped(String namespace, String filePath, boolean waitForDeployment) {
         ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(filePath, ActiveMQArtemis.class);
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
@@ -179,7 +179,9 @@ public class AbstractSystemTests implements TestSeparator {
     private void waitForBrokerDeployment(String namespace, GenericKubernetesResource brokerCR) {
         LOGGER.info("Waiting for creation of broker {} in namespace {}", brokerCR.getMetadata().getName(), namespace);
         String brokerName = brokerCR.getMetadata().getName();
-        TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+        // Will throw different exception
+//        getKubernetesClient().resource(getClient().getStatefulSet(namespace, brokerName + "-ss")).inNamespace(namespace).waitUntilReady(1L, TimeUnit.MINUTES);
+        TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE, () -> {
             StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
             return ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
         });

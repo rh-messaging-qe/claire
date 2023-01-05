@@ -10,6 +10,7 @@ public interface Constants {
 
     // Platform related strings
     String LINE_SEPARATOR = System.getProperty("line.separator");
+    String FILE_SEPARATOR = System.getProperty("file.separator");
 
     // Environment Variables
     String EV_ARTEMIS_VERSION = "ARTEMIS_VERSION";
@@ -19,6 +20,7 @@ public interface Constants {
     String EV_BROKER_IMAGE = "BROKER_IMAGE";
     String EV_BROKER_INIT_IMAGE = "BROKER_INIT_IMAGE";
     String EV_BUNDLE_IMAGE = "BUNDLE_IMAGE";
+    String LOGS_LOCATION = "LOGS_LOCATION";
 
     String BROKER_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Kubernetes_";
     String BROKER_INIT_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Init_";
@@ -38,6 +40,7 @@ public interface Constants {
 
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
+    String LOGS_DEFAULT_DIR = System.getProperty("user.dir") + "/test-logs/";
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";
@@ -61,6 +64,9 @@ public interface Constants {
     String EXAMPLE_ADDRESS_QUEUE_PATH = Constants.EXAMPLES_DIR_PATH + "address/address_queue.yaml";
     String EXAMPLE_ADDRESS_TOPIC_PATH = Constants.EXAMPLES_DIR_PATH + "address/address_topic.yaml";
     String EXAMPLE_ARTEMIS_SINGLE_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis_single.yaml";
+    String EXAMPLE_ARTEMIS_CLUSTER_PERSISTENCE_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis_cluster_persistence.yaml";
+    String EXAMPLE_ARTEMIS_ADDRESS_SETTINGS_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis_address_settings.yaml";
+    String EXAMPLE_ARTEMIS_RESOURCES_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis_resources.yaml";
 
     // Old naming style
     String OLD_INSTALL_ARTEMIS_CO_010_CRD_ARTEMIS_PATH = Constants.OPERATOR_CRDS_DIR_PATH + "broker_activemqartemis_crd.yaml";             // 010_crd_artemis.yaml
@@ -83,7 +89,9 @@ public interface Constants {
     String OLD_EXAMPLE_ARTEMIS_SINGLE_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis-basic-deployment.yaml";
 
     // Timing variables
-    long DURATION_5_SECONDS = Duration.ofSeconds(5).toMillis();
     long DURATION_2_SECONDS = Duration.ofSeconds(2).toMillis();
+    long DURATION_5_SECONDS = Duration.ofSeconds(5).toMillis();
+    long DURATION_10_SECONDS = Duration.ofSeconds(10).toMillis();
+    long DURATION_1_MINUTE = Duration.ofMinutes(1).toMillis();
     long DURATION_3_MINUTES = Duration.ofMinutes(3).toMillis();
 }
