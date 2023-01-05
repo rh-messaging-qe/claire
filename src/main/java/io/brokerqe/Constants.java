@@ -40,7 +40,7 @@ public interface Constants {
 
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
-    String LOGS_DEFAULT_DIR = System.getProperty("user.dir") + "/test-logs/";
+    String LOGS_DEFAULT_DIR = System.getProperty("user.dir") + "/test-logs";
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";

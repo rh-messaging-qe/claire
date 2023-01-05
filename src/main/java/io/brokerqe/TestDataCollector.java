@@ -41,6 +41,8 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
     static final Logger LOGGER = LoggerFactory.getLogger(TestDataCollector.class);
     KubeClient kubeClient;
 
+    static String archiveDir = null;
+
     @Override
     public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
         if (throwable instanceof TestAbortedException) {
@@ -52,12 +54,12 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         Object testInstance = context.getRequiredTestInstance();
         List<String> testNamespaces = getTestNamespaces(testInstance);
         Environment testEnv = (Environment) getTestInstanceDeclaredField(testInstance, "testEnvironment");
+        archiveDir = testEnv.getLogsDirLocation() + Constants.FILE_SEPARATOR + createArchiveName();
         kubeClient = (KubeClient) getTestInstanceDeclaredField(testInstance, "client");
 
         LOGGER.info("Will gather data from namespace: {}", String.join(" ", testNamespaces));
         for (String testNamespace : testNamespaces) {
-            String archiveDirName = testEnv.getLogsDirLocation() + Constants.FILE_SEPARATOR + createArchiveName(testNamespace)
-                    + Constants.FILE_SEPARATOR + testClass + "." + testMethod;
+            String archiveDirName = archiveDir + Constants.FILE_SEPARATOR + testClass + "." + testMethod + Constants.FILE_SEPARATOR + testNamespace;
 
             LOGGER.info("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirName);
             TestUtils.createDirectory(archiveDirName);
@@ -87,10 +89,10 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         return null;
     }
 
-    private static String createArchiveName(String namespace) {
+    private static String createArchiveName() {
         LocalDateTime date = LocalDateTime.now();
         String dateFormat = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss"));
-        String archiveName = dateFormat + "_" + namespace;
+        String archiveName = dateFormat;
         LOGGER.debug(archiveName);
         return archiveName;
     }

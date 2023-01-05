@@ -83,5 +83,4 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         assertThrows(WaitException.class, () -> createArtemisTypeless(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile()));
         assertNull(getClient().getStatefulSet(testNamespaceB, brokerName + "-ss"));
     }
-
 }
