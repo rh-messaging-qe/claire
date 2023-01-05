@@ -76,11 +76,15 @@ public class AbstractSystemTests implements TestSeparator {
             LOGGER.info("All logging changed to level: {}", envLevel.levelStr);
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
             List<ch.qos.logback.classic.Logger> loggerList = loggerContext.getLoggerList();
-            loggerList.stream().forEach(tmpLogger -> tmpLogger.setLevel(envLevel));
+            loggerList.stream().forEach(
+                    tmpLogger -> {
+                        // Do not set `ROOT` and `io` logger, as it would set it on all used components, not just this project.
+                        if (!List.of("ROOT", "io").contains(tmpLogger.getName())) {
+                            tmpLogger.setLevel(envLevel);
+                        }
+                    });
         }
     }
-
-
 
     /*******************************************************************************************************************
      *  TYPED API

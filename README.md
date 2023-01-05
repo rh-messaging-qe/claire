@@ -19,23 +19,23 @@ Review `Makefile` for more details.
 
 ## List of available Environment Variables
 
-| Name                      | Description                                      | Default                     | Possible values                         |
-|---------------------------|--------------------------------------------------|-----------------------------|-----------------------------------------|
-| ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)       | 7.10.2                      | <url>                                   |
-| OPERATOR_IMAGE            | ArtemisCloud Operator image url                  | not set                     | <url>                                   |
-| BROKER_IMAGE              | Broker image url                                 | not set                     | <url>                                   |
-| BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | <url>                                   |
-| BUNDLE_IMAGE              | Bundle image url                                 | not set                     | <url>                                   |
-| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices            | not set (`false`)           | `true`, `false`                         |
-| LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | <directory>                             |
-| TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
-| CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)  | true                        | `false`                                 |
-| OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile) | 7.10.1 url                  | <url>                                   |
-| OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)          | main                        | <branch>                                |
+| Name                      | Description                                      | Default                     | Possible values                                  |
+|---------------------------|--------------------------------------------------|-----------------------------|--------------------------------------------------|
+| ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)       | 7.10.2                      | <url>                                            |
+| OPERATOR_IMAGE            | ArtemisCloud Operator image url                  | not set                     | <url>                                            |
+| BROKER_IMAGE              | Broker image url                                 | not set                     | <url>                                            |
+| BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | <url>                                            |
+| BUNDLE_IMAGE              | Bundle image url                                 | not set                     | <url>                                            |
+| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices            | not set (`false`)           | `true`, `false`                                  |
+| LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | <directory>                                      |
+| TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+| CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)  | true                        | `false`                                          |
+| OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile) | 7.10.1 url                  | <url>                                            |
+| OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)          | main                        | <branch>                                         |
 
 ## Setting log level
 Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
-By default, we use `INFO` level. Supported values are `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
+By default, we use `INFO` level. Supported values are `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`.
 
 ## Disable generating random suffices for namespaces
 Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.

@@ -141,7 +141,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
             String fileName = archiveLocation + Constants.FILE_SEPARATOR + deployment.getKind().toLowerCase(Locale.ROOT)
                     + "_" + deployment.getMetadata().getName() + ".yaml";
             TestUtils.createFile(fileName, Serialization.asYaml(deployment).toString());
-            LOGGER.debug("Stored events into {}", fileName);
+            LOGGER.trace("Stored data into {}", fileName);
         });
     }
 
@@ -183,7 +183,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         });
         String eventsFile = archiveLocation + Constants.FILE_SEPARATOR + "events.log";
         TestUtils.createFile(eventsFile, eventsData.toString());
-        LOGGER.debug("Stored events into {}", eventsFile);
+        LOGGER.trace("Stored events into {}", eventsFile);
     }
 
     private List<String> getTestNamespaces(Object testInstance) {

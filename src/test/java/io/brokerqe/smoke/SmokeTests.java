@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -68,7 +67,7 @@ public class SmokeTests extends AbstractSystemTests {
         broker.getSpec().getDeploymentPlan().setSize(3);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
         TestUtils.threadSleep(Constants.DURATION_5_SECONDS); // give time to StatefulSet to update itself
-        getKubernetesClient().resource(broker).inNamespace(testNamespace).waitUntilReady(2L, TimeUnit.MINUTES);
+        waitForBrokerDeployment(testNamespace, broker);
         throw new RuntimeException("Throwing random exception, to trigger TestDataCollection.");
     }
 
@@ -76,7 +75,6 @@ public class SmokeTests extends AbstractSystemTests {
     void simpleBrokerDeploymentTest() {
 //        GenericKubernetesResource broker = createArtemisTypeless(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         ActiveMQArtemis broker = createArtemisTyped(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
-        LOGGER.info(String.valueOf(broker));
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
         List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
