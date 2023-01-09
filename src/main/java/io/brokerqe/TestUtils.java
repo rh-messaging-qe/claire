@@ -116,6 +116,7 @@ public final class TestUtils {
     }
 
     public static void threadSleep(long sleepTime) {
+        LOGGER.debug("Waiting for {}", sleepTime);
         try {
             Thread.sleep(sleepTime);
         } catch (InterruptedException e) {

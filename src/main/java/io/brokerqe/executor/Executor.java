@@ -102,7 +102,7 @@ public class Executor implements AutoCloseable {
 
         @Override
         public void onFailure(Throwable t, Response failureResponse) {
-            LOGGER.error("Failed with {}", t.getMessage());
+            LOGGER.error("Failed with {} message {}", t.getCause(), t.getMessage());
             data.completeExceptionally(t);
         }
 

@@ -9,13 +9,12 @@ import ch.qos.logback.classic.LoggerContext;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.separator.TestSeparator;
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import org.apache.commons.lang.NotImplementedException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -87,9 +86,13 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     /*******************************************************************************************************************
-     *  TYPED API
+     *  ActiveMQArtemis Usage of generated typed API
      ******************************************************************************************************************/
-    protected ActiveMQArtemis createArtemisTyped(String namespace, String filePath, boolean waitForDeployment) {
+    protected ActiveMQArtemis createArtemis(String namespace, String filePath) {
+        return createArtemis(namespace, filePath, true);
+    }
+
+    protected ActiveMQArtemis createArtemis(String namespace, String filePath, boolean waitForDeployment) {
         ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(filePath, ActiveMQArtemis.class);
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
         LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
@@ -97,6 +100,17 @@ public class AbstractSystemTests implements TestSeparator {
             waitForBrokerDeployment(namespace, artemisBroker);
         }
         return artemisBroker;
+    }
+
+    protected ActiveMQArtemis createArtemisFromString(String namespace, InputStream yamlStream, boolean waitForDeployment) {
+        LOGGER.trace("[{}] Deploying broker using stringYaml {}", namespace, yamlStream);
+        ActiveMQArtemis brokerCR = ResourceManager.getArtemisClient().inNamespace(namespace).load(yamlStream).get();
+        brokerCR = ResourceManager.getArtemisClient().inNamespace(namespace).resource(brokerCR).createOrReplace();
+        if (waitForDeployment) {
+            waitForBrokerDeployment(namespace, brokerCR);
+        }
+        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", brokerCR, namespace);
+        return brokerCR;
     }
 
     protected void deleteArtemis(String namespace, ActiveMQArtemis broker) {
@@ -130,10 +144,9 @@ public class AbstractSystemTests implements TestSeparator {
     protected List<StatusDetails> deleteArtemisAddress(String namespace, String addressName) {
         throw new NotImplementedException();
     }
-    protected List<StatusDetails> deleteArtemisAddress(String namespace, ActiveMQArtemisAddress activeMQArtemisAddress) {
+    protected void deleteArtemisAddress(String namespace, ActiveMQArtemisAddress activeMQArtemisAddress) {
         List<StatusDetails> status = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(activeMQArtemisAddress).delete();
         LOGGER.info("Deleted ActiveMQArtemisAddress {} in namespace {}", activeMQArtemisAddress.getMetadata().getName(), namespace);
-        return status;
     }
 
     protected ActiveMQArtemisSecurity createArtemisSecurity(String namespace, String filePath) {
@@ -149,75 +162,38 @@ public class AbstractSystemTests implements TestSeparator {
         return status;
     }
 
-    /*******************************************************************************************************************
-     *  TYPELESS API - used only until Typed API is fixed
-     ******************************************************************************************************************/
-    protected GenericKubernetesResource createArtemisTypeless(String namespace, String filePath) {
-        return createArtemisTypeless(namespace, filePath, true);
+    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis brokerCR) {
+        waitForBrokerDeployment(namespace, brokerCR, false);
     }
-
-    protected GenericKubernetesResource createArtemisTypelessFromString(String namespace, InputStream yamlStream, boolean waitForDeployment) {
-        CustomResourceDefinitionContext brokerCrdContextFromCrd = getArtemisCRDContext(Constants.CRD_ACTIVEMQ_ARTEMIS);
-//        LOGGER.debug("[{}] Deploying broker using stringYaml {}", namespace, stringYaml);
-        GenericKubernetesResource brokerCR = getKubernetesClient().genericKubernetesResources(brokerCrdContextFromCrd).load(yamlStream).get();
-        brokerCR = getKubernetesClient().genericKubernetesResources(brokerCrdContextFromCrd).inNamespace(namespace).resource(brokerCR).createOrReplace();
-        if (waitForDeployment) {
-            waitForBrokerDeployment(namespace, brokerCR);
-        }
-        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", brokerCR, namespace);
-        return brokerCR;
-    }
-
-    protected GenericKubernetesResource createArtemisTypeless(String namespace, String filePath, boolean waitForDeployment) {
-        CustomResourceDefinitionContext brokerCrdContextFromCrd = getArtemisCRDContext(Constants.CRD_ACTIVEMQ_ARTEMIS);
-        LOGGER.debug("[{}] Deploying broker using file {}", namespace, filePath);
-        GenericKubernetesResource brokerCR = getKubernetesClient().genericKubernetesResources(brokerCrdContextFromCrd).load(filePath).get();
-        brokerCR = getKubernetesClient().genericKubernetesResources(brokerCrdContextFromCrd).inNamespace(namespace).resource(brokerCR).createOrReplace();
-        if (waitForDeployment) {
-            waitForBrokerDeployment(namespace, brokerCR);
-        }
-        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", brokerCR, namespace);
-        return brokerCR;
-    }
-
-    private void waitForBrokerDeployment(String namespace, GenericKubernetesResource brokerCR) {
+    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis brokerCR, boolean reloadExisting) {
         LOGGER.info("Waiting for creation of broker {} in namespace {}", brokerCR.getMetadata().getName(), namespace);
         String brokerName = brokerCR.getMetadata().getName();
-        // Will throw different exception
-//        getKubernetesClient().resource(getClient().getStatefulSet(namespace, brokerName + "-ss")).inNamespace(namespace).waitUntilReady(1L, TimeUnit.MINUTES);
+        if (reloadExisting) {
+            // TODO: make more generic and resource specific wait
+            LOGGER.debug("[{}] Reloading existing broker {}, sleeping for some time", namespace, brokerCR.getMetadata().getName());
+            TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
+        }
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE, () -> {
             StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
-            return ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
+            return ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
         });
     }
 
-    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis brokerCR) {
-        LOGGER.info("Waiting for creation of broker {} in namespace {}", brokerCR.getMetadata().getName(), namespace);
-        String brokerName = brokerCR.getMetadata().getName();
-        TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
-            StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
-            return ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
-        });
+    /******************************************************************************************************************
+     *  Helper methods
+     ******************************************************************************************************************/
+    protected Acceptors createAcceptor(String name, String protocols) {
+        Acceptors acceptors = new Acceptors();
+        acceptors.setName(name);
+        acceptors.setProtocols(protocols);
+        acceptors.setPort(5672);
+        return acceptors;
     }
 
-    protected List<StatusDetails> deleteArtemisTypeless(String namespace, String brokerName) {
-        return deleteArtemisTypeless(namespace, brokerName, true);
-    }
-    protected List<StatusDetails> deleteArtemisTypeless(String namespace, String brokerName, boolean waitForDeletion) {
-        CustomResourceDefinitionContext brokerCrdContextFromCrd = getArtemisCRDContext(Constants.CRD_ACTIVEMQ_ARTEMIS);
-        List<StatusDetails> status = getKubernetesClient().genericKubernetesResources(brokerCrdContextFromCrd).inNamespace(namespace).withName(brokerName).delete();
-        if (waitForDeletion) {
-            LOGGER.info("Waiting on deletion of ActiveMQArtemis StatefulSet {} from namespace {}", brokerName, namespace);
-            TestUtils.waitFor("StatefulSet to be removed", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES,
-                    () -> getClient().getStatefulSet(namespace, brokerName + "-ss") == null
-                            &&  getClient().listPodsByPrefixInName(namespace, brokerName).size() == 0
-            );
-        }
-        LOGGER.info("Deleted ActiveMQArtemis {} from namespace {}", brokerName, namespace);
-        return status;
-    }
-
-    protected CustomResourceDefinitionContext getArtemisCRDContext(String crdName) {
-        return CustomResourceDefinitionContext.fromCrd(getKubernetesClient().apiextensions().v1().customResourceDefinitions().withName(crdName).get());
+    protected ActiveMQArtemis addAcceptors(String namespace, List<Acceptors> acceptors, ActiveMQArtemis broker) {
+        broker.getSpec().setAcceptors(acceptors);
+        broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
+        waitForBrokerDeployment(namespace, broker, true);
+        return broker;
     }
 }

@@ -23,7 +23,6 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestWatcher;
-import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +44,6 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
 
     @Override
     public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
-        if (throwable instanceof TestAbortedException) {
-            return;
-        }
         String testClass = context.getRequiredTestClass().getName();
         String testMethod = context.getRequiredTestMethod().getName();
 
@@ -65,7 +61,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
             TestUtils.createDirectory(archiveDirName);
             collectTestData(testNamespace, archiveDirName);
         }
-
+        throw throwable;
     }
 
     private Object getTestInstanceDeclaredField(Object testInstance, String fieldName) {
