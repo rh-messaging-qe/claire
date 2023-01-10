@@ -15,6 +15,7 @@ import io.brokerqe.separator.TestSeparator;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import okhttp3.OkHttpClient;
 import org.apache.commons.lang.NotImplementedException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -65,6 +66,8 @@ public class AbstractSystemTests implements TestSeparator {
         setupLoggingLevel();
         resourceManager = ResourceManager.getInstance(testEnvironment);
         client = ResourceManager.getKubeClient();
+        // Following log is added for debugging purposes, when OkHttpClient leaks connection
+        java.util.logging.Logger.getLogger(OkHttpClient.class.getName()).setLevel(java.util.logging.Level.FINE);
     }
 
     void setupLoggingLevel() {

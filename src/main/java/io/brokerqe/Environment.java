@@ -7,18 +7,13 @@ package io.brokerqe;
 import io.brokerqe.operator.ArtemisFileProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 public class Environment {
 
     private final boolean disabledRandomNs;
     private final String testLogLevel;
-
     private final String artemisVersion;
     private final String brokerImage;
     private final String brokerInitImage;
@@ -37,18 +32,9 @@ public class Environment {
         brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
         operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE);
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
-        logsDirLocation = System.getProperty(Constants.LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR);
+        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR);
+        projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
 
-        // Properties files
-        Properties projectSettings = new Properties();
-        FileInputStream projectSettingsFile = null;
-        try {
-            projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
-            projectSettings.load(projectSettingsFile);
-            projectManagedClusterOperator = Boolean.valueOf(projectSettings.getProperty(Constants.PROJECT_CO_MANAGE_KEY));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         printAllUsedTestVariables();
         checkSetProvidedImages();
     }
@@ -56,6 +42,7 @@ public class Environment {
     private void printAllUsedTestVariables() {
         StringBuilder envVarsSB = new StringBuilder("List of all used Claire related variables:").append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_DISABLE_RANDOM_NAMESPACES).append("=").append(disabledRandomNs).append(Constants.LINE_SEPARATOR);
+        envVarsSB.append(Constants.EV_CLUSTER_OPERATOR_MANAGED).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
 
         if (testLogLevel != null) {
             envVarsSB.append(Constants.EV_TEST_LOG_LEVEL).append("=").append(testLogLevel).append(Constants.LINE_SEPARATOR);
@@ -76,9 +63,8 @@ public class Environment {
             envVarsSB.append(Constants.EV_ARTEMIS_VERSION).append("=").append(bundleImage).append(Constants.LINE_SEPARATOR);
         }
         if (logsDirLocation != null) {
-            envVarsSB.append(Constants.LOGS_LOCATION).append("=").append(logsDirLocation).append(Constants.LINE_SEPARATOR);
+            envVarsSB.append(Constants.EV_LOGS_LOCATION).append("=").append(logsDirLocation).append(Constants.LINE_SEPARATOR);
         }
-        envVarsSB.append(Constants.PROJECT_CO_MANAGE_KEY).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
 
         LOGGER.debug(envVarsSB.toString());
     }

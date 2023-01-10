@@ -20,16 +20,12 @@ public interface Constants {
     String EV_BROKER_IMAGE = "BROKER_IMAGE";
     String EV_BROKER_INIT_IMAGE = "BROKER_INIT_IMAGE";
     String EV_BUNDLE_IMAGE = "BUNDLE_IMAGE";
-    String LOGS_LOCATION = "LOGS_LOCATION";
+    String EV_LOGS_LOCATION = "LOGS_LOCATION";
+    String EV_CLUSTER_OPERATOR_MANAGED = "CLUSTER_OPERATOR_MANAGED";
 
     String BROKER_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Kubernetes_";
     String BROKER_INIT_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Init_";
     String OPERATOR_IMAGE_OPERATOR_PREFIX = "image";
-
-    // Project related strings
-    String PROJECT_TYPE_ARTEMIS = "activemq-artemis";
-    String PROJECT_TYPE_AMQ = "amq-broker";
-    String PROJECT_CO_MANAGE_KEY = "project.cluster_operator.manage";
 
     // Artemis Operator strings
     String CRD_ACTIVEMQ_ARTEMIS_GROUP = "broker.amq.io";

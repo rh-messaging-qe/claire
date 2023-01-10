@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
@@ -57,7 +58,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         for (String testNamespace : testNamespaces) {
             String archiveDirName = archiveDir + Constants.FILE_SEPARATOR + testClass + "." + testMethod + Constants.FILE_SEPARATOR + testNamespace;
 
-            LOGGER.info("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirName);
+            LOGGER.debug("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirName);
             TestUtils.createDirectory(archiveDirName);
             collectTestData(testNamespace, archiveDirName);
         }
@@ -73,7 +74,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
                 field.setAccessible(true);
                 return field.get(testInstance);
             } catch (IllegalAccessException | NoSuchFieldException e) {
-                LOGGER.debug("DeclaredField {} not found in class {}, trying superclass()", fieldName, clazz);
+                LOGGER.trace("DeclaredField {} not found in class {}, trying superclass()", fieldName, clazz);
             }
             clazz = clazz.getSuperclass();
         }
@@ -94,7 +95,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
     }
 
     private void collectTestData(String namespace, String archiveLocation) {
-        LOGGER.debug("Current ns {}", kubeClient.getNamespace());
+        LOGGER.trace("Current namespace {}", kubeClient.getNamespace());
 
         List<Deployment> deployments = kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).list().getItems();
         List<StatefulSet> statefulSets = kubeClient.getKubernetesClient().apps().statefulSets().inNamespace(namespace).list().getItems();
@@ -103,6 +104,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         List<PersistentVolumeClaim> persistentVolumeClaims = kubeClient.getKubernetesClient().persistentVolumeClaims().inNamespace(namespace).list().getItems();
         List<PersistentVolume> persistentVolumes = kubeClient.getKubernetesClient().persistentVolumes().list().getItems();
         List<Service> services = kubeClient.getKubernetesClient().services().inNamespace(namespace).list().getItems();
+        List<Secret> secrets = kubeClient.getKubernetesClient().secrets().inNamespace(namespace).list().getItems();
         List<Event> events = kubeClient.getKubernetesClient().v1().events().inNamespace(namespace).list().getItems();
         List<Pod> pods = kubeClient.getKubernetesClient().pods().inNamespace(namespace).list().getItems();
 
@@ -113,6 +115,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         writeHasMetadataObject(persistentVolumeClaims, archiveLocation);
         writeHasMetadataObject(persistentVolumes, archiveLocation);
         writeHasMetadataObject(services, archiveLocation);
+        writeHasMetadataObject(secrets, archiveLocation);
         writeHasMetadataObject(pods, archiveLocation);
         writeEvents(events, archiveLocation);
         collectPodLogs(pods, archiveLocation);

@@ -43,12 +43,13 @@ public class KubeClient {
                 .build()
                 .adapt(OpenShiftClient.class);
         this.namespace = namespace;
+        LOGGER.info("[{}] Created KubernetesClient: {}.{} - {}", namespace, client.getKubernetesVersion().getMajor(), client.getKubernetesVersion().getMinor(), client.getMasterUrl());
     }
 
     public KubeClient(KubernetesClient client, String namespaceName) {
         LOGGER.debug("Creating client in namespace: {}", namespaceName);
         this.client = client;
-        this.namespace = namespace;
+        this.namespace = namespaceName;
     }
 
     // ============================
@@ -110,6 +111,18 @@ public class KubeClient {
      */
     public boolean getNamespaceStatus(String namespaceName) {
         return client.namespaces().withName(namespaceName).isReady();
+    }
+
+    public long getAvailableUserId(String namespace, long defaultUserId) {
+        long userId = defaultUserId;
+        try {
+            String range = getNamespace(namespace).getMetadata().getAnnotations().get("openshift.io/sa.scc.uid-range");
+            // 1001040000/10000
+            userId = Long.parseLong(range.split("/")[0]) + defaultUserId;
+        } catch (NullPointerException e) {
+            LOGGER.debug("[{}] Unable to detect 'openshift.io/sa.scc.uid-range', using default userId {}", namespace, userId);
+        }
+        return userId;
     }
 
     // ================================

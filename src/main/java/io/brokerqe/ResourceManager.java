@@ -91,7 +91,7 @@ public class ResourceManager {
             operatorList.add(clusterOperator);
             return clusterOperator;
         } else {
-            LOGGER.warn("Not deploying operator! " + "'" + Constants.PROJECT_CO_MANAGE_KEY + "' is 'false'");
+            LOGGER.warn("Not deploying operator! " + "'" + Constants.EV_CLUSTER_OPERATOR_MANAGED + "' is 'false'");
             return null;
         }
     }
@@ -101,7 +101,7 @@ public class ResourceManager {
             clusterOperator.undeployOperator(true);
             operatorList.remove(clusterOperator);
         } else {
-            LOGGER.warn("Not deploying operator! " + "'" + Constants.PROJECT_CO_MANAGE_KEY + "' is 'false'");
+            LOGGER.warn("Not undeploying operator! " + "'" + Constants.EV_CLUSTER_OPERATOR_MANAGED + "' is 'false'");
         }
     }
 

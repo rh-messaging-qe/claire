@@ -4,17 +4,16 @@ ARTEMIS_PROPERTIES_FILE 		= ${ROOT_DIR}/artemis/project-settings.properties
 ARTEMIS_VERSION 			?= 7.10.2
 OPERATOR_INSTALL_ZIP			?= https://download.eng.bos.redhat.com/released/jboss/amq/broker/${ARTEMIS_VERSION}/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples-rhel8.zip
 OPERATOR_VERSION_UPSTREAM 		?= main
-CLUSTER_OPERATOR_MANAGED		?= true
 
 all: test_smoke_downstream
 
-build_downstream: prepare_dirs fill_project_properties downstream_files copy_ocp_zip_files build_java
+build_downstream: prepare_dirs downstream_files copy_ocp_zip_files build_java
 
-build_upstream: prepare_dirs fill_project_properties upstream_files build_java
+build_upstream: prepare_dirs upstream_files build_java
 
-test_smoke_downstream: prepare_dirs fill_project_properties downstream_files copy_ocp_zip_files test_smoke
+test_smoke_downstream: prepare_dirs downstream_files copy_ocp_zip_files test_smoke
 
-test_smoke_upstream: prepare_dirs fill_project_properties upstream_files test_smoke
+test_smoke_upstream: prepare_dirs upstream_files test_smoke
 
 
 clean: clean_all
@@ -33,9 +32,6 @@ prepare_dirs:
 	rm -rf ${ROOT_DIR}/artemis
 	mkdir -p ${ROOT_DIR}/artemis/{crds,examples,install}
 	mkdir -p ${ROOT_DIR}/artemis/examples/{artemis,address}
-
-fill_project_properties:
-	echo "project.cluster_operator.manage=${CLUSTER_OPERATOR_MANAGED}" > ${ARTEMIS_PROPERTIES_FILE}
 
 downstream_files:
 	# TODO use new structure of examples/install for downstream once 7.11 is out. Current is ugly
