@@ -5,6 +5,7 @@
 package io.brokerqe.clients;
 
 import io.brokerqe.KubeClient;
+import io.brokerqe.ResourceManager;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import org.apache.commons.lang.NotImplementedException;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class MessagingAmqpClient implements MessagingClient {
 
     static Map<Deployment, String> deployedContainers = new HashMap<>();
-    static KubeClient kubeClient = new KubeClient("default");
+    static KubeClient kubeClient = ResourceManager.getKubeClient();
 
     static Deployment deploymentSystemClients = new DeploymentBuilder()
         .withNewMetadata()

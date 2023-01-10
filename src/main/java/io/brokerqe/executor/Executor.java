@@ -4,11 +4,9 @@
  */
 package io.brokerqe.executor;
 
+import io.brokerqe.ResourceManager;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import org.slf4j.Logger;
@@ -32,8 +30,7 @@ public class Executor implements AutoCloseable {
 
 
     public Executor() {
-        Config config = new ConfigBuilder().build();
-        this.client = new KubernetesClientBuilder().withConfig(config).build();
+        client = ResourceManager.getKubeClient().getKubernetesClient();
     }
 
     public CompletableFuture<String> getListenerData() {
@@ -43,10 +40,10 @@ public class Executor implements AutoCloseable {
     @Override
     public void close() {
         if (listener.data == null || listener.data.isDone()) {
-            client.close();
-            LOGGER.debug("Closed client");
+//            client.close();
+            LOGGER.trace("We should close client, but we're not. (Reusing singleton KubernetesClient)");
         } else {
-            LOGGER.debug("Not yet closing client");
+            LOGGER.trace("Not yet closing client");
         }
     }
 
@@ -97,7 +94,7 @@ public class Executor implements AutoCloseable {
 
         @Override
         public void onOpen() {
-            LOGGER.debug("Opened executor client, waiting for data... ");
+            LOGGER.trace("Opened executor client, waiting for data... ");
         }
 
         @Override
@@ -108,7 +105,7 @@ public class Executor implements AutoCloseable {
 
         @Override
         public void onClose(int code, String reason) {
-            LOGGER.debug("Exit with: " + code + " and with reason: " + reason);
+            LOGGER.trace("Exit with: " + code + " and with reason: " + reason);
             data.complete(baos.toString());
         }
     }

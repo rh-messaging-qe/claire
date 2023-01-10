@@ -31,9 +31,10 @@ public class ResourceManager {
     private static List<ArtemisCloudClusterOperator> operatorList = new ArrayList<>();
     private static Boolean projectCODeploy;
     private static ResourceManager resourceManager = null;
+    private static KubeClient kubeClient;
 
     private ResourceManager(Environment environment) {
-        KubeClient kubeClient = new KubeClient("default");
+        kubeClient = new KubeClient("default");
         artemisClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemis.class);
         artemisAddressClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisAddress.class);
         artemisSecurityClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisSecurity.class);
@@ -45,6 +46,10 @@ public class ResourceManager {
             resourceManager = new ResourceManager(environment);
         }
         return resourceManager;
+    }
+
+    public static KubeClient getKubeClient() {
+        return kubeClient;
     }
 
     public static MixedOperation<ActiveMQArtemis, KubernetesResourceList<ActiveMQArtemis>, Resource<ActiveMQArtemis>> getArtemisClient() {

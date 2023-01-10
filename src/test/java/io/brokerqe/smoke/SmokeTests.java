@@ -73,8 +73,7 @@ public class SmokeTests extends AbstractSystemTests {
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
         List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(1));
-
-        deleteArtemis(testNamespace, broker, true);
+        deleteArtemis(testNamespace, broker);
     }
 
     @Test

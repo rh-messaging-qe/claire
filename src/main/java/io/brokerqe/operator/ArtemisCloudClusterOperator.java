@@ -6,6 +6,7 @@ package io.brokerqe.operator;
 
 import io.brokerqe.Constants;
 import io.brokerqe.KubeClient;
+import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -70,7 +71,7 @@ public class ArtemisCloudClusterOperator {
         } else {
             this.filesToDeploy = new ArrayList<>(getClusteredOperatorInstallFiles());
         }
-        this.kubeClient = new KubeClient(this.namespace);
+        this.kubeClient = ResourceManager.getKubeClient().inNamespace(this.namespace);
     }
 
     public void deployOperator(boolean waitForDeployment) {

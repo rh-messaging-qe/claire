@@ -37,9 +37,10 @@ public class AbstractSystemTests implements TestSeparator {
     protected ArtemisCloudClusterOperator operator;
 
     protected Environment testEnvironment;
+    protected ResourceManager resourceManager;
 
     public KubeClient getClient() {
-        return this.client;
+        return client;
     }
     public KubernetesClient getKubernetesClient() {
         return this.client.getKubernetesClient();
@@ -62,8 +63,8 @@ public class AbstractSystemTests implements TestSeparator {
             testEnvironment = new Environment();
         }
         setupLoggingLevel();
-        client = new KubeClient("default");
-        ResourceManager resourceManager = ResourceManager.getInstance(testEnvironment);
+        resourceManager = ResourceManager.getInstance(testEnvironment);
+        client = ResourceManager.getKubeClient();
     }
 
     void setupLoggingLevel() {
