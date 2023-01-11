@@ -61,8 +61,7 @@ public class SmokeTests extends AbstractSystemTests {
         ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         broker.getSpec().getDeploymentPlan().setSize(3);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        TestUtils.threadSleep(Constants.DURATION_5_SECONDS); // give time to StatefulSet to update itself
-        waitForBrokerDeployment(testNamespace, broker);
+        waitForBrokerDeployment(testNamespace, broker, true);
         throw new RuntimeException("Throwing random exception, to trigger TestDataCollection.");
     }
 

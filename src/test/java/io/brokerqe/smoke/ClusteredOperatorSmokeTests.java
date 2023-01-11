@@ -6,6 +6,7 @@ package io.brokerqe.smoke;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.WaitException;
 import io.brokerqe.operator.ArtemisFileProvider;
@@ -80,7 +81,8 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
 
         // testNamespaceB - should fail
         LOGGER.info("[{}] Expecting FAIL: deploy broker in namespace {}", testNamespace, testNamespaceB);
-        assertThrows(WaitException.class, () -> createArtemis(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile()));
+        ActiveMQArtemis brokerB = createArtemis(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile(), false);
+        assertThrows(WaitException.class, () -> waitForBrokerDeployment(testNamespaceB, brokerB, false, Constants.DURATION_30_SECONDS));
         assertNull(getClient().getStatefulSet(testNamespaceB, brokerName + "-ss"));
     }
 }

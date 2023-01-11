@@ -88,6 +88,7 @@ public interface Constants {
     long DURATION_2_SECONDS = Duration.ofSeconds(2).toMillis();
     long DURATION_5_SECONDS = Duration.ofSeconds(5).toMillis();
     long DURATION_10_SECONDS = Duration.ofSeconds(10).toMillis();
+    long DURATION_30_SECONDS = Duration.ofSeconds(30).toMillis();
     long DURATION_1_MINUTE = Duration.ofMinutes(1).toMillis();
     long DURATION_3_MINUTES = Duration.ofMinutes(3).toMillis();
 }

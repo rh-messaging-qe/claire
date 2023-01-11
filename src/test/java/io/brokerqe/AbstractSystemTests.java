@@ -118,14 +118,14 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     protected void deleteArtemis(String namespace, ActiveMQArtemis broker) {
-        deleteArtemis(namespace, broker, true);
+        deleteArtemis(namespace, broker, true, Constants.DURATION_1_MINUTE);
     }
 
-    protected void deleteArtemis(String namespace, ActiveMQArtemis broker, boolean waitForDeletion) {
+    protected void deleteArtemis(String namespace, ActiveMQArtemis broker, boolean waitForDeletion, long maxTimeout) {
         String brokerName = broker.getMetadata().getName();
         ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).delete();
         if (waitForDeletion) {
-            TestUtils.waitFor("StatefulSet to be removed", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+            TestUtils.waitFor("StatefulSet to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
                 StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
                 return ss == null && getClient().listPodsByPrefixInName(namespace, brokerName).size() == 0;
             });
@@ -167,17 +167,22 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis brokerCR) {
-        waitForBrokerDeployment(namespace, brokerCR, false);
+        waitForBrokerDeployment(namespace, brokerCR, false, Constants.DURATION_1_MINUTE);
     }
-    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis brokerCR, boolean reloadExisting) {
-        LOGGER.info("Waiting for creation of broker {} in namespace {}", brokerCR.getMetadata().getName(), namespace);
-        String brokerName = brokerCR.getMetadata().getName();
+
+    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting) {
+        waitForBrokerDeployment(namespace, broker, reloadExisting, Constants.DURATION_1_MINUTE);
+    }
+
+    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout) {
+        LOGGER.info("Waiting for creation of broker {} in namespace {}", broker.getMetadata().getName(), namespace);
+        String brokerName = broker.getMetadata().getName();
         if (reloadExisting) {
             // TODO: make more generic and resource specific wait
-            LOGGER.debug("[{}] Reloading existing broker {}, sleeping for some time", namespace, brokerCR.getMetadata().getName());
+            LOGGER.debug("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
             TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
         }
-        TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE, () -> {
+        TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
             return ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
         });
@@ -197,7 +202,7 @@ public class AbstractSystemTests implements TestSeparator {
     protected ActiveMQArtemis addAcceptors(String namespace, List<Acceptors> acceptors, ActiveMQArtemis broker) {
         broker.getSpec().setAcceptors(acceptors);
         broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
-        waitForBrokerDeployment(namespace, broker, true);
+        waitForBrokerDeployment(namespace, broker, true, Constants.DURATION_1_MINUTE);
         return broker;
     }
 }

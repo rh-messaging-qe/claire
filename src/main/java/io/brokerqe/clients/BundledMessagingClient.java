@@ -5,6 +5,7 @@
 package io.brokerqe.clients;
 
 import io.brokerqe.KubeClient;
+import io.brokerqe.ResourceManager;
 import io.brokerqe.executor.Executor;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
@@ -36,7 +37,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
         this.destinationQueue = destinationQueue;
         this.messageCount = messageCount;
 
-        this.client = new KubeClient(brokerPod.getMetadata().getNamespace());
+        this.client = ResourceManager.getKubeClient().inNamespace(brokerPod.getMetadata().getNamespace());
         this.protocol = getProtocol();
     }
 

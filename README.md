@@ -5,13 +5,14 @@
 This repository contains code for testing AMQ Broker/Artemis operator and it's operands.
 
 It uses fabric8 for communication with Kubernetes API.
-For details of usage fabric8 client see perfect [Cheatsheet](https://github.com/fabric8io/kubernetes-client/blob/v6.2.0/doc/CHEATSHEET.md), which contains all resources with examples.
+For details of usage fabric8 client see perfect [Cheatsheet](https://github.com/fabric8io/kubernetes-client/blob/v6.3.0/doc/CHEATSHEET.md), which contains all resources with examples.
 
 [CRDs](crds) contains Either upstream or downstream CRDs for AMQ Broker 7.10.x. Currently we only support downstream, as upstream versions are different (imports are different) and 
 we need to solve this problem nicely. If you're using upstream, please update all imports manually (find all and replace) accordingly.
 
 ## How to run tests
 
+Test suite expects you to be logged into some kind of Kubernetes instance (minikube, k3s, Kubernetes, ..).
 Currently, we support running `test_smoke_downstream` and `test_smoke_upstream` (which executes `SmokeTests` and `ClusteredOperatorSmokeTests`) tests using `make`.
 These targets will execute all necessary steps - clean, download files, build and generate needed code and finally execute tests.
 Review `Makefile` for more details.
