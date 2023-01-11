@@ -84,6 +84,10 @@ public interface Constants {
 //    String OLD_EXAMPLE_ADDRESS_TOPIC_PATH = Constants.EXAMPLES_DIR_PATH + "address/address_topic.yaml";
     String OLD_EXAMPLE_ARTEMIS_SINGLE_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis-basic-deployment.yaml";
 
+    // Container folder paths
+    String CONTAINER_BROKER_HOME_DIR = "/home/jboss/amq-broker/";
+    String CONTAINER_BROKER_HOME_ETC_DIR = CONTAINER_BROKER_HOME_DIR + "etc/";
+
     // Timing variables
     long DURATION_2_SECONDS = Duration.ofSeconds(2).toMillis();
     long DURATION_5_SECONDS = Duration.ofSeconds(5).toMillis();

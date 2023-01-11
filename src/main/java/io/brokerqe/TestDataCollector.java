@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -119,13 +120,35 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         writeHasMetadataObject(pods, archiveLocation);
         writeEvents(events, archiveLocation);
         collectPodLogs(pods, archiveLocation);
+        collectBrokerPodFiles(pods, archiveLocation);
+    }
+
+    private void collectBrokerPodFiles(List<Pod> pods, String archiveLocation) {
+        List<String> fileList = List.of("artemis-roles.properties", "artemis.profile", "broker.xml", "jolokia-access.xml", "login.config", "artemis-users.properties", "bootstrap.xml", "jgroups-ping.xml", "logging.properties", "management.xml");
+        // TODO: /home/jboss/artemis-broker
+        final String amqBrokerEtcHome = Constants.CONTAINER_BROKER_HOME_ETC_DIR;
+        for (Pod pod : pods) {
+            if (pod.getMetadata().getLabels().containsKey("ActiveMQArtemis")) {
+                String dirName = archiveLocation + Constants.FILE_SEPARATOR + "broker_etc" + Constants.FILE_SEPARATOR + pod.getMetadata().getName();
+                TestUtils.createDirectory(dirName);
+
+                for (String file : fileList) {
+                    String outputFileName = dirName + Constants.FILE_SEPARATOR + file;
+                    String podFileName = amqBrokerEtcHome + file;
+                    kubeClient.getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace())
+                         .withName(pod.getMetadata().getName()).file(podFileName).copy(Paths.get(outputFileName));
+                }
+            }
+        }
     }
 
     private void collectPodLogs(List<Pod> pods, String archiveLocation) {
         for (Pod pod : pods) {
-            String fileName = archiveLocation + Constants.FILE_SEPARATOR + "pod_" + pod.getMetadata().getName() + ".log";
+            String dirName = archiveLocation + Constants.FILE_SEPARATOR + "logs";
+            String fileName = dirName + Constants.FILE_SEPARATOR + "pod_" + pod.getMetadata().getName() + ".log";
             try {
                 String podLog = kubeClient.getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).withName(pod.getMetadata().getName()).getLog();
+                TestUtils.createDirectory(dirName);
                 TestUtils.createFile(fileName, podLog);
             } catch (KubernetesClientException e) {
                 LOGGER.error("[{}] Unable to get pod logs {}! Skipping {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(), e.getMessage());
@@ -137,8 +160,9 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
     // Method Applicable for StatefulSet, Deployment, Service, Pod, ...
     private void writeHasMetadataObject(List<? extends HasMetadata> deployments, String archiveLocation) {
         deployments.stream().forEach(deployment -> {
-            String fileName = archiveLocation + Constants.FILE_SEPARATOR + deployment.getKind().toLowerCase(Locale.ROOT)
-                    + "_" + deployment.getMetadata().getName() + ".yaml";
+            String dirName = archiveLocation + Constants.FILE_SEPARATOR + deployment.getKind().toLowerCase(Locale.ROOT);
+            String fileName = dirName + Constants.FILE_SEPARATOR + deployment.getMetadata().getName() + ".yaml";
+            TestUtils.createDirectory(dirName);
             TestUtils.createFile(fileName, Serialization.asYaml(deployment).toString());
             LOGGER.trace("Stored data into {}", fileName);
         });
