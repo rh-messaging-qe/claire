@@ -151,8 +151,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
                 TestUtils.createDirectory(dirName);
                 TestUtils.createFile(fileName, podLog);
             } catch (KubernetesClientException e) {
-                LOGGER.error("[{}] Unable to get pod logs {}! Skipping {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(), e.getMessage());
-                throw e;
+                LOGGER.error("[{}] Unable to get pod logs {} - skipping. {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(), e.getMessage());
             }
         }
     }

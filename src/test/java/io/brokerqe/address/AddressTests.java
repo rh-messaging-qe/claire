@@ -6,25 +6,27 @@ package io.brokerqe.address;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
-import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
-import io.brokerqe.configuration.BrokerConfigurationTests;
+import io.brokerqe.TestUtils;
+import io.brokerqe.executor.Executor;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 public class AddressTests extends AbstractSystemTests {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BrokerConfigurationTests.class);
-    private final String testNamespace = getRandomNamespaceName("broker-config-tests", 6);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AddressTests.class);
+    private final String testNamespace = getRandomNamespaceName("address-tests", 6);
 
     @BeforeAll
     void setupClusterOperator() {
@@ -44,15 +46,39 @@ public class AddressTests extends AbstractSystemTests {
     }
 
     @Test
-    @Disabled
     void persistAddressAfterCoBrokerRestart() {
         ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
-        Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire");
-        broker = addAcceptors(testNamespace, List.of(amqpAcceptors), broker);
-
         ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
-        // sending & receiving messages
+
         String brokerName = broker.getMetadata().getName();
+        String operatorName = operator.getOperatorName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
+        Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operatorName);
+
+        LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
+        String command = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":61616";
+        try (Executor example = new Executor();) {
+            String cmdOutput = example.execCommandOnPod(brokerPod.getMetadata().getName(),
+                    brokerPod.getMetadata().getNamespace(), 60, command.split(" "));
+            LOGGER.info(cmdOutput);
+            assertThat(cmdOutput, containsString(myAddress.getSpec().getAddressName()));
+
+            getClient().reloadPodWithWait(testNamespace, operatorPod, operatorName);
+            getClient().reloadPodWithWait(testNamespace, brokerPod, brokerName);
+
+            brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
+            LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
+
+            Pod finalBrokerPod = brokerPod;
+            String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":61616";
+            TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+                String commandOutput = example.execCommandOnPod(finalBrokerPod.getMetadata().getName(),
+                        finalBrokerPod.getMetadata().getNamespace(), 60, finalCommand.split(" "));
+                return commandOutput.contains(myAddress.getSpec().getAddressName());
+            });
+        }
+        deleteArtemisAddress(testNamespace, myAddress);
+        deleteArtemis(testNamespace, broker);
     }
+
 }

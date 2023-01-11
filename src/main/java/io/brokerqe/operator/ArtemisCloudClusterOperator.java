@@ -214,4 +214,8 @@ public class ArtemisCloudClusterOperator {
         this.clusterRoleBindingUpdatedFile = clusterRoleBindingFile;
     }
 
+    public String getOperatorName() {
+        return operatorName;
+    }
+
 }

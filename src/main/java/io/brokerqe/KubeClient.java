@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class KubeClient {
@@ -178,13 +179,39 @@ public class KubeClient {
     public Pod getFirstPodByPrefixName(String namespaceName, String podNamePrefix) {
         List<Pod> pods = listPodsByPrefixInName(namespaceName, podNamePrefix);
         if (pods.size() > 1) {
-            LOGGER.warn("[{}] Returning first found pod with name '{}' of many!", namespaceName, pods.size());
+            LOGGER.warn("[{}] Returning first found pod with name '{}' of many ({})!", namespaceName, podNamePrefix, pods.size());
             return pods.get(0);
         } else if (pods.size() > 0) {
             return pods.get(0);
         } else {
             return null;
         }
+    }
+
+    public void reloadPodWithWait(String namespaceName, Pod pod, String podName) {
+        this.getKubernetesClient().resource(pod).inNamespace(namespaceName).delete();
+        waitForPodReload(namespaceName, pod, podName);
+    }
+
+    public void waitUntilPodIsReady(String namespaceName, String podName) {
+        client.pods().inNamespace(namespaceName).withName(podName).waitUntilReady(3, TimeUnit.MINUTES);
+    }
+
+    public void waitForPodReload(String namespace, Pod pod, String podName) {
+        waitForPodReload(namespace, pod, podName, Constants.DURATION_1_MINUTE);
+    }
+
+    public void waitForPodReload(String namespace, Pod pod, String podName, long maxTimeout) {
+        String originalPodName = pod.getMetadata().getName();
+        String originalUid = pod.getMetadata().getUid();
+
+        LOGGER.info("Waiting for pod {} reload in namespace {}", podName, namespace);
+
+        TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+            Pod newPod = this.getFirstPodByPrefixName(namespace, podName);
+            return newPod != null && !newPod.getMetadata().getUid().equals(originalUid);
+        });
+        this.waitUntilPodIsReady(namespace, this.getFirstPodByPrefixName(namespace, podName).getMetadata().getName());
     }
 
     // ==================================

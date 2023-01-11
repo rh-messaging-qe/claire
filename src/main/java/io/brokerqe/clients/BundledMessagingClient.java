@@ -148,13 +148,15 @@ public abstract class BundledMessagingClient implements MessagingClient {
         String cmdOutput = null;
         if (subscriberExecWatch.exitCode().isDone()) {
             try {
-                cmdOutput = backgroundExecutor.getListenerData().get().toString();
+                cmdOutput = backgroundExecutor.getListenerData().get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
+            } finally {
+                subscriberExecWatch.close();
+                backgroundExecutor.close();
+                backgroundExecutor = null;
+                subscriberExecWatch = null;
             }
-            backgroundExecutor.close();
-            backgroundExecutor = null;
-            subscriberExecWatch = null;
         }
         return cmdOutput;
     }

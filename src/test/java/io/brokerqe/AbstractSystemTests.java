@@ -166,8 +166,8 @@ public class AbstractSystemTests implements TestSeparator {
         return status;
     }
 
-    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis brokerCR) {
-        waitForBrokerDeployment(namespace, brokerCR, false, Constants.DURATION_1_MINUTE);
+    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker) {
+        waitForBrokerDeployment(namespace, broker, false, Constants.DURATION_1_MINUTE);
     }
 
     protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting) {
