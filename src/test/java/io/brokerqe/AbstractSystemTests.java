@@ -11,7 +11,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
-import io.brokerqe.separator.TestSeparator;
+import io.brokerqe.junit.TestSeparator;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;

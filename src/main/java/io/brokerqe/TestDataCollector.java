@@ -5,7 +5,7 @@
 package io.brokerqe;
 
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
-import io.brokerqe.separator.TestSeparator;
+import io.brokerqe.junit.TestSeparator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;

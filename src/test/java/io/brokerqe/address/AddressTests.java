@@ -74,8 +74,10 @@ public class AddressTests extends AbstractSystemTests {
             TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_3_MINUTES, () -> {
                 String commandOutput = example.execCommandOnPod(finalBrokerPod.getMetadata().getName(),
                         finalBrokerPod.getMetadata().getNamespace(), 60, finalCommand.split(" "));
+                LOGGER.info(commandOutput);
                 return commandOutput.contains(myAddress.getSpec().getAddressName());
             });
+
         }
         deleteArtemisAddress(testNamespace, myAddress);
         deleteArtemis(testNamespace, broker);
