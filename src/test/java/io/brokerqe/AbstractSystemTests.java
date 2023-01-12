@@ -199,10 +199,11 @@ public class AbstractSystemTests implements TestSeparator {
         return acceptors;
     }
 
-    protected ActiveMQArtemis addAcceptors(String namespace, List<Acceptors> acceptors, ActiveMQArtemis broker) {
+    protected ActiveMQArtemis addAcceptorsWaitForPodReload(String namespace, List<Acceptors> acceptors, ActiveMQArtemis broker) {
         broker.getSpec().setAcceptors(acceptors);
         broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
-        waitForBrokerDeployment(namespace, broker, true, Constants.DURATION_1_MINUTE);
+        String brokerName = broker.getMetadata().getName();
+        client.waitForPodReload(namespace, getClient().getFirstPodByPrefixName(namespace, brokerName), brokerName);
         return broker;
     }
 }

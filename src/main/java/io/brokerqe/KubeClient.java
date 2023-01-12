@@ -202,7 +202,6 @@ public class KubeClient {
     }
 
     public void waitForPodReload(String namespace, Pod pod, String podName, long maxTimeout) {
-        String originalPodName = pod.getMetadata().getName();
         String originalUid = pod.getMetadata().getUid();
 
         LOGGER.info("Waiting for pod {} reload in namespace {}", podName, namespace);

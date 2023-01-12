@@ -97,7 +97,7 @@ public class SmokeTests extends AbstractSystemTests {
     void sendReceiveAMQPMessageTest() {
         ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire");
-        broker = addAcceptors(testNamespace, List.of(amqpAcceptors), broker);
+        broker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors), broker);
 
         ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         // sending & receiving messages
@@ -155,7 +155,7 @@ public class SmokeTests extends AbstractSystemTests {
 
         ActiveMQArtemis artemisBroker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire");
-        artemisBroker = addAcceptors(testNamespace, List.of(amqpAcceptors), artemisBroker);
+        artemisBroker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors), artemisBroker);
 
         ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         String brokerName = artemisBroker.getMetadata().getName();
