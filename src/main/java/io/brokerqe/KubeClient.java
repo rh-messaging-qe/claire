@@ -4,7 +4,6 @@
  */
 package io.brokerqe;
 
-import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
@@ -83,7 +82,7 @@ public class KubeClient {
         if (setNamespace) {
             this.namespace = namespaceName;
         }
-
+        ResourceManager.addNamespace(namespaceName);
         return ns;
     }
 
@@ -92,6 +91,7 @@ public class KubeClient {
         TestUtils.waitFor("Deleting namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return !this.namespaceExists(namespaceName);
         });
+        ResourceManager.removeNamespace(namespaceName);
     }
 
     public String getNamespace() {
@@ -342,24 +342,6 @@ public class KubeClient {
     public List<Job> listJobs(String namePrefix) {
         return client.batch().v1().jobs().inNamespace(getNamespace()).list().getItems().stream()
             .filter(job -> job.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
-    }
-
-
-    /*******************************************************************************************************************
-     *  Deploy ActiveMQ Artemis Operator
-     ******************************************************************************************************************/
-    public ArtemisCloudClusterOperator deployClusterOperator(String namespace) {
-        ArtemisCloudClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperator(namespace);
-        return clusterOperator;
-    }
-
-    public ArtemisCloudClusterOperator deployClusterOperator(String namespace, List<String> watchedNamespaces) {
-        ArtemisCloudClusterOperator clusterOperator = ResourceManager.deployArtemisClusterOperatorClustered(namespace, watchedNamespaces);
-        return clusterOperator;
-    }
-
-    public void undeployClusterOperator(ArtemisCloudClusterOperator operator) {
-        ResourceManager.undeployArtemisClusterOperator(operator);
     }
 
 }

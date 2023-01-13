@@ -13,7 +13,6 @@ import io.brokerqe.ResourceManager;
 import io.brokerqe.clients.AmqpQpidClient;
 import io.brokerqe.clients.BundledAmqpMessagingClient;
 import io.brokerqe.clients.BundledCoreMessagingClient;
-import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.clients.MessagingClient;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -40,43 +39,44 @@ public class SmokeTests extends AbstractSystemTests {
     void setupClusterOperator() {
         getClient().createNamespace(testNamespace, true);
         LOGGER.info("[{}] Creating new namespace to {}", testNamespace, testNamespace);
-        operator = getClient().deployClusterOperator(testNamespace);
+        operator = ResourceManager.deployArtemisClusterOperator(testNamespace);
     }
 
     @AfterAll
     void teardownClusterOperator() {
-        getClient().undeployClusterOperator(ResourceManager.getArtemisClusterOperator(testNamespace));
+        ResourceManager.undeployArtemisClusterOperator(operator);
         if (!ResourceManager.isClusterOperatorManaged()) {
             LOGGER.info("[{}] Deleting namespace to {}", testNamespace, testNamespace);
             getClient().deleteNamespace(testNamespace);
         }
         ResourceManager.undeployAllClientsContainers();
+        getClient().deleteNamespace(testNamespace);
     }
 
     @Test
     @Disabled
     void brokerErrorTest() {
-        ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         broker.getSpec().getDeploymentPlan().setSize(3);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        waitForBrokerDeployment(testNamespace, broker, true);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true);
         throw new RuntimeException("Throwing random exception, to trigger TestDataCollection.");
     }
 
     @Test
     void defaultSingleBrokerDeploymentTest() {
-        ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
         List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(1));
-        deleteArtemis(testNamespace, broker);
+        ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
     @Test
     void sendReceiveCoreMessageTest() {
-        ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
@@ -89,17 +89,17 @@ public class SmokeTests extends AbstractSystemTests {
         assertThat(sent, equalTo(received));
         assertThat(messagingClientCore.compareMessages(), is(true));
 
-        deleteArtemisAddress(testNamespace, myAddress);
-        deleteArtemis(testNamespace, broker);
+        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
     @Test
     void sendReceiveAMQPMessageTest() {
-        ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire");
         broker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors), broker);
 
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         // sending & receiving messages
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
@@ -120,14 +120,14 @@ public class SmokeTests extends AbstractSystemTests {
         assertThat(sent, equalTo(received));
         assertThat(messagingClientAmqp.compareMessages(), is(true));
 
-        deleteArtemisAddress(testNamespace, myAddress);
-        deleteArtemis(testNamespace, broker);
+        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
     @Test
     void subscriberMessageTest() {
-        ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
@@ -144,20 +144,20 @@ public class SmokeTests extends AbstractSystemTests {
         assertThat(sent, equalTo(received));
         assertThat(messagingClientCore.compareMessages(), is(true));
 
-        deleteArtemisAddress(testNamespace, myAddress);
-        deleteArtemis(testNamespace, broker);
+        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
     @Test
     void sendReceiveSystemTestsClientMessageTest() {
-        Deployment clients = MessagingAmqpClient.deployClientsContainer(testNamespace);
+        Deployment clients = ResourceManager.deployClientsContainer(testNamespace);
         Pod clientsPod = getClient().getFirstPodByPrefixName(testNamespace, "systemtests-clients");
 
-        ActiveMQArtemis artemisBroker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire");
         artemisBroker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors), artemisBroker);
 
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         String brokerName = artemisBroker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
 
@@ -182,8 +182,8 @@ public class SmokeTests extends AbstractSystemTests {
         assertThat(sent, equalTo(received));
         assertThat(messagingSubscriberClient.compareMessages(), is(true));
 
-        MessagingAmqpClient.undeployClientsContainer(testNamespace, clients);
-        deleteArtemisAddress(testNamespace, myAddress);
-        deleteArtemis(testNamespace, artemisBroker);
+        ResourceManager.undeployClientsContainer(testNamespace, clients);
+        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        ResourceManager.deleteArtemis(testNamespace, artemisBroker);
     }
 }

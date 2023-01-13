@@ -95,4 +95,5 @@ public interface Constants {
     long DURATION_30_SECONDS = Duration.ofSeconds(30).toMillis();
     long DURATION_1_MINUTE = Duration.ofMinutes(1).toMillis();
     long DURATION_3_MINUTES = Duration.ofMinutes(3).toMillis();
+    long DURATION_5_MINUTES = Duration.ofMinutes(5).toMillis();
 }

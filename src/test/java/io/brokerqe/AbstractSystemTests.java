@@ -6,24 +6,19 @@ package io.brokerqe;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
-import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.junit.TestSeparator;
-import io.fabric8.kubernetes.api.model.StatusDetails;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import okhttp3.OkHttpClient;
-import org.apache.commons.lang.NotImplementedException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 
@@ -70,6 +65,11 @@ public class AbstractSystemTests implements TestSeparator {
         java.util.logging.Logger.getLogger(OkHttpClient.class.getName()).setLevel(java.util.logging.Level.FINE);
     }
 
+    @AfterAll
+    void teardownTestEnvironment() {
+        ResourceManager.undeployAllResources();
+    }
+
     void setupLoggingLevel() {
         String envLogLevel = testEnvironment.getTestLogLevel();
         if (envLogLevel == null || envLogLevel.equals("")) {
@@ -87,105 +87,6 @@ public class AbstractSystemTests implements TestSeparator {
                         }
                     });
         }
-    }
-
-    /*******************************************************************************************************************
-     *  ActiveMQArtemis Usage of generated typed API
-     ******************************************************************************************************************/
-    protected ActiveMQArtemis createArtemis(String namespace, String filePath) {
-        return createArtemis(namespace, filePath, true);
-    }
-
-    protected ActiveMQArtemis createArtemis(String namespace, String filePath, boolean waitForDeployment) {
-        ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(filePath, ActiveMQArtemis.class);
-        artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
-        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
-        if (waitForDeployment) {
-            waitForBrokerDeployment(namespace, artemisBroker);
-        }
-        return artemisBroker;
-    }
-
-    protected ActiveMQArtemis createArtemisFromString(String namespace, InputStream yamlStream, boolean waitForDeployment) {
-        LOGGER.trace("[{}] Deploying broker using stringYaml {}", namespace, yamlStream);
-        ActiveMQArtemis brokerCR = ResourceManager.getArtemisClient().inNamespace(namespace).load(yamlStream).get();
-        brokerCR = ResourceManager.getArtemisClient().inNamespace(namespace).resource(brokerCR).createOrReplace();
-        if (waitForDeployment) {
-            waitForBrokerDeployment(namespace, brokerCR);
-        }
-        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", brokerCR, namespace);
-        return brokerCR;
-    }
-
-    protected void deleteArtemis(String namespace, ActiveMQArtemis broker) {
-        deleteArtemis(namespace, broker, true, Constants.DURATION_1_MINUTE);
-    }
-
-    protected void deleteArtemis(String namespace, ActiveMQArtemis broker, boolean waitForDeletion, long maxTimeout) {
-        String brokerName = broker.getMetadata().getName();
-        ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).delete();
-        if (waitForDeletion) {
-            TestUtils.waitFor("StatefulSet to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
-                StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
-                return ss == null && getClient().listPodsByPrefixInName(namespace, brokerName).size() == 0;
-            });
-        }
-    }
-
-    protected ActiveMQArtemisAddress createArtemisAddress(String namespace, String filePath) {
-        ActiveMQArtemisAddress artemisAddress = TestUtils.configFromYaml(filePath, ActiveMQArtemisAddress.class);
-        artemisAddress = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).createOrReplace();
-        // TODO check it programmatically
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        LOGGER.info("Created ActiveMQArtemisAddress {} in namespace {}", artemisAddress, namespace);
-        return artemisAddress;
-    }
-
-    protected List<StatusDetails> deleteArtemisAddress(String namespace, String addressName) {
-        throw new NotImplementedException();
-    }
-    protected void deleteArtemisAddress(String namespace, ActiveMQArtemisAddress activeMQArtemisAddress) {
-        List<StatusDetails> status = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(activeMQArtemisAddress).delete();
-        LOGGER.info("Deleted ActiveMQArtemisAddress {} in namespace {}", activeMQArtemisAddress.getMetadata().getName(), namespace);
-    }
-
-    protected ActiveMQArtemisSecurity createArtemisSecurity(String namespace, String filePath) {
-        ActiveMQArtemisSecurity artemisSecurity = TestUtils.configFromYaml(filePath, ActiveMQArtemisSecurity.class);
-        artemisSecurity = ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).createOrReplace();
-        LOGGER.info("Created ActiveMQArtemisSecurity {} in namespace {}", artemisSecurity, namespace);
-        return artemisSecurity;
-    }
-
-    protected List<StatusDetails> deleteArtemisSecurity(String namespace, ActiveMQArtemisSecurity artemisSecurity) {
-        List<StatusDetails> status = ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).delete();
-        LOGGER.info("Deleted ActiveMQArtemisSecurity {} in namespace {}", artemisSecurity.getMetadata().getName(), namespace);
-        return status;
-    }
-
-    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker) {
-        waitForBrokerDeployment(namespace, broker, false, Constants.DURATION_1_MINUTE);
-    }
-
-    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting) {
-        waitForBrokerDeployment(namespace, broker, reloadExisting, Constants.DURATION_1_MINUTE);
-    }
-
-    protected void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout) {
-        LOGGER.info("Waiting for creation of broker {} in namespace {}", broker.getMetadata().getName(), namespace);
-        String brokerName = broker.getMetadata().getName();
-        if (reloadExisting) {
-            // TODO: make more generic and resource specific wait
-            LOGGER.debug("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
-            TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
-        }
-        TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
-            StatefulSet ss = getClient().getStatefulSet(namespace, brokerName + "-ss");
-            return ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
-        });
     }
 
     /******************************************************************************************************************

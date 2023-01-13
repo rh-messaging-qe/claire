@@ -38,18 +38,17 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         getClient().createNamespace(testNamespaceB, true);
         LOGGER.info("[{}] Creating new namespace to {}", testNamespace, testNamespace);
         // Operator will watch namespaces testNamespace and testNamespaceA
-        operator = getClient().deployClusterOperator(testNamespace, List.of(testNamespace, testNamespaceA));
+        operator = ResourceManager.deployArtemisClusterOperatorClustered(testNamespace, List.of(testNamespace, testNamespaceA));
     }
 
     @AfterAll
     void teardownClusterOperator() {
-        getClient().undeployClusterOperator(ResourceManager.getArtemisClusterOperator(testNamespace));
-        if (!ResourceManager.isClusterOperatorManaged()) {
-            LOGGER.info("[{}] Deleting namespace to {}", testNamespace, testNamespace);
-            getClient().deleteNamespace(testNamespace);
-            getClient().deleteNamespace(testNamespaceA);
-            getClient().deleteNamespace(testNamespaceB);
+        if (ResourceManager.isClusterOperatorManaged()) {
+            ResourceManager.undeployArtemisClusterOperator(operator);
         }
+        getClient().deleteNamespace(testNamespace);
+        getClient().deleteNamespace(testNamespaceA);
+        getClient().deleteNamespace(testNamespaceB);
 
         ResourceManager.undeployAllClientsContainers();
     }
@@ -58,31 +57,31 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
     void simpleBrokerClusteredDeploymentTest() {
         // testNamespace & testNamespaceA should work, testNamespaceB should fail
         LOGGER.info("[{}] Expecting PASS: Deploy broker in namespace {}", testNamespace, testNamespaceA);
-        ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
         List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(1));
 
-        deleteArtemis(testNamespace, broker);
+        ResourceManager.deleteArtemis(testNamespace, broker);
         brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(0));
 
         // testNamespaceA - should work
         LOGGER.info("[{}] Expecting PASS: Deploy broker in namespace {}", testNamespace, testNamespaceA);
-        ActiveMQArtemis brokerA = createArtemis(testNamespaceA, ArtemisFileProvider.getArtemisSingleExampleFile());
+        ActiveMQArtemis brokerA = ResourceManager.createArtemis(testNamespaceA, ArtemisFileProvider.getArtemisSingleExampleFile());
         String brokerNameA = brokerA.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespaceA, brokerNameA);
         brokerPods = getClient().listPodsByPrefixInName(testNamespaceA, brokerNameA);
         assertThat(brokerPods.size(), is(1));
-        deleteArtemis(testNamespaceA, brokerA);
+        ResourceManager.deleteArtemis(testNamespaceA, brokerA);
         brokerPods = getClient().listPodsByPrefixInName(testNamespaceA, brokerName);
         assertThat(brokerPods.size(), is(0));
 
         // testNamespaceB - should fail
         LOGGER.info("[{}] Expecting FAIL: deploy broker in namespace {}", testNamespace, testNamespaceB);
-        ActiveMQArtemis brokerB = createArtemis(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile(), false);
-        assertThrows(WaitException.class, () -> waitForBrokerDeployment(testNamespaceB, brokerB, false, Constants.DURATION_30_SECONDS));
+        ActiveMQArtemis brokerB = ResourceManager.createArtemis(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile(), false);
+        assertThrows(WaitException.class, () -> ResourceManager.waitForBrokerDeployment(testNamespaceB, brokerB, false, Constants.DURATION_30_SECONDS));
         assertNull(getClient().getStatefulSet(testNamespaceB, brokerName + "-ss"));
     }
 }

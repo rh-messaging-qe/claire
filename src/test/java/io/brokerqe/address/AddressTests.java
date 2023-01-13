@@ -32,23 +32,22 @@ public class AddressTests extends AbstractSystemTests {
     void setupClusterOperator() {
         getClient().createNamespace(testNamespace, true);
         LOGGER.info("[{}] Creating new namespace to {}", testNamespace, testNamespace);
-        operator = getClient().deployClusterOperator(testNamespace);
+        operator = ResourceManager.deployArtemisClusterOperator(testNamespace);
     }
 
     @AfterAll
     void teardownClusterOperator() {
-        getClient().undeployClusterOperator(ResourceManager.getArtemisClusterOperator(testNamespace));
+        ResourceManager.undeployArtemisClusterOperator(operator);
         if (!ResourceManager.isClusterOperatorManaged()) {
             LOGGER.info("[{}] Deleting namespace to {}", testNamespace, testNamespace);
             getClient().deleteNamespace(testNamespace);
         }
-        ResourceManager.undeployAllClientsContainers();
     }
 
     @Test
     void persistAddressAfterCoBrokerRestart() {
-        ActiveMQArtemis broker = createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
-        ActiveMQArtemisAddress myAddress = createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         String brokerName = broker.getMetadata().getName();
         String operatorName = operator.getOperatorName();
@@ -71,7 +70,7 @@ public class AddressTests extends AbstractSystemTests {
 
             Pod finalBrokerPod = brokerPod;
             String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":61616";
-            TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+            TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
                 String commandOutput = example.execCommandOnPod(finalBrokerPod.getMetadata().getName(),
                         finalBrokerPod.getMetadata().getNamespace(), 60, finalCommand.split(" "));
                 LOGGER.info(commandOutput);
@@ -79,8 +78,9 @@ public class AddressTests extends AbstractSystemTests {
             });
 
         }
-        deleteArtemisAddress(testNamespace, myAddress);
-        deleteArtemis(testNamespace, broker);
+
+        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
 }
