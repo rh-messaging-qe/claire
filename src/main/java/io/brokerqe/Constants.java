@@ -31,12 +31,20 @@ public interface Constants {
     String CRD_ACTIVEMQ_ARTEMIS_GROUP = "broker.amq.io";
     // CRDs needed for typeless usage
     String CRD_ACTIVEMQ_ARTEMIS = "activemqartemises" + "." + CRD_ACTIVEMQ_ARTEMIS_GROUP;
-
     String WATCH_ALL_NAMESPACES = "*";
+
+    // Project related strings
+    String BROKER_KEYSTORE_ID = "broker.ks";
+    String BROKER_TRUSTSTORE_ID = "broker.ts";
+    String CLIENT_KEYSTORE_ID = "client.ks";
+    String CLIENT_TRUSTSTORE_ID = "client.ts";
+    String KEY_TRUSTSTORE_PASSWORD = "trustStorePassword";
+    String KEY_KEYSTORE_PASSWORD = "keyStorePassword";
 
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
     String LOGS_DEFAULT_DIR = System.getProperty("user.dir") + "/test-logs";
+    String CERTS_GENERATION_DIR = System.getProperty("user.dir") + "/certificates/";
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";
@@ -83,6 +91,12 @@ public interface Constants {
     // TODO alternative file does not exist?
 //    String OLD_EXAMPLE_ADDRESS_TOPIC_PATH = Constants.EXAMPLES_DIR_PATH + "address/address_topic.yaml";
     String OLD_EXAMPLE_ARTEMIS_SINGLE_PATH = Constants.EXAMPLES_DIR_PATH + "artemis/artemis-basic-deployment.yaml";
+
+    // Container labels & names
+    String LABEL_ACTIVEMQARTEMIS = "ActiveMQArtemis";
+
+    String PREFIX_SYSTEMTESTS_CLIENTS = "systemtests-clients";
+    String IMAGE_SYSTEMTEST_CLIENTS = "quay.io/messaging/cli-java:latest";
 
     // Container folder paths
     String CONTAINER_BROKER_HOME_DIR = "/home/jboss/amq-broker/";

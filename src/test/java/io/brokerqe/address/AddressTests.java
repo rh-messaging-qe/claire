@@ -10,7 +10,6 @@ import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
-import io.brokerqe.executor.Executor;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -57,11 +56,11 @@ public class AddressTests extends AbstractSystemTests {
             LOGGER.info(cmdOutput);
             assertThat(cmdOutput, containsString(myAddress.getSpec().getAddressName()));
 
-            getClient().reloadPodWithWait(testNamespace, operatorPod, operatorName);
-            getClient().reloadPodWithWait(testNamespace, brokerPod, brokerName);
+        getClient().reloadPodWithWait(testNamespace, operatorPod, operatorName);
+        getClient().reloadPodWithWait(testNamespace, brokerPod, brokerName);
 
-            brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
-            LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
+        brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
+        LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
 
             Pod finalBrokerPod = brokerPod;
             String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":" + allDefaultPort;
@@ -71,7 +70,6 @@ public class AddressTests extends AbstractSystemTests {
                 LOGGER.info(commandOutput);
                 return commandOutput.contains(myAddress.getSpec().getAddressName());
             });
-
         }
 
         ResourceManager.deleteArtemisAddress(testNamespace, myAddress);

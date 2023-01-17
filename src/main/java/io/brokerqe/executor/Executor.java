@@ -47,7 +47,7 @@ public class Executor implements AutoCloseable {
         }
     }
 
-    public String execCommandOnPod(String podName, String namespace, int maxExecSeconds, String... cmd) {
+    public String execCommandOnPod(String namespace, String podName, int maxExecSeconds, String... cmd) {
         Pod pod = client.pods().inNamespace(namespace).withName(podName).get();
         LOGGER.info("[{}] {} Running command: {}",
                 namespace, pod.getMetadata().getName(), Arrays.toString(cmd).replaceAll(",", ""));

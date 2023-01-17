@@ -110,15 +110,33 @@ public class AbstractSystemTests implements TestSeparator {
     /******************************************************************************************************************
      *  Helper methods
      ******************************************************************************************************************/
-    protected Acceptors createAcceptor(String name, String protocols) {
+
+    // TODO: Move these methods to some more appropriate location?
+    protected Acceptors createAcceptor(String name, String protocols, int port) {
+        return createAcceptor(name, protocols, port, false, false, null);
+    }
+
+    protected Acceptors createAcceptor(String name, String protocols, int port, boolean expose) {
+        return createAcceptor(name, protocols, port, expose, false, null);
+    }
+    protected Acceptors createAcceptor(String name, String protocols, int port, boolean expose, boolean sslEnabled, String sslSecretName) {
         Acceptors acceptors = new Acceptors();
         acceptors.setName(name);
         acceptors.setProtocols(protocols);
-        acceptors.setPort(5672);
+        acceptors.setPort(port);
+        acceptors.setExpose(expose);
+        if (sslEnabled) {
+            acceptors.setSslEnabled(sslEnabled);
+            if (sslSecretName != null) {
+                acceptors.setSslSecret(sslSecretName);
+            }
+        }
         return acceptors;
     }
 
     protected ActiveMQArtemis addAcceptorsWaitForPodReload(String namespace, List<Acceptors> acceptors, ActiveMQArtemis broker) {
+        List<String> acceptorNames = acceptors.stream().map(Acceptors::getName).collect(Collectors.toList());
+        LOGGER.info("[{}] Adding acceptors {} to broker {}", namespace, acceptorNames, broker.getMetadata().getName());
         broker.getSpec().setAcceptors(acceptors);
         broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
         String brokerName = broker.getMetadata().getName();

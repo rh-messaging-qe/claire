@@ -9,6 +9,7 @@ import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.clients.AmqpQpidClient;
 import io.brokerqe.clients.BundledAmqpMessagingClient;
@@ -89,7 +90,7 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     void sendReceiveAMQPMessageTest() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
-        Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire");
+        Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire", 5672);
         broker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors), broker);
 
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
@@ -98,7 +99,7 @@ public class SmokeTests extends AbstractSystemTests {
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
 
         // Get service/amqp acceptor name - svcName = "brokerName-XXXX-svc"
-        Service amqp = getClient().getServiceBrokerAcceptor(testNamespace, brokerName, "amqp-owire-acceptor");
+        Service amqp = getClient().geServiceBrokerAcceptorFirst(testNamespace, brokerName, "amqp-owire-acceptor");
 
         // Messaging tests
         int msgsExpected = 100;
@@ -145,10 +146,10 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     void sendReceiveSystemTestsClientMessageTest() {
         Deployment clients = ResourceManager.deployClientsContainer(testNamespace);
-        Pod clientsPod = getClient().getFirstPodByPrefixName(testNamespace, "systemtests-clients");
+        Pod clientsPod = getClient().getFirstPodByPrefixName(testNamespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
 
         ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
-        Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire");
+        Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire", 5672);
         artemisBroker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors), artemisBroker);
 
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
@@ -160,7 +161,7 @@ public class SmokeTests extends AbstractSystemTests {
         int received = 0;
 
         // Publisher - Receiver
-        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, brokerPod.getStatus().getPodIP(), "5672", myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
+        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, brokerPod.getStatus().getPodIP(), "5672", myAddress, msgsExpected);
         sent = messagingClient.sendMessages();
         received = messagingClient.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
@@ -168,7 +169,7 @@ public class SmokeTests extends AbstractSystemTests {
         assertThat(messagingClient.compareMessages(), is(true));
 
         // Subscriber - Publisher
-        MessagingClient messagingSubscriberClient = new AmqpQpidClient(clientsPod, brokerPod.getStatus().getPodIP(), "5672", myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
+        MessagingClient messagingSubscriberClient = new AmqpQpidClient(clientsPod, brokerPod.getStatus().getPodIP(), "5672", myAddress, msgsExpected);
         messagingSubscriberClient.subscribe();
         sent = messagingSubscriberClient.sendMessages();
         received = messagingSubscriberClient.receiveMessages();

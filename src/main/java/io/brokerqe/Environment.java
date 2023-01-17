@@ -66,7 +66,7 @@ public class Environment {
             envVarsSB.append(Constants.EV_LOGS_LOCATION).append("=").append(logsDirLocation).append(Constants.LINE_SEPARATOR);
         }
 
-        LOGGER.debug(envVarsSB.toString());
+        LOGGER.info(envVarsSB.toString());
     }
 
     private void checkSetProvidedImages() {

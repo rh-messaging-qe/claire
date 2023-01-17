@@ -48,9 +48,9 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
     public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
         String testClass = context.getRequiredTestClass().getName();
         String testMethod = context.getRequiredTestMethod().getName();
-
         Object testInstance = context.getRequiredTestInstance();
         List<String> testNamespaces = getTestNamespaces(testInstance);
+
         Environment testEnv = (Environment) getTestInstanceDeclaredField(testInstance, "testEnvironment");
         archiveDir = testEnv.getLogsDirLocation() + Constants.FILE_SEPARATOR + createArchiveName();
         kubeClient = (KubeClient) getTestInstanceDeclaredField(testInstance, "client");
@@ -62,6 +62,9 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
             LOGGER.debug("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirName);
             TestUtils.createDirectory(archiveDirName);
             collectTestData(testNamespace, archiveDirName);
+            if (TestUtils.directoryExists(Constants.CERTS_GENERATION_DIR)) {
+                TestUtils.copyDirectoryFlat(Constants.CERTS_GENERATION_DIR, archiveDirName + Constants.FILE_SEPARATOR + "certificates");
+            }
         }
         throw throwable;
     }
@@ -128,7 +131,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         // TODO: /home/jboss/artemis-broker
         final String amqBrokerEtcHome = Constants.CONTAINER_BROKER_HOME_ETC_DIR;
         for (Pod pod : pods) {
-            if (pod.getMetadata().getLabels().containsKey("ActiveMQArtemis")) {
+            if (pod.getMetadata().getLabels().containsKey(Constants.LABEL_ACTIVEMQARTEMIS)) {
                 String dirName = archiveLocation + Constants.FILE_SEPARATOR + "broker_etc" + Constants.FILE_SEPARATOR + pod.getMetadata().getName();
                 TestUtils.createDirectory(dirName);
 

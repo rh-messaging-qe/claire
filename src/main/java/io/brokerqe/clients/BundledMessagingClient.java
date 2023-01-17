@@ -4,6 +4,7 @@
  */
 package io.brokerqe.clients;
 
+import io.brokerqe.Constants;
 import io.brokerqe.KubeClient;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.executor.Executor;
@@ -27,7 +28,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private int sentMessages = 0;
     private ExecWatch subscriberExecWatch;
     private Executor backgroundExecutor;
-    private KubeClient client;
+    private final KubeClient kubeClient;
 
     public BundledMessagingClient(Pod sourcePod, String destinationUrl, String destinationPort, String destinationAddress, String destinationQueue, int messageCount) {
         this.brokerPod = sourcePod;
@@ -37,7 +38,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
         this.destinationQueue = destinationQueue;
         this.messageCount = messageCount;
 
-        this.client = ResourceManager.getKubeClient().inNamespace(brokerPod.getMetadata().getNamespace());
+        this.kubeClient = ResourceManager.getKubeClient().inNamespace(brokerPod.getMetadata().getNamespace());
         this.protocol = getProtocol();
     }
 
@@ -101,11 +102,8 @@ public abstract class BundledMessagingClient implements MessagingClient {
     public int sendMessages() {
         String cmdOutput;
         String command = constructClientCommand(PRODUCER);
-        try (Executor example = new Executor()) {
-            cmdOutput = example.execCommandOnPod(this.brokerPod.getMetadata().getName(),
-                    this.brokerPod.getMetadata().getNamespace(), 180, command.split(" "));
-            LOGGER.debug(cmdOutput);
-        }
+        cmdOutput = kubeClient.executeCommandInPod(brokerPod.getMetadata().getNamespace(), brokerPod, command, Constants.DURATION_3_MINUTES);
+        LOGGER.debug(cmdOutput);
         return parseMessageCount(cmdOutput, PRODUCER);
     }
 
@@ -118,11 +116,8 @@ public abstract class BundledMessagingClient implements MessagingClient {
             // executed client on foreground
             String cmdOutput;
             String command = constructClientCommand(CONSUMER);
-            try (Executor example = new Executor()) {
-                cmdOutput = example.execCommandOnPod(this.brokerPod.getMetadata().getName(),
-                        this.brokerPod.getMetadata().getNamespace(), 180, command.split(" "));
-                LOGGER.debug(cmdOutput);
-            }
+            cmdOutput = kubeClient.executeCommandInPod(brokerPod.getMetadata().getNamespace(), brokerPod, command, Constants.DURATION_3_MINUTES);
+            LOGGER.debug(cmdOutput);
             return parseMessageCount(cmdOutput, CONSUMER);
         }
     }

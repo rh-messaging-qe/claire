@@ -4,6 +4,8 @@
  */
 package io.brokerqe.clients;
 
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.brokerqe.Constants;
 import io.brokerqe.executor.Executor;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
@@ -18,6 +20,11 @@ import java.util.stream.Collectors;
 
 public class AmqpQpidClient extends MessagingAmqpClient {
 
+    private String keystorePassword;
+    private String trustStore;
+    private String trustStorePassword;
+    private String keystore;
+    private String brokerUri;
     private Pod clientsPod;
     private String destinationUrl;
     private String destinationPort;
@@ -26,29 +33,44 @@ public class AmqpQpidClient extends MessagingAmqpClient {
     String clientDestination;
     private int messageCount;
 
+    private boolean secured;
+
     private ExecWatch subscriberExecWatch;
     private Executor backgroundExecutor;
     private List<JSONObject> sentMessages;
     private List<JSONObject> receivedMessages;
 
-    public AmqpQpidClient(Pod clientsPod, String destinationUrl, String destinationPort, String destinationAddress, String destinationQueue, int messageCount) {
+    public AmqpQpidClient(Pod clientsPod, String destinationUrl, String destinationPort, ActiveMQArtemisAddress address, int messageCount) {
+        this.secured = false;
         this.clientsPod = clientsPod;
         this.destinationUrl = destinationUrl;
         this.destinationPort = destinationPort;
-        this.destinationAddress = destinationAddress;
-        this.destinationQueue = destinationQueue;
+        this.destinationAddress = address.getSpec().getAddressName();
+        this.destinationQueue = address.getSpec().getQueueName();
         this.messageCount = messageCount;
+    }
+
+    public AmqpQpidClient(Pod clientsPod, String brokerUri, ActiveMQArtemisAddress address, int messageCount,
+                          String keystore, String keystorePassword, String trustStore, String trustStorePassword) {
+        this.secured = true;
+        this.clientsPod = clientsPod;
+        this.brokerUri = brokerUri;
+        this.destinationAddress = address.getSpec().getAddressName();
+        this.destinationQueue = address.getSpec().getQueueName();
+        this.messageCount = messageCount;
+        this.keystore = keystore;
+        this.keystorePassword = keystorePassword;
+        this.trustStore = trustStore;
+        this.trustStorePassword = trustStorePassword;
+
     }
 
     @Override
     public int sendMessages() {
         String cmdOutput;
         String command = constructClientCommand(SENDER);
-        try (Executor example = new Executor()) {
-            cmdOutput = example.execCommandOnPod(this.clientsPod.getMetadata().getName(),
-                    this.clientsPod.getMetadata().getNamespace(), 180, command.split(" "));
-            LOGGER.debug(cmdOutput);
-        }
+        cmdOutput = kubeClient.executeCommandInPod(clientsPod.getMetadata().getNamespace(), clientsPod, command, Constants.DURATION_3_MINUTES);
+        LOGGER.debug(cmdOutput);
         this.sentMessages = parseMessages(cmdOutput);
         return sentMessages.size();
     }
@@ -62,11 +84,8 @@ public class AmqpQpidClient extends MessagingAmqpClient {
             // executed client on foreground
             String cmdOutput;
             String command = constructClientCommand(RECEIVER);
-            try (Executor example = new Executor()) {
-                cmdOutput = example.execCommandOnPod(this.clientsPod.getMetadata().getName(),
-                        this.clientsPod.getMetadata().getNamespace(), 180, command.split(" "));
-                LOGGER.debug(cmdOutput);
-            }
+            cmdOutput = kubeClient.executeCommandInPod(clientsPod.getMetadata().getNamespace(), clientsPod, command, Constants.DURATION_3_MINUTES);
+            LOGGER.debug(cmdOutput);
             this.receivedMessages = parseMessages(cmdOutput);
             return receivedMessages.size();
         }
@@ -79,13 +98,14 @@ public class AmqpQpidClient extends MessagingAmqpClient {
 
     private List<JSONObject> parseMessages(String output) {
         List<JSONObject> jsonMessages = new ArrayList<>();
-        try {
-            String[] lines = output.split("\n");
-            for (String line: lines) {
+        String[] lines = output.split("\n");
+        for (String line: lines) {
+            try {
                 jsonMessages.add(new JSONObject(line));
+            } catch (JSONException e) {
+                LOGGER.error("Unable to parse messages from client output. Some error happened! \n{}", line);
+                throw new RuntimeException(e); // do we want to carry on with execution
             }
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
         }
         return jsonMessages;
     }
@@ -170,14 +190,28 @@ public class AmqpQpidClient extends MessagingAmqpClient {
     private String constructClientCommand(String clientType, int timeout) {
         // cli-qpid-sender --broker 172.30.177.210:5672 --address myAddress0::myQueue0 --count 10 --log-msgs dict
         // cli-qpid-receiver --broker 172.30.177.210:5672 --address myAddress0::myQueue0 --count 10 --log-msgs dict
+        String command;
         if (destinationAddress.equals(destinationQueue)) {
             clientDestination = destinationAddress;
         } else {
             clientDestination = String.format("%s::%s", destinationAddress, destinationQueue);
         }
-
-        String command = String.format("cli-qpid-%s --broker %s:%s --address %s --log-msgs json",
-                clientType, destinationUrl, destinationPort, clientDestination);
+        if (secured) {
+            // java -Djavax.net.ssl.keyStore="/etc/ssl-stores/$CLIENT_KEYSTORE" -Djavax.net.ssl.keyStorePassword="$PASSWORD" -Djavax.net.ssl.trustStore="/etc/ssl-stores/$CLIENT_TRUSTSTORE" -Djavax.net.ssl.trustStorePassword="$PASSWORD"
+            // -jar /client_executable/cli-qpid-jms.jar sender --broker-uri $broker_address:443 --log-msgs json --conn-auth-mechanisms PLAIN --conn-username admin --conn-password admin --address "MyQueue0" --count 1 --msg-content "content" --conn-ssl-verify-host true
+            String javaPrefix = String.format("java -Djavax.net.ssl.keyStore=/etc/ssl-stores/%s " +
+                            "-Djavax.net.ssl.keyStorePassword=%s " +
+                            "-Djavax.net.ssl.trustStore=/etc/ssl-stores/%s " +
+                            "-Djavax.net.ssl.trustStorePassword=%s -jar",
+                    keystore, keystorePassword, trustStore, trustStorePassword);
+//            https://github.com/rh-messaging/cli-java/issues/139
+//            String tlsOptions = String.format("--conn-ssl-keystore-location %s --conn-ssl-keystore-password %s --conn-ssl-truststore-location %s --conn-ssl-truststore-password %s", keystore, keystorePassword, trustStore, trustStorePassword);
+            command = String.format("%s /main/cli-qpid.jar %s --broker-uri amqps://%s:443 --address %s --log-msgs json --conn-ssl-verify-host true ",
+                    javaPrefix, clientType, brokerUri, clientDestination);
+        } else {
+            command = String.format("cli-qpid-%s --broker %s:%s --address %s --log-msgs json",
+                    clientType, destinationUrl, destinationPort, clientDestination);
+        }
 
         if (messageCount != -2) {
             command += " --count " + messageCount;

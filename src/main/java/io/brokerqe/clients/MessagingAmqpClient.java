@@ -4,6 +4,7 @@
  */
 package io.brokerqe.clients;
 
+import io.brokerqe.Constants;
 import io.brokerqe.KubeClient;
 import io.brokerqe.ResourceManager;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -17,49 +18,111 @@ public abstract class MessagingAmqpClient implements MessagingClient {
     static KubeClient kubeClient = ResourceManager.getKubeClient();
 
     public static Deployment deployClientsContainer(String namespace) {
+        return deployClientsContainer(namespace, false, null);
+    }
+    public static Deployment deployClientsContainer(String namespace, boolean secured, String secretName) {
         long userId = kubeClient.getAvailableUserId(namespace, 1000L);
         Deployment deploymentSystemClients = new DeploymentBuilder()
-                .withNewMetadata()
-                    .withName("systemtests-clients")
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(1)
-                    .withNewSelector()
-                        .addToMatchLabels("app", "systemtests-clients")
-                    .endSelector()
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .addToLabels("app", "systemtests-clients")
-                        .endMetadata()
-                        .withNewSpec()
+            .withNewMetadata()
+                .withName(Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(1)
+                .withNewSelector()
+                    .addToMatchLabels("app", Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+                .endSelector()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .addToLabels("app", Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+                    .endMetadata()
+                    .withNewSpec()
+                        .editOrNewSecurityContext()
+                            .withRunAsNonRoot(true)
+                            .withNewSeccompProfile()
+                                .withType("RuntimeDefault") // localhost
+                            .endSeccompProfile()
+                        .withRunAsUser(userId)
+                        .endSecurityContext()
+                        .addNewContainer()
+                            .withName(Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+                            .withImage(Constants.IMAGE_SYSTEMTEST_CLIENTS)
+                            .withCommand("sleep")
+                            .withArgs("infinity")
+                            .withImagePullPolicy("Always")
                             .editOrNewSecurityContext()
+                                .withPrivileged(false)
+                                .withAllowPrivilegeEscalation(false)
                                 .withRunAsNonRoot(true)
-                                .withNewSeccompProfile()
-                                    .withType("RuntimeDefault") // localhost
-                                .endSeccompProfile()
-                            .withRunAsUser(userId)
+                                .withNewCapabilities()
+                                    .withDrop("ALL")
+                                .endCapabilities()
                             .endSecurityContext()
-                            .addNewContainer()
-                                .withName("systemtests-clients")
-                                .withImage("quay.io/messaging/cli-java:latest")
-                                .withCommand("sleep")
-                                .withArgs("infinity")
-                                .withImagePullPolicy("Always")
-                                .editOrNewSecurityContext()
-                                    .withPrivileged(false)
-                                    .withAllowPrivilegeEscalation(false)
-                                    .withRunAsNonRoot(true)
-                                    .withNewCapabilities()
-                                        .withDrop("ALL")
-                                    .endCapabilities()
-                                .endSecurityContext()
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build();
 
-        Deployment deployment = kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).resource(deploymentSystemClients).createOrReplace();
+        Deployment deploymentSystemClientsSecured = new DeploymentBuilder()
+            .withNewMetadata()
+                .withName(Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(1)
+                .withNewSelector()
+                    .addToMatchLabels("app", Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+                .endSelector()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .addToLabels("app", Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+                    .endMetadata()
+                    .withNewSpec()
+                        .editOrNewSecurityContext()
+                            .withRunAsNonRoot(true)
+                            .withNewSeccompProfile()
+                                .withType("RuntimeDefault") // localhost
+                            .endSeccompProfile()
+                            .withRunAsUser(userId)
+                        .endSecurityContext()
+                        .addNewVolume()
+                            .withName("client-stores-volume")
+                            .withNewSecret()
+                                .withSecretName(secretName)
+                                .withDefaultMode(420)
+                            .endSecret()
+                        .endVolume()
+                        .addNewContainer()
+                            .withName(Constants.PREFIX_SYSTEMTESTS_CLIENTS)
+                            .withImage(Constants.IMAGE_SYSTEMTEST_CLIENTS)
+                            .withCommand("sleep")
+                            .withArgs("infinity")
+                            .withImagePullPolicy("Always")
+                            .editOrNewSecurityContext()
+                                .withPrivileged(false)
+                                .withAllowPrivilegeEscalation(false)
+                                .withRunAsNonRoot(true)
+                                .withNewCapabilities()
+                                    .withDrop("ALL")
+                                .endCapabilities()
+                            .endSecurityContext()
+                            .addNewVolumeMount()
+                                .withName("client-stores-volume")
+                                .withMountPath("/etc/ssl-stores")
+                                .withReadOnly()
+                            .endVolumeMount()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build();
+
+        Deployment deployment;
+        if (secured) {
+            deployment = kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).resource(deploymentSystemClientsSecured).createOrReplace();
+        } else {
+            deployment = kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).resource(deploymentSystemClients).createOrReplace();
+        }
+
         LOGGER.debug("[{}] Wait 30s for systemtest-clients deployment to be ready", namespace);
         kubeClient.getKubernetesClient().resource(deployment).inNamespace(namespace).waitUntilReady(30, TimeUnit.SECONDS);
         return deployment;

@@ -139,7 +139,7 @@ public class ResourceManager {
     public static ActiveMQArtemis createArtemis(String namespace, String filePath, boolean waitForDeployment) {
         ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(filePath, ActiveMQArtemis.class);
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
-        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
+        LOGGER.info("[{}] Created ActiveMQArtemis {}", namespace, artemisBroker);
         if (waitForDeployment) {
             waitForBrokerDeployment(namespace, artemisBroker);
         }
@@ -155,7 +155,7 @@ public class ResourceManager {
             waitForBrokerDeployment(namespace, brokerCR);
         }
         ResourceManager.addArtemisBroker(brokerCR);
-        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", brokerCR, namespace);
+        LOGGER.info("[{}] Created ActiveMQArtemis {} in namespace {}", namespace, brokerCR);
         return brokerCR;
     }
 
@@ -177,12 +177,13 @@ public class ResourceManager {
         String brokerName = broker.getMetadata().getName();
         ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).delete();
         if (waitForDeletion) {
-            TestUtils.waitFor("StatefulSet to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+            TestUtils.waitFor("ActiveMQArtemis statefulSet & related pods to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
                 StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
                 return ss == null && kubeClient.listPodsByPrefixInName(namespace, brokerName).size() == 0;
             });
         }
         ResourceManager.removeArtemisBroker(broker);
+        LOGGER.info("[{}] Deleted ActiveMQArtemis {}", namespace, broker.getMetadata().getName());
     }
 
     public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String filePath) {
@@ -195,7 +196,7 @@ public class ResourceManager {
             throw new RuntimeException(e);
         }
         ResourceManager.addArtemisAddress(artemisAddress);
-        LOGGER.info("Created ActiveMQArtemisAddress {} in namespace {}", artemisAddress, namespace);
+        LOGGER.info("[{}] Created ActiveMQArtemisAddress {}", namespace, artemisAddress.getMetadata().getName());
         return artemisAddress;
     }
 
@@ -205,20 +206,20 @@ public class ResourceManager {
     public static void deleteArtemisAddress(String namespace, ActiveMQArtemisAddress artemisAddress) {
         List<StatusDetails> status = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).delete();
         ResourceManager.removeArtemisAddress(artemisAddress);
-        LOGGER.info("Deleted ActiveMQArtemisAddress {} in namespace {}", artemisAddress.getMetadata().getName(), namespace);
+        LOGGER.info("[{}] Deleted ActiveMQArtemisAddress {}", namespace, artemisAddress.getMetadata().getName());
     }
 
     public static ActiveMQArtemisSecurity createArtemisSecurity(String namespace, String filePath) {
         ActiveMQArtemisSecurity artemisSecurity = TestUtils.configFromYaml(filePath, ActiveMQArtemisSecurity.class);
         artemisSecurity = ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).createOrReplace();
-        LOGGER.info("Created ActiveMQArtemisSecurity {} in namespace {}", artemisSecurity, namespace);
+        LOGGER.info("[{}] Created ActiveMQArtemisSecurity {}", namespace, artemisSecurity.getMetadata().getName());
         ResourceManager.addArtemisSecurity(artemisSecurity);
         return artemisSecurity;
     }
 
     public static List<StatusDetails> deleteArtemisSecurity(String namespace, ActiveMQArtemisSecurity artemisSecurity) {
         List<StatusDetails> status = ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).delete();
-        LOGGER.info("Deleted ActiveMQArtemisSecurity {} in namespace {}", artemisSecurity.getMetadata().getName(), namespace);
+        LOGGER.info("[{}] Deleted ActiveMQArtemisSecurity {}", namespace, artemisSecurity.getMetadata().getName());
         ResourceManager.removeArtemisSecurity(artemisSecurity);
         return status;
     }
@@ -232,7 +233,7 @@ public class ResourceManager {
     }
 
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout) {
-        LOGGER.info("Waiting for creation of broker {} in namespace {}", broker.getMetadata().getName(), namespace);
+        LOGGER.info("[{}] Waiting for creation of broker {}", namespace, broker.getMetadata().getName());
         String brokerName = broker.getMetadata().getName();
         if (reloadExisting) {
             // TODO: make more generic and resource specific wait
@@ -248,6 +249,12 @@ public class ResourceManager {
     // MessagingClient Deployment
     public static Deployment deployClientsContainer(String testNamespace) {
         Deployment deployment = MessagingAmqpClient.deployClientsContainer(testNamespace);
+        deployedContainers.put(deployment, testNamespace);
+        return deployment;
+    }
+
+    public static Deployment deploySecuredClientsContainer(String testNamespace, String secret) {
+        Deployment deployment = MessagingAmqpClient.deployClientsContainer(testNamespace, true, secret);
         deployedContainers.put(deployment, testNamespace);
         return deployment;
     }
@@ -299,7 +306,7 @@ public class ResourceManager {
         }
         // Wait for namespaces to be deleted
         for (String namespace : deployedNamespaces) {
-            TestUtils.waitFor("Deleting namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES,
+            TestUtils.waitFor("Deletion of namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES,
                     () -> !kubeClient.namespaceExists(namespace));
         }
     }

@@ -20,12 +20,12 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
-//@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public final class TestUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
@@ -139,7 +139,6 @@ public final class TestUtils {
         }
     }
 
-
     public static void configToYaml(File yamlOutputFile, Object yamlData) {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
@@ -165,7 +164,6 @@ public final class TestUtils {
         configToYaml(copyPath.toFile(), updatedCRB);
         return copyPath.toString();
     }
-
 
     public static String updateOperatorFileWatchNamespaces(Path yamlFile, List<String> watchedNamespaces) {
         String newCOFileName = "operator_cw_" + TestUtils.getRandomString(3) + ".yaml";
@@ -198,16 +196,34 @@ public final class TestUtils {
 
     public static void createFile(String fileName, String content) {
         try {
-            Files.createFile(Paths.get(fileName));
             Files.write(Paths.get(fileName), content.getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public static boolean directoryExists(String directoryName) {
+        Path path = Paths.get(directoryName);
+        return Files.exists(path) && Files.isDirectory(path);
+    }
+
     public static void createDirectory(String directoryName) {
         try {
             Files.createDirectories(Paths.get(directoryName));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void copyDirectoryFlat(String source, String target) {
+        try {
+            Path sourceDir = Paths.get(source);
+            Path targetDir = Paths.get(target);
+            Files.copy(sourceDir, targetDir, StandardCopyOption.REPLACE_EXISTING);
+            for (File file : sourceDir.toFile().listFiles()) {
+                Path sourcePath = file.toPath();
+                Files.copy(sourcePath, targetDir.resolve(sourcePath.getFileName()));
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

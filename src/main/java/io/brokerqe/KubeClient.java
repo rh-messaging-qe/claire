@@ -4,60 +4,86 @@
  */
 package io.brokerqe;
 
+import io.brokerqe.executor.Executor;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobList;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 public class KubeClient {
     protected final KubernetesClient client;
+    private final KubernetesPlatform platform;
     protected String namespace;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KubeClient.class);
-
-    public KubeClient(String namespace) {
-        LOGGER.debug("Creating client in namespace: {}", namespace);
-        Config config = Config.autoConfigure(System.getenv().getOrDefault("KUBE_CONTEXT", null));
-
-        this.client = new KubernetesClientBuilder()
-                .withConfig(config)
-                .build()
-                .adapt(OpenShiftClient.class);
-        this.namespace = namespace;
-        LOGGER.info("[{}] Created KubernetesClient: {}.{} - {}", namespace, client.getKubernetesVersion().getMajor(), client.getKubernetesVersion().getMinor(), client.getMasterUrl());
-    }
-
-    public KubeClient(KubernetesClient client, String namespaceName) {
-        LOGGER.debug("Creating client in namespace: {}", namespaceName);
-        this.client = client;
-        this.namespace = namespaceName;
-    }
 
     // ============================
     // ---------> CLIENT <---------
     // ============================
 
+    public KubeClient(String namespace) {
+        LOGGER.debug("Creating client in namespace: {}", namespace);
+        Config config = Config.autoConfigure(System.getenv().getOrDefault("KUBE_CONTEXT", null));
+        KubernetesClient tmpClient = new KubernetesClientBuilder().withConfig(config).build().adapt(OpenShiftClient.class);
+        KubernetesPlatform tmpPlatform;
+        try {
+            // if following command works, we are on openshift cluster instance
+            ((OpenShiftClient) tmpClient).routes().inNamespace("default").list();
+            tmpPlatform = KubernetesPlatform.OPENSHIFT;
+        } catch (ClassCastException | KubernetesClientException e) {
+            tmpPlatform = KubernetesPlatform.KUBERNETES;
+            tmpClient.close();
+            tmpClient = new KubernetesClientBuilder().withConfig(config).build().adapt(KubernetesClient.class);
+        }
+        client = tmpClient;
+        platform = tmpPlatform;
+        this.namespace = namespace;
+        LOGGER.info("[{}] Created KubernetesClient for {}: {}.{} - {}", namespace, platform, client.getKubernetesVersion().getMajor(), client.getKubernetesVersion().getMinor(), client.getMasterUrl());
+    }
+
     public KubernetesClient getKubernetesClient() {
         return client;
+    }
+
+    public KubernetesPlatform getKubernetesType() {
+        return this.platform;
+    }
+
+    public KubernetesPlatform getKubernetesType(KubeClient client) {
+        return client.getKubernetesType();
     }
 
     // ===============================
@@ -89,7 +115,7 @@ public class KubeClient {
     public void deleteNamespace(String namespaceName) {
         LOGGER.info("Deleting namespace {}", namespaceName);
         this.getKubernetesClient().namespaces().withName(namespaceName).delete();
-        TestUtils.waitFor("Deleting namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+        TestUtils.waitFor("Deletion of namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return !this.namespaceExists(namespaceName);
         });
         ResourceManager.removeNamespace(namespaceName);
@@ -214,6 +240,17 @@ public class KubeClient {
         this.waitUntilPodIsReady(namespace, this.getFirstPodByPrefixName(namespace, podName).getMetadata().getName());
     }
 
+    public String executeCommandInPod(String namespace, Pod pod, String cmd, long timeout) {
+        try (Executor executor = new Executor()) {
+            executor.execCommandOnPod(namespace, pod.getMetadata().getName(), 30, "/bin/bash", "-c", String.join(" ", cmd));
+            try {
+                return executor.getListenerData().get(timeout, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     // ==================================
     // ---------> STATEFUL SET <---------
     // ==================================
@@ -269,18 +306,104 @@ public class KubeClient {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get().getSpec().getSelector();
     }
 
-    // ==============================
-    // ---------> SERVICES <---------
-    // ==============================
+    // =============================
+    // ---------> SERVICE <---------
+    // =============================
 
-    public Service getServiceByNames(String namespaceName, String serviceName) {
-        return client.services().inNamespace(namespaceName).withName(serviceName).get();
+    public List<Service> getServiceByNames(String namespaceName) {
+        return client.services().inNamespace(namespaceName).list().getItems();
     }
 
-    public Service getServiceBrokerAcceptor(String namespaceName, String brokerName, String acceptorName) {
+    public Service geServiceBrokerAcceptorFirst(String namespaceName, String brokerName, String acceptorName) {
+        return getServiceBrokerAcceptors(namespaceName, brokerName, acceptorName).get(0);
+    }
+
+    public List<Service> getServiceBrokerAcceptors(String namespaceName, String brokerName, String acceptorName) {
         return client.services().inNamespace(namespaceName).list().getItems().stream()
                 .filter(svc -> svc.getMetadata().getName().startsWith(brokerName + "-" + acceptorName)
-                ).findFirst().get();
+                ).collect(Collectors.toList());
+    }
+
+    // =====================================
+    // ----------> INGRESS/ROUTE <----------
+    // =====================================
+    // Route:
+    // artemis-broker-my-amqp-0-svc-rte    artemis-broker-my-amqp-0-svc-rte-namespacename.apps.lala.amq-broker-qe.my-host.com
+    // Ingress
+    // artemis-broker-my-amqp-0-svc-ing    artemis-broker-my-amqp-0-svc-ing.apps.artemiscloud.io
+
+    public List<String> getExternalAccessServiceUrl(String namespaceName, String externalAccessName) {
+        List<String> externalUrls = new ArrayList<>();
+        Ingress ingress = getIngressByName(namespaceName, externalAccessName);
+        if (ingress == null) {
+            Route route = getRouteByName(namespaceName, externalAccessName);
+            externalUrls.add(route.getSpec().getHost());
+        } else {
+            externalUrls.add(ingress.getSpec().getRules().get(0).getHost());
+        }
+        return externalUrls;
+    }
+
+    public List<String> getExternalAccessServiceUrlPrefixName(String namespaceName, String externalAccessPrefixName) {
+        List<String> externalUrls = new ArrayList<>();
+        if (this.getKubernetesType().equals(KubernetesPlatform.KUBERNETES)) {
+            List<Ingress> ingresses = getIngressByPrefixName(namespaceName, externalAccessPrefixName);
+            for (Ingress ingress : ingresses) {
+                externalUrls.add(ingress.getSpec().getRules().get(0).getHost());
+            }
+        } else {
+            List<Route> routes = getRouteByPrefixName(namespaceName, externalAccessPrefixName);
+            for (Route route : routes) {
+                externalUrls.add(route.getSpec().getHost());
+            }
+        }
+        LOGGER.debug("[{}] Found externalServiceUrl (ingress/route) {}", namespaceName, externalUrls);
+        return externalUrls;
+    }
+
+    public Ingress getIngressByName(String namespaceName, String ingressName) {
+        Ingress ingress = null;
+        LOGGER.debug("[{}] Searching for ingress with {}", namespaceName, ingressName);
+        try {
+            ingress = client.network().v1().ingresses().inNamespace(namespaceName).withName(ingressName).get();
+        } catch (KubernetesClientException e) {
+            LOGGER.debug("[{}] Calling for Ingress resource on different platform", namespaceName);
+        }
+        return ingress;
+    }
+
+    public List<Ingress> getIngressByPrefixName(String namespaceName, String ingressPrefixName) {
+        List<Ingress> ingresses = null;
+        LOGGER.debug("[{}] Searching for ingresses with {}*", namespaceName, ingressPrefixName);
+        try {
+            ingresses = client.network().v1().ingresses().inNamespace(namespaceName).list().getItems().stream().filter(
+                    ingress -> ingress.getMetadata().getName().startsWith(ingressPrefixName)).collect(Collectors.toList());
+        } catch (KubernetesClientException e) {
+            LOGGER.debug("[{}] Calling for Ingress resource on different platform {}", namespace, e.getMessage());
+        }
+        return ingresses;
+    }
+
+    public Route getRouteByName(String namespaceName, String routeName) {
+        Route route = null;
+        LOGGER.debug("[{}] Searching for route with {}*", namespaceName, routeName);
+        try {
+            route = ((OpenShiftClient) client).routes().inNamespace(namespaceName).withName(routeName).get();
+        } catch (KubernetesClientException e) {
+            LOGGER.debug("[{}] Calling for Ingress resource on different platform", namespaceName);
+        }
+        return route;
+    }
+
+    public List<Route> getRouteByPrefixName(String namespaceName, String routePrefixName) {
+        List<Route> routes = null;
+        try {
+            routes = ((OpenShiftClient) client).routes().inNamespace(namespaceName).list().getItems().stream().filter(
+                    route -> route.getMetadata().getName().startsWith(routePrefixName)).collect(Collectors.toList());
+        } catch (KubernetesClientException e) {
+            LOGGER.debug("[{}] Calling for Route resource on different platform", namespaceName);
+        }
+        return routes;
     }
 
     // ==========================
@@ -343,6 +466,57 @@ public class KubeClient {
     public List<Job> listJobs(String namePrefix) {
         return client.batch().v1().jobs().inNamespace(getNamespace()).list().getItems().stream()
             .filter(job -> job.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
+    }
+
+    // ============================
+    // ---------> SECRET <---------
+    // ============================
+    public Secret createSecret(String namespaceName, String secretName, Map<String, String> data, boolean waitForCreation) {
+        Secret secret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(namespaceName)
+                .endMetadata()
+                .withData(data)
+                .build();
+        client.secrets().inNamespace(namespaceName).resource(secret).createOrReplace();
+        if (waitForCreation) {
+            waitForSecretCreation(namespaceName, secretName);
+        }
+        return secret;
+    }
+
+    public void waitForSecretCreation(String namespaceName, String secretName) {
+        TestUtils.waitFor("creation of secret " + secretName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
+                () -> client.secrets().inNamespace(namespaceName).withName(secretName).get() != null);
+    }
+
+    public void deleteSecret(String namespaceName, String secretName) {
+        deleteSecret(namespaceName, secretName, true);
+    }
+
+    public void deleteSecret(String namespaceName, String secretName, boolean waitForDeletion) {
+        client.secrets().inNamespace(namespaceName).withName(secretName).delete();
+        if (waitForDeletion) {
+            LOGGER.info("[{}] Waiting for secret deletion {}", namespaceName, secretName);
+            TestUtils.waitFor(" deletion of secret " + secretName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
+                    () -> client.secrets().inNamespace(namespaceName).withName(secretName).get() == null);
+        }
+        LOGGER.info("[{}] Deleted secret {}", namespaceName, secretName);
+
+    }
+
+    public X509Certificate getCertificateFromSecret(Secret secret, String dataKey) {
+        String caCert = secret.getData().get(dataKey);
+        byte[] decoded = Base64.getDecoder().decode(caCert);
+        X509Certificate cacert = null;
+        try {
+            cacert = (X509Certificate)
+                    CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(decoded));
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        }
+        return cacert;
     }
 
 }
