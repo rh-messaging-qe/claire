@@ -99,7 +99,7 @@ public class ArtemisCloudClusterOperator {
     public void watchNamespaces(List<String> watchedNamespaces) {
         if (!isNamespaced) {
             String operatorFile = getArtemisOperatorFile();
-            // Replace 110_operator.yaml file to use custom updated file
+            // Replace operator.yaml file to use custom updated file
             // Update operator file with watch-namespaces
             LOGGER.info("Updating {} with watched namespaces {}", operatorFile, watchedNamespaces);
             String updatedClusterOperatorFileName = TestUtils.updateOperatorFileWatchNamespaces(Paths.get(operatorFile), watchedNamespaces);
@@ -117,7 +117,7 @@ public class ArtemisCloudClusterOperator {
     public void updateClusterRoleBinding(String namespace) {
         if (!isNamespaced) {
             String clusterRoleBindingFile = getArtemisClusterRoleBindingFile();
-            // Update namespace in 070_cluster_role_binding.yaml file to use custom updated file
+            // Update namespace in cluster_role_binding.yaml file to use custom updated file
             LOGGER.info("Updating {} to use namespaces {}", clusterRoleBindingFile, namespace);
             String updatedClusterRoleBindingFile = TestUtils.updateClusterRoleBindingFileNamespace(Paths.get(clusterRoleBindingFile), namespace);
             // Replace CRB file by newly generated in filesToDeployList
