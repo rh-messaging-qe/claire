@@ -314,6 +314,11 @@ public class KubeClient {
         return client.services().inNamespace(namespaceName).list().getItems();
     }
 
+    public Service getServiceByName(String namespaceName, String serviceName) {
+        return client.services().inNamespace(namespaceName).withName(serviceName).get();
+    }
+
+
     public Service geServiceBrokerAcceptorFirst(String namespaceName, String brokerName, String acceptorName) {
         return getServiceBrokerAcceptors(namespaceName, brokerName, acceptorName).get(0);
     }

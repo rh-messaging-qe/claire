@@ -50,11 +50,9 @@ public class AddressTests extends AbstractSystemTests {
 
         LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
         String command = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":" + allDefaultPort;
-        try (Executor example = new Executor();) {
-            String cmdOutput = example.execCommandOnPod(brokerPod.getMetadata().getName(),
-                    brokerPod.getMetadata().getNamespace(), 60, command.split(" "));
-            LOGGER.info(cmdOutput);
-            assertThat(cmdOutput, containsString(myAddress.getSpec().getAddressName()));
+        String cmdOutput = getClient().executeCommandInPod(testNamespace, brokerPod, command, Constants.DURATION_1_MINUTE);
+        LOGGER.info(cmdOutput);
+        assertThat(cmdOutput, containsString(myAddress.getSpec().getAddressName()));
 
         getClient().reloadPodWithWait(testNamespace, operatorPod, operatorName);
         getClient().reloadPodWithWait(testNamespace, brokerPod, brokerName);
@@ -62,15 +60,13 @@ public class AddressTests extends AbstractSystemTests {
         brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
 
-            Pod finalBrokerPod = brokerPod;
-            String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":" + allDefaultPort;
-            TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
-                String commandOutput = example.execCommandOnPod(finalBrokerPod.getMetadata().getName(),
-                        finalBrokerPod.getMetadata().getNamespace(), 60, finalCommand.split(" "));
-                LOGGER.info(commandOutput);
-                return commandOutput.contains(myAddress.getSpec().getAddressName());
-            });
-        }
+        Pod finalBrokerPod = brokerPod;
+        String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":" + allDefaultPort;
+        TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
+            String commandOutput = getClient().executeCommandInPod(testNamespace, finalBrokerPod, finalCommand, Constants.DURATION_1_MINUTE);
+            LOGGER.info(commandOutput);
+            return commandOutput.contains(myAddress.getSpec().getAddressName());
+        });
 
         ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);

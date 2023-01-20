@@ -145,7 +145,7 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     protected Service getArtemisServiceHdls(String namespace, ActiveMQArtemis broker) {
-        return getClient().getServiceByNames(namespace, broker.getMetadata().getName() + "-hdls-svc");
+        return getClient().getServiceByName(namespace, broker.getMetadata().getName() + "-hdls-svc");
     }
 
     protected String getServicePortNumber(String namespace, Service service, String portName) {
