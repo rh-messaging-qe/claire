@@ -23,6 +23,7 @@ public interface MessagingClient {
     Object getMessages();
 
     boolean compareMessages();
+    boolean compareMessages(Object sentMessages, Object receivedMessages);
 
     void subscribe();
 

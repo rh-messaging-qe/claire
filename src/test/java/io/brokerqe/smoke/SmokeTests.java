@@ -80,9 +80,10 @@ public class SmokeTests extends AbstractSystemTests {
 
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
+        String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
 
         int msgsExpected = 100;
-        MessagingClient messagingClientCore = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(), "61616", myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
+        MessagingClient messagingClientCore = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(), allDefaultPort, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
         int sent = messagingClientCore.sendMessages();
         int received = messagingClientCore.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
@@ -131,10 +132,11 @@ public class SmokeTests extends AbstractSystemTests {
 
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
+        String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
 
         int msgsExpected = 100;
         MessagingClient messagingClientCore = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
-                "61616", myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
+                allDefaultPort, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
         messagingClientCore.subscribe();
         int sent = messagingClientCore.sendMessages();
         int received = messagingClientCore.receiveMessages();

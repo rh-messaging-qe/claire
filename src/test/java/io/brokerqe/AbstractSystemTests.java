@@ -10,6 +10,8 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.junit.TestSeparator;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.AfterAll;
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestDataCollector.class})
@@ -106,5 +109,19 @@ public class AbstractSystemTests implements TestSeparator {
         String brokerName = broker.getMetadata().getName();
         client.waitForPodReload(namespace, getClient().getFirstPodByPrefixName(namespace, brokerName), brokerName);
         return broker;
+    }
+
+    protected Service getArtemisServiceHdls(String namespace, ActiveMQArtemis broker) {
+        return getClient().getServiceByNames(namespace, broker.getMetadata().getName() + "-hdls-svc");
+    }
+
+    protected String getServicePortNumber(String namespace, Service service, String portName) {
+        return getServicePort(namespace, service, portName).getTargetPort().getValue().toString();
+    }
+
+    protected ServicePort getServicePort(String namespace, Service service, String portName) {
+        return service.getSpec().getPorts().stream().filter(port -> {
+            return port.getName().equals(portName);
+        }).collect(Collectors.toList()).get(0);
     }
 }

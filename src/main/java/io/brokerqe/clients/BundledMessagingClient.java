@@ -184,4 +184,13 @@ public abstract class BundledMessagingClient implements MessagingClient {
         return sentMessages == receivedMessages;
     }
 
+    @Override
+    public boolean compareMessages(Object sentMessages, Object receivedMessages) {
+        if (sentMessages instanceof Integer && receivedMessages instanceof Integer) {
+            return sentMessages == receivedMessages;
+        } else {
+            throw new IllegalArgumentException("This clients currently supports only comparison of Integer (number of sent/received messages)");
+        }
+    }
+
 }

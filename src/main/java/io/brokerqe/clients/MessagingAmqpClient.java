@@ -86,6 +86,11 @@ public abstract class MessagingAmqpClient implements MessagingClient {
     }
 
     @Override
+    public boolean compareMessages(Object sentMessages, Object receivedMessages) {
+        throw new NotImplementedException("containerized clients not implemented yet");
+    }
+
+    @Override
     public void subscribe() {
         throw new NotImplementedException("containerized clients not implemented yet");
     }

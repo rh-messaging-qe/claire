@@ -53,9 +53,10 @@ public class AddressTests extends AbstractSystemTests {
         String operatorName = operator.getOperatorName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operatorName);
+        String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
 
         LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
-        String command = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":61616";
+        String command = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":" + allDefaultPort;
         try (Executor example = new Executor();) {
             String cmdOutput = example.execCommandOnPod(brokerPod.getMetadata().getName(),
                     brokerPod.getMetadata().getNamespace(), 60, command.split(" "));
@@ -69,7 +70,7 @@ public class AddressTests extends AbstractSystemTests {
             LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
 
             Pod finalBrokerPod = brokerPod;
-            String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":61616";
+            String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":" + allDefaultPort;
             TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
                 String commandOutput = example.execCommandOnPod(finalBrokerPod.getMetadata().getName(),
                         finalBrokerPod.getMetadata().getNamespace(), 60, finalCommand.split(" "));
