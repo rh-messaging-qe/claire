@@ -159,6 +159,16 @@ public class ResourceManager {
         return brokerCR;
     }
 
+    public static ActiveMQArtemis createArtemis(String namespace, ActiveMQArtemis artemisBroker, boolean waitForDeployment) {
+        artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
+        LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
+        if (waitForDeployment) {
+            waitForBrokerDeployment(namespace, artemisBroker);
+        }
+        ResourceManager.addArtemisBroker(artemisBroker);
+        return artemisBroker;
+    }
+
     public static void deleteArtemis(String namespace, ActiveMQArtemis broker) {
         deleteArtemis(namespace, broker, true, Constants.DURATION_1_MINUTE);
     }

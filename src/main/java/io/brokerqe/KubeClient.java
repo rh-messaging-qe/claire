@@ -74,7 +74,7 @@ public class KubeClient {
         return this.createNamespace(namespaceName, false);
     }
     public Namespace createNamespace(String namespaceName, boolean setNamespace) {
-        LOGGER.debug("Creating new namespace: {}", namespaceName);
+        LOGGER.info("Creating new namespace {}", namespaceName);
         Namespace ns = this.getKubernetesClient().resource(new NamespaceBuilder().withNewMetadata().withName(namespaceName).endMetadata().build()).createOrReplace();
         TestUtils.waitFor("Creating namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return this.namespaceExists(namespaceName);
@@ -87,6 +87,7 @@ public class KubeClient {
     }
 
     public void deleteNamespace(String namespaceName) {
+        LOGGER.info("Deleting namespace {}", namespaceName);
         this.getKubernetesClient().namespaces().withName(namespaceName).delete();
         TestUtils.waitFor("Deleting namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return !this.namespaceExists(namespaceName);

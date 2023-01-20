@@ -30,18 +30,12 @@ public class AddressTests extends AbstractSystemTests {
 
     @BeforeAll
     void setupClusterOperator() {
-        getClient().createNamespace(testNamespace, true);
-        LOGGER.info("[{}] Creating new namespace to {}", testNamespace, testNamespace);
-        operator = ResourceManager.deployArtemisClusterOperator(testNamespace);
+        setupDefaultClusterOperator(testNamespace);
     }
 
     @AfterAll
     void teardownClusterOperator() {
-        ResourceManager.undeployArtemisClusterOperator(operator);
-        if (!ResourceManager.isClusterOperatorManaged()) {
-            LOGGER.info("[{}] Deleting namespace to {}", testNamespace, testNamespace);
-            getClient().deleteNamespace(testNamespace);
-        }
+        teardownDefaultClusterOperator(testNamespace);
     }
 
     @Test

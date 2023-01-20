@@ -15,7 +15,6 @@ test_smoke_downstream: prepare_dirs downstream_files copy_ocp_zip_files test_smo
 
 test_smoke_upstream: prepare_dirs upstream_files test_smoke
 
-
 clean: clean_all
 
 build_java:
