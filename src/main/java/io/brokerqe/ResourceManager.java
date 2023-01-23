@@ -177,10 +177,7 @@ public class ResourceManager {
         String brokerName = broker.getMetadata().getName();
         ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).delete();
         if (waitForDeletion) {
-            TestUtils.waitFor("ActiveMQArtemis statefulSet & related pods to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
-                StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
-                return ss == null && kubeClient.listPodsByPrefixInName(namespace, brokerName).size() == 0;
-            });
+            waitForBrokerDeletion(namespace, brokerName, maxTimeout);
         }
         ResourceManager.removeArtemisBroker(broker);
         LOGGER.info("[{}] Deleted ActiveMQArtemis {}", namespace, broker.getMetadata().getName());
@@ -243,6 +240,14 @@ public class ResourceManager {
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
             return ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
+        });
+    }
+
+    public static void waitForBrokerDeletion(String namespace, String brokerName, long maxTimeout) {
+        LOGGER.info("[{}] Waiting for deletion of broker {}", namespace, brokerName);
+        TestUtils.waitFor("ActiveMQArtemis statefulSet & related pods to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+            StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
+            return ss == null && kubeClient.listPodsByPrefixInName(namespace, brokerName).size() == 0;
         });
     }
 
