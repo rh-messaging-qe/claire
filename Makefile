@@ -50,20 +50,20 @@ copy_ocp_zip_files:
 
 upstream_files:
 	# CRDs
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/crd_artemis.yaml -P ${ROOT_DIR}/artemis/crds/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/crd_artemis_security.yaml -P ${ROOT_DIR}/artemis/crds/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/crd_artemis_address.yaml -P ${ROOT_DIR}/artemis/crds/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/crd_artemis_scaledown.yaml -P ${ROOT_DIR}/artemis/crds/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemis_crd.yaml -P ${ROOT_DIR}/artemis/crds/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemissecurity_crd.yaml -P ${ROOT_DIR}/artemis/crds/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisaddress_crd.yaml -P ${ROOT_DIR}/artemis/crds/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisscaledown_crd.yaml -P ${ROOT_DIR}/artemis/crds/
 	# Install files (currently present only at main branch
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/service_account.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/cluster_role.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/namespace_role.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/cluster_role_binding.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/namespace_role_binding.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/election_role.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/election_role_binding.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/operator_config.yaml -P ${ROOT_DIR}/artemis/install/
-	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/resources/operator.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/service_account.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/cluster_role.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/role.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/cluster_role_binding.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/role_binding.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/election_role.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/election_role_binding.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/operator_config.yaml -P ${ROOT_DIR}/artemis/install/
+	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/operator.yaml -P ${ROOT_DIR}/artemis/install/
 	# Examples
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/artemis/artemis_single.yaml -P ${ROOT_DIR}/artemis/examples/artemis/
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/artemis/artemis_address_settings.yaml -P ${ROOT_DIR}/artemis/examples/artemis/
