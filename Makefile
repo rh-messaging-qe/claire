@@ -43,6 +43,10 @@ copy_ocp_zip_files:
 	set -e ;\
 	EXAMPLES_ZIP_DIR=$$(find ${ROOT_DIR} -iname "*ocp-install-examples" -type d ) ;\
 	cp -r $${EXAMPLES_ZIP_DIR}/deploy/crds/* ${ROOT_DIR}/artemis/crds/ ;\
+        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemis_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemissecurity_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisaddress_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisscaledown_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
 	cp $${EXAMPLES_ZIP_DIR}/deploy/examples/artemis-basic-deployment.yaml ${ROOT_DIR}/artemis/examples/artemis/ ;\
 	cp $${EXAMPLES_ZIP_DIR}/deploy/examples/address-queue-create.yaml ${ROOT_DIR}/artemis/examples/address/ ;\
 	cp -r $${EXAMPLES_ZIP_DIR}/deploy/*yaml ${ROOT_DIR}/artemis/install/
