@@ -4,6 +4,7 @@
  */
 package io.brokerqe.smoke;
 
+import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
@@ -93,10 +94,22 @@ public class SmokeTests extends AbstractSystemTests {
 
     @Test
     void sendReceiveAMQPMessageTest() {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire", 5672);
-        broker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors), broker);
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+            .editOrNewMetadata()
+                .withName("my-artemis")
+                .withNamespace(testNamespace)
+            .endMetadata()
+            .editOrNewSpec()
+                .editOrNewDeploymentPlan()
+                    .withSize(1)
+                    .withImage("placeholder")
+                .endDeploymentPlan()
+                .withAcceptors(List.of(amqpAcceptors))
+            .endSpec()
+            .build();
 
+        broker = ResourceManager.createArtemis(testNamespace, broker);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         // sending & receiving messages
         String brokerName = broker.getMetadata().getName();
@@ -104,9 +117,11 @@ public class SmokeTests extends AbstractSystemTests {
 
         // Get service/amqp acceptor name - svcName = "brokerName-XXXX-svc"
         Service amqp = getClient().geServiceBrokerAcceptorFirst(testNamespace, brokerName, "amqp-owire-acceptor");
+        assertThat(amqp.getSpec().getPorts().get(0).getPort(), equalTo(5672));
 
         // Messaging tests
         int msgsExpected = 100;
+
         MessagingClient messagingClientAmqp = new BundledAmqpMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
                 amqp.getSpec().getPorts().get(0).getPort().toString(),
                 myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), msgsExpected);
