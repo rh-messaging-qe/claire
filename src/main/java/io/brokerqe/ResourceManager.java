@@ -164,10 +164,14 @@ public class ResourceManager {
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, ActiveMQArtemis artemisBroker, boolean waitForDeployment) {
+        return createArtemis(namespace, artemisBroker, true, Constants.DURATION_1_MINUTE);
+    }
+
+    public static ActiveMQArtemis createArtemis(String namespace, ActiveMQArtemis artemisBroker, boolean waitForDeployment, long maxTimeout) {
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
         LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
         if (waitForDeployment) {
-            waitForBrokerDeployment(namespace, artemisBroker);
+            waitForBrokerDeployment(namespace, artemisBroker, false, maxTimeout);
         }
         ResourceManager.addArtemisBroker(artemisBroker);
         return artemisBroker;

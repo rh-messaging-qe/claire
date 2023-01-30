@@ -109,7 +109,7 @@ public class SmokeTests extends AbstractSystemTests {
             .endSpec()
             .build();
 
-        broker = ResourceManager.createArtemis(testNamespace, broker);
+        broker = ResourceManager.createArtemis(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         // sending & receiving messages
         String brokerName = broker.getMetadata().getName();
