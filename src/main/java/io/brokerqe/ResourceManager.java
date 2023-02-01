@@ -10,6 +10,8 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
+import io.brokerqe.security.Keycloak;
+import io.brokerqe.security.Rhsso;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -44,14 +46,16 @@ public class ResourceManager {
     private static Boolean projectCODeploy;
     private static ResourceManager resourceManager = null;
     private static KubeClient kubeClient;
+    private static Environment environment;
 
-    private ResourceManager(Environment environment) {
-        kubeClient = new KubeClient("default");
+    private ResourceManager(Environment env) {
+        kubeClient = env.getKubeClient();
         artemisClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemis.class);
         artemisAddressClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisAddress.class);
         artemisSecurityClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisSecurity.class);
         artemisScaledownClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisScaledown.class);
-        projectCODeploy = environment.isProjectManagedClusterOperator();
+        projectCODeploy = env.isProjectManagedClusterOperator();
+        environment = env;
     }
     public static ResourceManager getInstance(Environment environment) {
         if (resourceManager == null) {
@@ -214,8 +218,7 @@ public class ResourceManager {
         LOGGER.info("[{}] Deleted ActiveMQArtemisAddress {}", namespace, artemisAddress.getMetadata().getName());
     }
 
-    public static ActiveMQArtemisSecurity createArtemisSecurity(String namespace, String filePath) {
-        ActiveMQArtemisSecurity artemisSecurity = TestUtils.configFromYaml(filePath, ActiveMQArtemisSecurity.class);
+    public static ActiveMQArtemisSecurity createArtemisSecurity(String namespace, ActiveMQArtemisSecurity artemisSecurity) {
         artemisSecurity = ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).createOrReplace();
         LOGGER.info("[{}] Created ActiveMQArtemisSecurity {}", namespace, artemisSecurity.getMetadata().getName());
         ResourceManager.addArtemisSecurity(artemisSecurity);
@@ -324,6 +327,16 @@ public class ResourceManager {
         }
     }
 
+    // Keycloak/Rhsso Resources
+    public static Keycloak getKeycloakInstance(String namespace) {
+        // Keycloak resources manage
+        if (kubeClient.getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
+            return new Rhsso(environment, kubeClient, namespace);
+        } else {
+            return new Keycloak(environment, kubeClient, namespace);
+        }
+    }
+
     public static void undeployAllResources() {
         ResourceManager.undeployAllClientsContainers();
         ResourceManager.undeployAllArtemisClusterOperators();
@@ -366,5 +379,9 @@ public class ResourceManager {
             LOGGER.info("[{}] Undeploying orphaned MessagingClient {}!", deployedContainers.get(deployment), deployment.getMetadata().getName());
             kubeClient.getKubernetesClient().apps().deployments().inNamespace(deployedContainers.get(deployment)).resource(deployment).delete();
         }
+    }
+
+    public static Environment getEnvironment() {
+        return environment;
     }
 }

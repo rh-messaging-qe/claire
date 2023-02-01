@@ -103,8 +103,8 @@ public class AmqpQpidClient extends MessagingAmqpClient {
             try {
                 jsonMessages.add(new JSONObject(line));
             } catch (JSONException e) {
-                LOGGER.error("Unable to parse messages from client output. Some error happened! \n{}", line);
-                throw new RuntimeException(e); // do we want to carry on with execution
+                LOGGER.error("Unable to parse messages from client output. Some error happened! \n{}", output);
+                throw new RuntimeException(e); // do we want to carry on with execution?
             }
         }
         return jsonMessages;

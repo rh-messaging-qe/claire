@@ -22,6 +22,7 @@ public interface Constants {
     String EV_BUNDLE_IMAGE = "BUNDLE_IMAGE";
     String EV_LOGS_LOCATION = "LOGS_LOCATION";
     String EV_CLUSTER_OPERATOR_MANAGED = "CLUSTER_OPERATOR_MANAGED";
+    String EV_KEYCLOAK_VERSION = "KEYCLOAK_VERSION";
 
     String BROKER_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Kubernetes_";
     String BROKER_INIT_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Init_";
@@ -41,10 +42,16 @@ public interface Constants {
     String KEY_TRUSTSTORE_PASSWORD = "trustStorePassword";
     String KEY_KEYSTORE_PASSWORD = "keyStorePassword";
 
+    // Test related strings
+    String DEFAULT_KEYCLOAK_VERSION = "20.0.3";
+    String DEFAULT_RHSSO_VERSION = "rhsso-operator.7.6.1-opr-005";
+
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
-    String LOGS_DEFAULT_DIR = System.getProperty("user.dir") + "/test-logs";
-    String CERTS_GENERATION_DIR = System.getProperty("user.dir") + "/certificates/";
+    String PROJECT_TEST_DIR = PROJECT_USER_DIR + "/src/test/";
+    String LOGS_DEFAULT_DIR = PROJECT_USER_DIR + "/test-logs";
+    String CERTS_GENERATION_DIR = PROJECT_USER_DIR + "/certificates/";
+    // not used anymore ?
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";

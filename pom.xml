@@ -17,6 +17,8 @@
         <checkstyle.version>9.0.1</checkstyle.version>
         <spotbugs.version>4.0.3</spotbugs.version>
         <fabric8.version>6.3.1</fabric8.version>
+        <commons-codec.version>1.15</commons-codec.version>
+        <commons-compress.version>1.15</commons-compress.version>
         <hamcrest.version>2.2</hamcrest.version>
         <junit.version>5.9.0</junit.version>
         <slf4j.version>2.0.5</slf4j.version>
@@ -153,6 +155,18 @@
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model-annotator</artifactId>
             <version>${kubernetes-model-annotator.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons-codec.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>${commons-compress.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.github.spotbugs</groupId>

@@ -4,11 +4,15 @@
  */
 package io.brokerqe.security;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -18,22 +22,24 @@ import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.Constants;
 import io.brokerqe.KubeClient;
 import io.brokerqe.KubernetesPlatform;
 import io.brokerqe.TestUtils;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -65,7 +71,7 @@ import javax.security.auth.x500.X500PrivateCredential;
 // Original Certificate generation code in https://github.com/misterpki/selfsignedcert/
 // https://docs.oracle.com/javase/9/docs/specs/security/standard-names.html#keypairgenerator-algorithms
 // https://www.bouncycastle.org/specifications.html
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class CertificateManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(CertificateManager.class);
     protected static final String KEY_PAIR_ALGORITHM = "RSA";
@@ -76,13 +82,28 @@ public class CertificateManager {
     final static String DEFAULT_CLIENT_ALIAS = "clientUser";
     final static String DEFAULT_CLIENT_PASSWORD = "clientPass";
 
+    public static String generateDefaultBrokerDN(KubernetesClient kubernetesClient) {
+        // Make sure you use correct kubernetesClient when using multi-cluster deployment
+        return generateDefaultBrokerDN(kubernetesClient, "Broker");
+    }
+    public static String generateDefaultBrokerDN(KubernetesClient kubernetesClient, String ou) {
+        return "C=CZ, L=Brno, O=ArtemisCloud, OU=" + ou + ", CN=" + kubernetesClient.getMasterUrl().getHost().replace("api", "*");
+    }
+
+    public static String generateDefaultClientDN(KubernetesClient kubernetesClient) {
+        return generateDefaultClientDN(kubernetesClient, "Client");
+    }
+    public static String generateDefaultClientDN(KubernetesClient kubernetesClient, String ou) {
+        return "C=CZ, L=Brno, O=ArtemisCloud, OU=" + ou + ", CN=" + kubernetesClient.getMasterUrl().getHost().replace("api", "*");
+    }
+
     public static X509Certificate generate(final KeyPair keyPair, final String hashAlgorithm, final String distinguishedName, final int days) {
         return generate(keyPair, hashAlgorithm, distinguishedName, days, null);
     }
 
     public static X509Certificate generate(final KeyPair keyPair, final String hashAlgorithm, final String distinguishedName, final int days, List<Extension> extensions) {
         final Instant now = Instant.now();
-        final Date notBefore = Date.from(now);
+        final Date notBefore = Date.from(now.minus(Duration.ofDays(1L)));
         final Date notAfter = Date.from(now.plus(Duration.ofDays(days)));
         final ContentSigner contentSigner;
 
@@ -223,21 +244,20 @@ public class CertificateManager {
         }
     }
 
-    public static Extension generateSanDnsNames(KubeClient kubeClient, ActiveMQArtemis broker, List<Acceptors> acceptors) {
+    public static Extension generateSanDnsNames(KubeClient kubeClient, ActiveMQArtemis broker, List<String> serviceNames) {
         // DNS:$APPLICATION_NAME-$ACCEPTOR-$ORDINAL-svc-rte-$NAMESPACE.$DOMAIN_NAME"
         // Route
         // artemis-broker-my-amqp-0-svc-rte    artemis-broker-my-amqp-0-svc-rte-namespacename.apps.lala.amq-broker-qe.my-host.com
         // Ingress
         // artemis-broker-my-amqp-0-svc-ing    artemis-broker-my-amqp-0-svc-ing.apps.artemiscloud.io
         Extension sanExtension;
-        List<String> acceptorNames = acceptors.stream().map(Acceptors::getName).collect(Collectors.toList());
         String appName = broker.getMetadata().getName();
         String namespace = broker.getMetadata().getNamespace();
 
         // platform specific
         String svc;
         String domain;
-        if (kubeClient.getKubernetesType().equals(KubernetesPlatform.KUBERNETES)) {
+        if (kubeClient.getKubernetesPlatform().equals(KubernetesPlatform.KUBERNETES)) {
             svc = "svc-ing";
             // https://github.com/artemiscloud/activemq-artemis-operator/blob/d04ed9609b1f8fe399fe9ea12b4f5488c6c9d9d9/pkg/resources/ingresses/ingress.go#L70
             // hardcoded
@@ -250,8 +270,9 @@ public class CertificateManager {
         ASN1EncodableVector sanNames = new ASN1EncodableVector();
         int size = broker.getSpec().getDeploymentPlan().getSize();
         for (int i = 0; i < size; i++) {
-            for (String acceptorName : acceptorNames) {
+            for (String acceptorName : serviceNames) {
                 sanNames.add(new GeneralName(GeneralName.dNSName, appName + "-" + acceptorName + "-" + i + "-" + svc + "-" + domain));
+//                sanNames.add(new GeneralName(GeneralName.dNSName, "*.app-services-dev.net"));
             }
         }
 
@@ -268,7 +289,7 @@ public class CertificateManager {
         return sanExtension;
     }
 
-    private static void writeCertificateToFile(X509Certificate certificate, String fileName) {
+    public static void writeCertificateToFile(X509Certificate certificate, String fileName) {
         StringWriter sw = new StringWriter();
         try (JcaPEMWriter jpw = new JcaPEMWriter(sw)) {
             jpw.writeObject(certificate);
@@ -277,6 +298,15 @@ public class CertificateManager {
         }
         TestUtils.createDirectory(Constants.CERTS_GENERATION_DIR);
         TestUtils.createFile(fileName, sw.toString());
+    }
+
+    public static String readCertificateFromFile(String certificatePath) {
+        try {
+            byte[] content = Files.readAllBytes(Paths.get(certificatePath));
+            return Base64.getEncoder().encodeToString(content);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Map<String, KeyStoreData> generateCertificateKeystores(String namespace, ActiveMQArtemis broker, String brokerDN, String clientDN, List<Extension> extensions) {
@@ -294,6 +324,54 @@ public class CertificateManager {
         writeCertificateToFile(clientCert, Constants.CERTS_GENERATION_DIR + DEFAULT_CLIENT_ALIAS + ".crt");
 
         return CertificateManager.createKeystores(brokerCredential, clientCredential, DEFAULT_BROKER_ALIAS, DEFAULT_BROKER_PASSWORD, DEFAULT_CLIENT_ALIAS, DEFAULT_CLIENT_PASSWORD);
+    }
+
+    public static Secret createClientKeystoreSecret(KubeClient kubeClient, String secretName, Map<String, KeyStoreData> keystores) {
+        Map<String, String> clientTlsSecret = new HashMap<>();
+        clientTlsSecret.put(Constants.CLIENT_KEYSTORE_ID, keystores.get(Constants.CLIENT_KEYSTORE_ID).getEncodedKeystoreFileData());
+        clientTlsSecret.put(Constants.KEY_KEYSTORE_PASSWORD, keystores.get(Constants.CLIENT_KEYSTORE_ID).getEncodedPassword());
+        clientTlsSecret.put(Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getEncodedKeystoreFileData());
+        clientTlsSecret.put(Constants.KEY_TRUSTSTORE_PASSWORD, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getEncodedPassword());
+        return kubeClient.createSecretEncodedData(kubeClient.getNamespace(), secretName, clientTlsSecret, true);
+    }
+
+    public static Secret createBrokerKeystoreSecret(KubeClient kubeClient, String secretName, Map<String, KeyStoreData> keystores) {
+        Map<String, String> brokerTlsSecret = new HashMap<>();
+        brokerTlsSecret.put(Constants.BROKER_KEYSTORE_ID, keystores.get(Constants.BROKER_KEYSTORE_ID).getEncodedKeystoreFileData());
+        brokerTlsSecret.put(Constants.KEY_KEYSTORE_PASSWORD, keystores.get(Constants.BROKER_KEYSTORE_ID).getEncodedPassword());
+        // broker expects `client.ts` key
+        brokerTlsSecret.put(Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.BROKER_TRUSTSTORE_ID).getEncodedKeystoreFileData());
+        brokerTlsSecret.put(Constants.KEY_TRUSTSTORE_PASSWORD, keystores.get(Constants.BROKER_TRUSTSTORE_ID).getEncodedPassword());
+        return kubeClient.createSecretEncodedData(kubeClient.getNamespace(), secretName, brokerTlsSecret, true);
+    }
+
+    public static Secret createConsoleKeystoreSecret(KubeClient kubeClient, String secretName, Map<String, KeyStoreData> keystores) {
+        Map<String, String> consoleTlsSecret = new HashMap<>();
+        consoleTlsSecret.put(Constants.BROKER_KEYSTORE_ID, keystores.get(Constants.BROKER_KEYSTORE_ID).getEncodedKeystoreFileData());
+        // broker expects `client.ts` key
+        consoleTlsSecret.put(Constants.KEY_KEYSTORE_PASSWORD, keystores.get(Constants.BROKER_KEYSTORE_ID).getEncodedPassword());
+        consoleTlsSecret.put(Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getEncodedKeystoreFileData());
+        consoleTlsSecret.put(Constants.KEY_TRUSTSTORE_PASSWORD, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getEncodedPassword());
+        return kubeClient.createSecretEncodedData(kubeClient.getNamespace(), secretName, consoleTlsSecret, true);
+    }
+
+    public static KeyStoreData addToTruststore(KeyStoreData keyStoreData, String tlsCert, String alias) {
+        try {
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            X509Certificate trustedCertificate = (X509Certificate)
+                    certificateFactory.generateCertificate(new ByteArrayInputStream(getDecodedString(tlsCert).getBytes()));
+
+            LOGGER.info("[TLS] Add trusted certificate to Broker truststore");
+            KeyStore brokerTrustStore = KeyStore.getInstance(KEYSTORE_TYPE_PKCS12, BouncyCastleProvider.PROVIDER_NAME);
+            brokerTrustStore.load(new FileInputStream(keyStoreData.getKeyStorePath()), keyStoreData.getPassword().toCharArray());
+            brokerTrustStore.setCertificateEntry(alias, trustedCertificate);
+            brokerTrustStore.store(new FileOutputStream(keyStoreData.getKeyStorePath()), keyStoreData.getPassword().toCharArray());
+            keyStoreData.setKeyStore(brokerTrustStore);
+        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException |
+                 NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        }
+        return keyStoreData;
     }
 
     /**
@@ -337,4 +415,11 @@ public class CertificateManager {
         }
     }
 
+    public static String getEncodedString(String password) {
+        return Base64.getEncoder().encodeToString(password.getBytes());
+    }
+
+    public static String getDecodedString(String data) {
+        return new String(Base64.getDecoder().decode(data), StandardCharsets.UTF_8);
+    }
 }

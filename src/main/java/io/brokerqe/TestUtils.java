@@ -10,6 +10,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,6 +230,19 @@ public final class TestUtils {
         }
     }
 
+    public String replaceFileContent(String realmFilePath, String toReplace, String replaceWith) {
+        String newFilePath = "amqbroker_realm_" + TestUtils.getRandomString(3) + ".json";
+        try {
+            File jsonRealmfile = new File(realmFilePath);
+            String data = FileUtils.readFileToString(jsonRealmfile);
+            data = data.replace(toReplace, replaceWith);
+            TestUtils.createFile(newFilePath, data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return newFilePath;
+    }
+
     public static void updateImagesInOperatorFile(Path operatorFile, String imageType, String imageUrl, String version) {
         List<EnvVar> envVars;
         String imageTypeVersion = null;
@@ -249,6 +263,5 @@ public final class TestUtils {
         }
 
         configToYaml(operatorFile.toFile(), operator);
-
     }
 }

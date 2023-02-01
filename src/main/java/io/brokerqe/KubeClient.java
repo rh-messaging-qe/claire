@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobList;
@@ -78,12 +79,12 @@ public class KubeClient {
         return client;
     }
 
-    public KubernetesPlatform getKubernetesType() {
+    public KubernetesPlatform getKubernetesPlatform() {
         return this.platform;
     }
 
-    public KubernetesPlatform getKubernetesType(KubeClient client) {
-        return client.getKubernetesType();
+    public KubernetesPlatform getKubernetesPlatform(KubeClient client) {
+        return client.getKubernetesPlatform();
     }
 
     // ===============================
@@ -167,6 +168,14 @@ public class KubeClient {
 
     public boolean getConfigMapStatus(String configMapName) {
         return client.configMaps().inNamespace(getNamespace()).withName(configMapName).isReady();
+    }
+
+    // ================================
+    // ---------> REPLICASET <---------
+    // ================================
+    public List<ReplicaSet> getReplicaSetsWithPrefix(String namespaceName, String prefixName) {
+        return client.apps().replicaSets().inNamespace(namespaceName).list().getItems().stream().filter(
+                replicaSet -> replicaSet.getMetadata().getName().startsWith(prefixName)).collect(Collectors.toList());
     }
 
     // =========================
@@ -351,7 +360,7 @@ public class KubeClient {
 
     public List<String> getExternalAccessServiceUrlPrefixName(String namespaceName, String externalAccessPrefixName) {
         List<String> externalUrls = new ArrayList<>();
-        if (this.getKubernetesType().equals(KubernetesPlatform.KUBERNETES)) {
+        if (this.getKubernetesPlatform().equals(KubernetesPlatform.KUBERNETES)) {
             List<Ingress> ingresses = getIngressByPrefixName(namespaceName, externalAccessPrefixName);
             for (Ingress ingress : ingresses) {
                 externalUrls.add(ingress.getSpec().getRules().get(0).getHost());
@@ -476,7 +485,7 @@ public class KubeClient {
     // ============================
     // ---------> SECRET <---------
     // ============================
-    public Secret createSecret(String namespaceName, String secretName, Map<String, String> data, boolean waitForCreation) {
+    public Secret createSecretEncodedData(String namespaceName, String secretName, Map<String, String> data, boolean waitForCreation) {
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(secretName)
@@ -489,6 +498,26 @@ public class KubeClient {
             waitForSecretCreation(namespaceName, secretName);
         }
         return secret;
+    }
+
+    public Secret createSecretStringData(String namespaceName, String secretName, Map<String, String> data, boolean waitForCreation) {
+        Secret secret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(namespaceName)
+                .endMetadata()
+                .withType("generic")
+                .withStringData(data)
+                .build();
+        client.secrets().inNamespace(namespaceName).resource(secret).createOrReplace();
+        if (waitForCreation) {
+            waitForSecretCreation(namespaceName, secretName);
+        }
+        return secret;
+    }
+
+    public Secret getSecret(String namespaceName, String secretName) {
+        return client.secrets().inNamespace(namespaceName).withName(secretName).get();
     }
 
     public void waitForSecretCreation(String namespaceName, String secretName) {
@@ -516,8 +545,7 @@ public class KubeClient {
         byte[] decoded = Base64.getDecoder().decode(caCert);
         X509Certificate cacert = null;
         try {
-            cacert = (X509Certificate)
-                    CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(decoded));
+            cacert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(decoded));
         } catch (CertificateException e) {
             e.printStackTrace();
         }

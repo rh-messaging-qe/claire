@@ -22,7 +22,9 @@ public class Environment {
     private final boolean projectManagedClusterOperator;
     private final String logsDirLocation;
 
+    private final String keycloakVersion;
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
+    private final KubeClient kubeClient;
 
     public Environment() {
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
@@ -34,6 +36,8 @@ public class Environment {
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
         logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR);
         projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
+        kubeClient = new KubeClient("default");
+        keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
 
         printAllUsedTestVariables();
         checkSetProvidedImages();
@@ -123,5 +127,21 @@ public class Environment {
 
     public String getLogsDirLocation() {
         return logsDirLocation;
+    }
+
+    public String getKeycloakVersion() {
+        return keycloakVersion;
+    }
+
+    private String getDefaultKeycloakVersion() {
+        if (kubeClient.getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
+            return Constants.DEFAULT_RHSSO_VERSION;
+        } else {
+            return Constants.DEFAULT_KEYCLOAK_VERSION;
+        }
+    }
+
+    public KubeClient getKubeClient() {
+        return kubeClient;
     }
 }

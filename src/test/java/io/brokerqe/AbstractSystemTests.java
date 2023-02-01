@@ -7,11 +7,21 @@ package io.brokerqe;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.broker.Permissions;
+import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.broker.PermissionsBuilder;
+import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.management.authorisation.RoleAccess;
+import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.management.authorisation.RoleAccessBuilder;
+import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.management.authorisation.roleaccess.AccessListBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
+import io.brokerqe.clients.AmqpQpidClient;
+import io.brokerqe.clients.MessagingClient;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.junit.TestSeparator;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.AfterAll;
@@ -24,6 +34,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestDataCollector.class})
@@ -111,6 +125,41 @@ public class AbstractSystemTests implements TestSeparator {
      *  Helper methods
      ******************************************************************************************************************/
 
+    protected List<Permissions> allAdminPermissions = List.of(
+            new PermissionsBuilder().withOperationType("createAddress").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("deleteAddress").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("createDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("deleteDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("createNonDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("deleteNonDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("send").withRoles("admin", "sender").build(),
+            new PermissionsBuilder().withOperationType("consume").withRoles("admin", "consumer").build(),
+            new PermissionsBuilder().withOperationType("browse").withRoles("admin").build()
+    );
+    protected List<Permissions> activemqManagementAllAdminPermissions = List.of(
+            new PermissionsBuilder().withOperationType("createAddress").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("deleteAddress").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("createDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("deleteDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("createNonDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("deleteNonDurableQueue").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("send").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("manage").withRoles("admin").build(),
+            new PermissionsBuilder().withOperationType("consume").withRoles("admin").build()
+    );
+
+    protected RoleAccess roleAccess = new RoleAccessBuilder()
+            .withDomain("org.apache.activemq.artemis")
+            .withAccessList(List.of(
+                    new AccessListBuilder().withMethod("get*").withRoles("admin", "viewer").build(),
+                    new AccessListBuilder().withMethod("is*").withRoles("admin", "viewer").build(),
+                    new AccessListBuilder().withMethod("set*").withRoles("admin").build(),
+                    new AccessListBuilder().withMethod("browse*").withRoles("admin").build(),
+                    new AccessListBuilder().withMethod("count*").withRoles("admin").build(),
+                    new AccessListBuilder().withMethod("*").withRoles("admin").build()
+            )).build();
+
+
     // TODO: Move these methods to some more appropriate location?
     protected Acceptors createAcceptor(String name, String protocols, int port) {
         return createAcceptor(name, protocols, port, false, false, null);
@@ -129,6 +178,8 @@ public class AbstractSystemTests implements TestSeparator {
             acceptors.setSslEnabled(sslEnabled);
             if (sslSecretName != null) {
                 acceptors.setSslSecret(sslSecretName);
+                // TODO true this later
+                acceptors.setVerifyHost(false);
             }
         }
         return acceptors;
@@ -157,4 +208,23 @@ public class AbstractSystemTests implements TestSeparator {
             return port.getName().equals(portName);
         }).collect(Collectors.toList()).get(0);
     }
+
+    public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress myAddress, String externalBrokerUri, String secretName, String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
+        Deployment clients = ResourceManager.deploySecuredClientsContainer(namespace, secretName);
+        Pod clientsPod = getClient().getFirstPodByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
+        int msgsExpected = 10;
+        int sent = -1;
+        int received = 0;
+
+        // Publisher - Receiver
+        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, externalBrokerUri, myAddress, msgsExpected, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
+        sent = messagingClient.sendMessages();
+        received = messagingClient.receiveMessages();
+        assertThat(sent, equalTo(msgsExpected));
+        assertThat(sent, equalTo(received));
+        assertThat(messagingClient.compareMessages(), is(true));
+        ResourceManager.undeployClientsContainer(namespace, clients);
+    }
+
+
 }

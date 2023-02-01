@@ -4,11 +4,7 @@
  */
 package io.brokerqe.security;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.KeyStore;
-import java.util.Base64;
 
 public class KeyStoreData {
 
@@ -29,7 +25,12 @@ public class KeyStoreData {
     }
 
     public KeyStore getKeyStore() {
+
         return keyStore;
+    }
+
+    public void setKeyStore(KeyStore keyStore) {
+        this.keyStore = keyStore;
     }
 
     public String getKeyStorePath() {
@@ -40,15 +41,10 @@ public class KeyStoreData {
         return password;
     }
     public String getEncodedPassword() {
-        return Base64.getEncoder().encodeToString(password.getBytes());
+        return CertificateManager.getEncodedString(password);
     }
 
     public String getEncodedKeystoreFileData() {
-        try {
-            byte[] content = Files.readAllBytes(Paths.get(keyStorePath));
-            return Base64.getEncoder().encodeToString(content);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return CertificateManager.readCertificateFromFile(keyStorePath);
     }
 }
