@@ -73,7 +73,7 @@ public class Keycloak {
     }
 
     protected String updateRealmImportTemplate(String realmFilePath, String brokerName) {
-        List<String> uris = kubeClient.getExternalAccessServiceUrlPrefixName(namespace, brokerName + "-wconsj-");
+        List<String> uris = kubeClient.getExternalAccessServiceUrlPrefixName(namespace, brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX + "-");
         String format = "        \"https://ROUTE/console/*\",\n";
         StringBuilder constructRoutes = new StringBuilder();
         for (String uri : uris) {

@@ -6,6 +6,7 @@ package io.brokerqe;
 
 import io.brokerqe.executor.Executor;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -81,6 +82,14 @@ public class KubeClient {
 
     public KubernetesPlatform getKubernetesPlatform() {
         return this.platform;
+    }
+
+    public boolean isKubernetesPlatform() {
+        return this.platform == KubernetesPlatform.KUBERNETES;
+    }
+
+    public boolean isOpenshiftPlatform() {
+        return this.platform == KubernetesPlatform.OPENSHIFT;
     }
 
     public KubernetesPlatform getKubernetesPlatform(KubeClient client) {
@@ -346,21 +355,27 @@ public class KubeClient {
     // Ingress
     // artemis-broker-my-amqp-0-svc-ing    artemis-broker-my-amqp-0-svc-ing.apps.artemiscloud.io
 
-    public List<String> getExternalAccessServiceUrl(String namespaceName, String externalAccessName) {
-        List<String> externalUrls = new ArrayList<>();
-        Ingress ingress = getIngressByName(namespaceName, externalAccessName);
-        if (ingress == null) {
-            Route route = getRouteByName(namespaceName, externalAccessName);
-            externalUrls.add(route.getSpec().getHost());
+    public List<HasMetadata> getExternalAccessServicePrefixName(String namespaceName, String externalAccessPrefixName) {
+        List<HasMetadata> externalUrls = new ArrayList<>();
+        if (isKubernetesPlatform()) {
+            externalUrls.addAll(getIngressByPrefixName(namespaceName, externalAccessPrefixName));
         } else {
-            externalUrls.add(ingress.getSpec().getRules().get(0).getHost());
+            externalUrls.addAll(getRouteByPrefixName(namespaceName, externalAccessPrefixName));
         }
         return externalUrls;
     }
 
+    public String getExternalAccessServiceUrl(String namespaceName, String externalAccess) {
+        if (isKubernetesPlatform()) {
+            return getIngressByName(namespaceName, externalAccess).getSpec().getRules().get(0).getHost();
+        } else {
+            return getRouteByName(namespaceName, externalAccess).getSpec().getHost();
+        }
+    }
+
     public List<String> getExternalAccessServiceUrlPrefixName(String namespaceName, String externalAccessPrefixName) {
         List<String> externalUrls = new ArrayList<>();
-        if (this.getKubernetesPlatform().equals(KubernetesPlatform.KUBERNETES)) {
+        if (this.isKubernetesPlatform()) {
             List<Ingress> ingresses = getIngressByPrefixName(namespaceName, externalAccessPrefixName);
             for (Ingress ingress : ingresses) {
                 externalUrls.add(ingress.getSpec().getRules().get(0).getHost());

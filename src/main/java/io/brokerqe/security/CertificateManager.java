@@ -66,6 +66,10 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500PrivateCredential;
 
 // Original Certificate generation code in https://github.com/misterpki/selfsignedcert/
@@ -81,6 +85,26 @@ public class CertificateManager {
     final static String DEFAULT_BROKER_PASSWORD = "brokerPass";
     final static String DEFAULT_CLIENT_ALIAS = "clientUser";
     final static String DEFAULT_CLIENT_PASSWORD = "clientPass";
+
+    public static TrustManager[] trustAllCertificates = new TrustManager[]{
+        new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+            public void checkClientTrusted(
+                    X509Certificate[] certs, String authType) {
+            }
+            public void checkServerTrusted(
+                    X509Certificate[] certs, String authType) {
+            }
+        }
+    };
+    public static HostnameVerifier trustAllHostnames = new HostnameVerifier() {
+        @Override
+        public boolean verify(String hostname, SSLSession session) {
+            return true;
+        }
+    };
 
     public static String generateDefaultBrokerDN(KubernetesClient kubernetesClient) {
         // Make sure you use correct kubernetesClient when using multi-cluster deployment

@@ -186,7 +186,7 @@ public class OauthSecurityTests extends AbstractSystemTests {
                 artemis,
                 CertificateManager.generateDefaultBrokerDN(getKubernetesClient()),
                 CertificateManager.generateDefaultClientDN(getKubernetesClient()),
-                List.of(CertificateManager.generateSanDnsNames(getClient(), artemis, List.of(amqpAcceptorName, "wconsj")))
+                List.of(CertificateManager.generateSanDnsNames(getClient(), artemis, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX)))
         );
 
         // https://access.redhat.com/solutions/6973839 Get route secret
@@ -224,7 +224,7 @@ public class OauthSecurityTests extends AbstractSystemTests {
         artemis = ResourceManager.createArtemis(testNamespace, artemis, true);
         int brokerConsoles = artemis.getSpec().getDeploymentPlan().getSize();
         TestUtils.waitFor("webconsole external uri availability", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
-            return getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-wconsj-").size() == brokerConsoles;
+            return getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX + "-").size() == brokerConsoles;
         });
         keycloak.importRealm("amq-broker-realm", keycloak.realmArtemis, artemis.getMetadata().getName());
         LOGGER.info("[{}] Starting KC test. Deployed pods {}", testNamespace,

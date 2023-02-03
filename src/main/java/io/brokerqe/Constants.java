@@ -42,6 +42,8 @@ public interface Constants {
     String KEY_TRUSTSTORE_PASSWORD = "trustStorePassword";
     String KEY_KEYSTORE_PASSWORD = "keyStorePassword";
 
+    String WEBCONSOLE_URI_PREFIX = "wconsj";
+
     // Test related strings
     String DEFAULT_KEYCLOAK_VERSION = "20.0.3";
     String DEFAULT_RHSSO_VERSION = "rhsso-operator.7.6.1-opr-005";

@@ -7,6 +7,7 @@ package io.brokerqe;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.brokerqe.security.CertificateManager;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -14,14 +15,21 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -46,7 +54,7 @@ public final class TestUtils {
 
     /**
      * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
-     * or throw a WaitException if it doesn't returns true within {@code timeoutMs} milliseconds.
+     * or throw a WaitException if it does not return true within {@code timeoutMs} milliseconds.
      * @return The remaining time left until timeout occurs
      * (helpful if you have several calls which need to share a common timeout),
      * */
@@ -156,6 +164,22 @@ public final class TestUtils {
         Deployment operatorCODeployment = configFromYaml(yamlFile.toFile(), Deployment.class);
         return operatorCODeployment.getMetadata().getName();
     }
+
+    // Make insecure HTTPS Requests
+    // https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
+    public static URLConnection makeInsecureHttpsRequest(String uri) {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, CertificateManager.trustAllCertificates, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier(CertificateManager.trustAllHostnames);
+            return new URL(uri).openConnection();
+        } catch (IOException | NoSuchAlgorithmException | KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // File Operations
 
     public static String updateClusterRoleBindingFileNamespace(Path yamlFile, String namespace) {
         String newCRBFileName = "cluster_role_binding_" + TestUtils.getRandomString(3) + ".yaml";
