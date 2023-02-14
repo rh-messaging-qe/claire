@@ -17,6 +17,12 @@ Currently, we support running `test_smoke_downstream` and `test_smoke_upstream` 
 These targets will execute all necessary steps - clean, download files, build and generate needed code and finally execute tests.
 Review `Makefile` for more details.
 
+To execute specific tests with maven, you need to build project (make) and execute maven tests, with skipping clean & compilation part
+```bash
+make build_upstream
+mvn test -Dmaven.install.skip=true -Dtest=<my-specific-test>
+```
+
 
 ## List of available Environment Variables
 
