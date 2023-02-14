@@ -22,6 +22,10 @@ public interface MessagingClient {
 
     Object getMessages();
 
+    Object getSentMessages();
+
+    Object getReceivedMessages();
+
     boolean compareMessages();
     boolean compareMessages(Object sentMessages, Object receivedMessages);
 

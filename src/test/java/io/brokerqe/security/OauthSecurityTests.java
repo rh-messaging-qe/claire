@@ -29,6 +29,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,7 @@ public class OauthSecurityTests extends AbstractSystemTests {
 
     public ActiveMQArtemisSecurity createArtemisSecurity() {
 
+        //TODO: Jaas is deprecated?!
         List<KeycloakLoginModules> kcLoginModules = List.of(new KeycloakLoginModulesBuilder()
                 .withName("login-keycloak-broker-module")
                 .withModuleType("directAccess")
@@ -151,13 +153,14 @@ public class OauthSecurityTests extends AbstractSystemTests {
         return artemisSecurity;
     }
     @Test
+    @Tag("jaas")
     public void keycloakDeploymentTest() {
         String brokerName = "artemis";
         String amqpAcceptorName = "my-amqp";
         String brokerSecretName = "broker-tls-secret";
         String clientSecretName = "client-tls-secret";
         String consoleSecretName = brokerName + "-console-secret";
-        Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName);
+        Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, false);
         ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -181,12 +184,13 @@ public class OauthSecurityTests extends AbstractSystemTests {
                 .endSpec()
                 .build();
 //        Map<String, KeyStoreData> keystores = CertificateManager.reuseDefaultGeneratedKeystoresFromFiles();
-        Map<String, KeyStoreData> keystores = CertificateManager.generateCertificateKeystores(
+        Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
                 testNamespace,
                 artemis,
                 CertificateManager.generateDefaultBrokerDN(getKubernetesClient()),
                 CertificateManager.generateDefaultClientDN(getKubernetesClient()),
-                List.of(CertificateManager.generateSanDnsNames(getClient(), artemis, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX)))
+                List.of(CertificateManager.generateSanDnsNames(getClient(), artemis, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX))),
+                null
         );
 
         // https://access.redhat.com/solutions/6973839 Get route secret
@@ -204,14 +208,14 @@ public class OauthSecurityTests extends AbstractSystemTests {
                 .editOrNewMetadata()
                 .withName("keycloak-truststore")
                 .endMetadata()
-                .withBinaryData(Map.of("brokerUser_keystore.p12", truststoreBrokerData.getEncodedKeystoreFileData()))
+                .withBinaryData(Map.of("brokerUser_keystore.jks", truststoreBrokerData.getEncodedKeystoreFileData()))
                 .build();
         getKubernetesClient().configMaps().inNamespace(testNamespace).resource(cm).createOrReplace();
 
         artemis.getSpec().setEnv(List.of(
                 new EnvBuilder()
                     .withName("DEBUG_ARGS")
-                    .withValue("-Djavax.net.ssl.trustStore=/amq/extra/configmaps/keycloak-truststore/brokerUser_keystore.p12 -Djavax.net.ssl.trustStorePassword=brokerPass -Djavax.net.ssl.trustStoreType=pkcs12")
+                    .withValue("-Djavax.net.ssl.trustStore=/amq/extra/configmaps/keycloak-truststore/brokerUser_keystore.jks -Djavax.net.ssl.trustStorePassword=brokerPass -Djavax.net.ssl.trustStoreType=jks")
                 .build())
         );
         artemis.getSpec().getDeploymentPlan().setExtraMounts(
@@ -235,12 +239,13 @@ public class OauthSecurityTests extends AbstractSystemTests {
 
         // Create clients and send messages
         LOGGER.info("ENV is set up properly. Deploy clients now");
-        testTlsMessaging(testNamespace, artemisPod0, tlsAddress, brokerUris.get(0), clientSecretName,
+        testTlsMessaging(testNamespace, artemisPod0, tlsAddress, brokerUris.get(0), null, clientSecretName,
                 Constants.CLIENT_KEYSTORE_ID, keystores.get(Constants.CLIENT_KEYSTORE_ID).getPassword(),
                 Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getPassword());
     }
 
     @Test
+    @Tag("jaas")
     public void keycloakJAASExternalTest() {
         // ENTMQBR-5918 Allow to configure TextFileCertificateLoginModule
     }

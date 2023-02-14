@@ -99,7 +99,8 @@ public class AbstractSystemTests implements TestSeparator {
             loggerList.stream().forEach(
                     tmpLogger -> {
                         // Do not set `ROOT` and `io` logger, as it would set it on all used components, not just this project.
-                        if (!List.of("ROOT", "io").contains(tmpLogger.getName())) {
+//                        if (!List.of("ROOT", "io").contains(tmpLogger.getName())) {
+                        if (tmpLogger.getName().contains("io.brokerqe")) {
                             tmpLogger.setLevel(envLevel);
                         }
                     });
@@ -162,13 +163,13 @@ public class AbstractSystemTests implements TestSeparator {
 
     // TODO: Move these methods to some more appropriate location?
     protected Acceptors createAcceptor(String name, String protocols, int port) {
-        return createAcceptor(name, protocols, port, false, false, null);
+        return createAcceptor(name, protocols, port, false, false, null, false);
     }
 
     protected Acceptors createAcceptor(String name, String protocols, int port, boolean expose) {
-        return createAcceptor(name, protocols, port, expose, false, null);
+        return createAcceptor(name, protocols, port, expose, false, null, false);
     }
-    protected Acceptors createAcceptor(String name, String protocols, int port, boolean expose, boolean sslEnabled, String sslSecretName) {
+    protected Acceptors createAcceptor(String name, String protocols, int port, boolean expose, boolean sslEnabled, String sslSecretName, boolean needClientAuth) {
         Acceptors acceptors = new Acceptors();
         acceptors.setName(name);
         acceptors.setProtocols(protocols);
@@ -178,9 +179,9 @@ public class AbstractSystemTests implements TestSeparator {
             acceptors.setSslEnabled(sslEnabled);
             if (sslSecretName != null) {
                 acceptors.setSslSecret(sslSecretName);
-                // TODO true this later
-                acceptors.setVerifyHost(false);
             }
+            acceptors.setNeedClientAuth(needClientAuth);
+
         }
         return acceptors;
     }
@@ -206,18 +207,22 @@ public class AbstractSystemTests implements TestSeparator {
     protected ServicePort getServicePort(String namespace, Service service, String portName) {
         return service.getSpec().getPorts().stream().filter(port -> {
             return port.getName().equals(portName);
-        }).collect(Collectors.toList()).get(0);
+        }).toList().get(0);
     }
 
-    public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress myAddress, String externalBrokerUri, String secretName, String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
-        Deployment clients = ResourceManager.deploySecuredClientsContainer(namespace, secretName);
+    public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress myAddress,
+                                 String externalBrokerUri, String saslMechanism, String secretName,
+                                 String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
+        Deployment clients = ResourceManager.deploySecuredClientsContainer(namespace, List.of(secretName));
         Pod clientsPod = getClient().getFirstPodByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
         int msgsExpected = 10;
         int sent = -1;
         int received = 0;
 
         // Publisher - Receiver
-        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, externalBrokerUri, myAddress, msgsExpected, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
+        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, externalBrokerUri, myAddress, msgsExpected, saslMechanism,
+                "/etc/" + secretName + "/" + clientKeyStore, clientKeyStorePassword,
+                "/etc/" + secretName + "/" + clientTrustStore, clientTrustStorePassword);
         sent = messagingClient.sendMessages();
         received = messagingClient.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
@@ -225,6 +230,5 @@ public class AbstractSystemTests implements TestSeparator {
         assertThat(messagingClient.compareMessages(), is(true));
         ResourceManager.undeployClientsContainer(namespace, clients);
     }
-
 
 }

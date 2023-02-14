@@ -21,26 +21,19 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
+
 public class TLSSecurityTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(TLSSecurityTests.class);
     private final String testNamespace = getRandomNamespaceName("tls-tests", 6);
 
     @BeforeAll
     void setupClusterOperator() {
-        getClient().createNamespace(testNamespace, true);
-        LOGGER.info("[{}] Creating new namespace to {}", testNamespace, testNamespace);
-        operator = ResourceManager.deployArtemisClusterOperator(testNamespace);
+        setupDefaultClusterOperator(testNamespace);
     }
 
     @AfterAll
     void teardownClusterOperator() {
-        ResourceManager.undeployArtemisClusterOperator(operator);
-        if (!ResourceManager.isClusterOperatorManaged()) {
-            LOGGER.info("[{}] Deleting namespace {}", testNamespace, testNamespace);
-            getClient().deleteNamespace(testNamespace);
-        }
-        ResourceManager.undeployAllClientsContainers();
-        getClient().deleteNamespace(testNamespace);
+        teardownDefaultClusterOperator(testNamespace);
     }
 
     @Test
@@ -54,22 +47,22 @@ public class TLSSecurityTests extends AbstractSystemTests {
 
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
-        Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName);
-        Acceptors owireAcceptors = createAcceptor(owireAcceptorName, "openwire", 61618, true, true, bugBrokerSecretName);
+        Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, true);
+        Acceptors owireAcceptors = createAcceptor(owireAcceptorName, "openwire", 61618, true, true, bugBrokerSecretName, true);
 
 //        Map<String, KeyStoreData> keystores = CertificateManager.reuseDefaultGeneratedKeystoresFromFiles();
-        Map<String, KeyStoreData> keystores = CertificateManager.generateCertificateKeystores(
+        Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
                 testNamespace,
                 broker,
                 CertificateManager.generateDefaultBrokerDN(getKubernetesClient()),
                 CertificateManager.generateDefaultClientDN(getKubernetesClient()),
-                List.of(CertificateManager.generateSanDnsNames(getClient(), broker, List.of(amqpAcceptorName, owireAcceptorName)))
+                List.of(CertificateManager.generateSanDnsNames(getClient(), broker, List.of(amqpAcceptorName, owireAcceptorName))),
+                null
         );
 
         // One Way TLS
         CertificateManager.createBrokerKeystoreSecret(getClient(), brokerSecretName, keystores);
         CertificateManager.createBrokerKeystoreSecret(getClient(), bugBrokerSecretName, keystores);
-
         // Two Way - Mutual Authentication (Clients TLS secret)
         CertificateManager.createClientKeystoreSecret(getClient(), clientSecret, keystores);
 
@@ -79,7 +72,8 @@ public class TLSSecurityTests extends AbstractSystemTests {
         List<String> brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
         LOGGER.info("[{}] Broker {} is up and running with TLS", testNamespace, brokerName);
 
-        testTlsMessaging(testNamespace, brokerPod, tlsAddress, brokerUris.get(0), clientSecret,
+        // TLS Authentication for netty, but for Artemis as Guest due to JAAS settings
+        testTlsMessaging(testNamespace, brokerPod, tlsAddress, brokerUris.get(0), null, clientSecret,
                 Constants.CLIENT_KEYSTORE_ID, keystores.get(Constants.CLIENT_KEYSTORE_ID).getPassword(),
                 Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getPassword());
 

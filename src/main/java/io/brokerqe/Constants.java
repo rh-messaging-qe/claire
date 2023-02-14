@@ -22,6 +22,7 @@ public interface Constants {
     String EV_BUNDLE_IMAGE = "BUNDLE_IMAGE";
     String EV_LOGS_LOCATION = "LOGS_LOCATION";
     String EV_CLUSTER_OPERATOR_MANAGED = "CLUSTER_OPERATOR_MANAGED";
+    String EV_COLLECT_TEST_DATA = "COLLECT_TEST_DATA";
     String EV_KEYCLOAK_VERSION = "KEYCLOAK_VERSION";
 
     String BROKER_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Kubernetes_";
@@ -33,8 +34,11 @@ public interface Constants {
     // CRDs needed for typeless usage
     String CRD_ACTIVEMQ_ARTEMIS = "activemqartemises" + "." + CRD_ACTIVEMQ_ARTEMIS_GROUP;
     String WATCH_ALL_NAMESPACES = "*";
+    String LOGGING_PROPERTIES_CONFIG_KEY = "logging.properties";
 
     // Project related strings
+    String ROUTING_TYPE_ANYCAST = "anycast";
+    String ROUTING_TYPE_MULTICAST = "multicast";
     String BROKER_KEYSTORE_ID = "broker.ks";
     String BROKER_TRUSTSTORE_ID = "broker.ts";
     String CLIENT_KEYSTORE_ID = "client.ks";

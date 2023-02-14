@@ -149,12 +149,13 @@ public class WebConsoleTests extends AbstractSystemTests {
                 .endSpec()
                 .build();
 
-        Map<String, KeyStoreData> keystores = CertificateManager.generateCertificateKeystores(
+        Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
                 testNamespace,
                 artemis,
                 CertificateManager.generateDefaultBrokerDN(getKubernetesClient()),
                 CertificateManager.generateDefaultClientDN(getKubernetesClient()),
-                List.of(CertificateManager.generateSanDnsNames(getClient(), artemis, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX)))
+                List.of(CertificateManager.generateSanDnsNames(getClient(), artemis, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX))),
+                null
         );
         Secret consoleSecret = CertificateManager.createConsoleKeystoreSecret(getClient(), consoleSecretName, keystores);
 

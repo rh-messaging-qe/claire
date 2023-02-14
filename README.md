@@ -30,7 +30,8 @@ Review `Makefile` for more details.
 | DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices            | not set (`false`)           | `true`, `false`                                  |
 | LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | <directory>                                      |
 | TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
-| CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)  | true                        | `false`                                          |
+| CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)  | `true`                      | `false`                                          |
+| COLLECT_TEST_DATA         | Whether to gather test data on error or not      | `true`                      | `true`, `false`                                  |
 | OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile) | 7.10.1 url                  | <url>                                            |
 | OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)          | main                        | <branch>                                         |
 

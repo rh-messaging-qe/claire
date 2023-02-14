@@ -122,6 +122,16 @@ public abstract class BundledMessagingClient implements MessagingClient {
         }
     }
 
+    @Override
+    public Object getSentMessages() {
+        throw new IllegalStateException("Bundled clients do not provide message output");
+    }
+
+    @Override
+    public Object getReceivedMessages() {
+        throw new IllegalStateException("Bundled clients do not provide message output");
+    }
+
     /**
      * Subscribe to the address and wait for messages.
      * This is definitely not thread safe, nor reusable solution for multiple client calls.

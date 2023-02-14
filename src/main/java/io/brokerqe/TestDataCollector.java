@@ -4,9 +4,13 @@
  */
 package io.brokerqe;
 
+import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.junit.TestSeparator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.MicroTime;
@@ -52,10 +56,15 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         List<String> testNamespaces = getTestNamespaces(testInstance);
 
         Environment testEnv = (Environment) getTestInstanceDeclaredField(testInstance, "testEnvironment");
+
+        if (!testEnv.isCollectTestData()) {
+            LOGGER.info("Gathering of debug data is disabled!");
+            throw throwable;
+        }
         archiveDir = testEnv.getLogsDirLocation() + Constants.FILE_SEPARATOR + createArchiveName();
         kubeClient = (KubeClient) getTestInstanceDeclaredField(testInstance, "client");
 
-        LOGGER.info("Will gather data from namespace: {}", String.join(" ", testNamespaces));
+        LOGGER.info("Error detected will gather data from namespace: {}", String.join(" ", testNamespaces));
         for (String testNamespace : testNamespaces) {
             String archiveDirName = archiveDir + Constants.FILE_SEPARATOR + testClass + "." + testMethod + Constants.FILE_SEPARATOR + testNamespace;
 
@@ -111,6 +120,9 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         List<Secret> secrets = kubeClient.getKubernetesClient().secrets().inNamespace(namespace).list().getItems();
         List<Event> events = kubeClient.getKubernetesClient().v1().events().inNamespace(namespace).list().getItems();
         List<Pod> pods = kubeClient.getKubernetesClient().pods().inNamespace(namespace).list().getItems();
+        List<ActiveMQArtemis> artemises = ResourceManager.getArtemisClient().inNamespace(namespace).list().getItems();
+        List<ActiveMQArtemisAddress> artemisAddresses = ResourceManager.getArtemisAddressClient().inNamespace(namespace).list().getItems();
+        List<ActiveMQArtemisSecurity> artemisSecurities = ResourceManager.getArtemisSecurityClient().inNamespace(namespace).list().getItems();
 
         writeHasMetadataObject(deployments, archiveLocation);
         writeHasMetadataObject(statefulSets, archiveLocation);
@@ -121,6 +133,9 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
         writeHasMetadataObject(services, archiveLocation);
         writeHasMetadataObject(secrets, archiveLocation);
         writeHasMetadataObject(pods, archiveLocation);
+        writeHasMetadataObject(artemises, archiveLocation);
+        writeHasMetadataObject(artemisAddresses, archiveLocation);
+        writeHasMetadataObject(artemisSecurities, archiveLocation);
         writeEvents(events, archiveLocation);
         collectPodLogs(pods, archiveLocation);
         collectBrokerPodFiles(pods, archiveLocation);
@@ -141,6 +156,13 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
                     kubeClient.getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace())
                          .withName(pod.getMetadata().getName()).file(podFileName).copy(Paths.get(outputFileName));
                 }
+                // collect /amq/extra/ mounted configuration files + possibly /etc/<cr-name>-secret-name
+                String output = kubeClient.executeCommandInPod(pod.getMetadata().getNamespace(), pod, "find /amq/extra/ -type f", Constants.DURATION_10_SECONDS);
+                for (String file : output.split("\n")) {
+                    String outputDirName = dirName + Constants.FILE_SEPARATOR + "container" + Constants.FILE_SEPARATOR + Paths.get(file).getFileName();
+                    kubeClient.getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace())
+                            .withName(pod.getMetadata().getName()).file(file).copy(Paths.get(outputDirName));
+                }
             }
         }
     }
@@ -148,13 +170,21 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
     private void collectPodLogs(List<Pod> pods, String archiveLocation) {
         for (Pod pod : pods) {
             String dirName = archiveLocation + Constants.FILE_SEPARATOR + "logs";
-            String fileName = dirName + Constants.FILE_SEPARATOR + "pod_" + pod.getMetadata().getName() + ".log";
+            String containerName = null;
+            List<Container> containers = pod.getSpec().getContainers();
+            containers.addAll(pod.getSpec().getInitContainers());
             try {
-                String podLog = kubeClient.getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).withName(pod.getMetadata().getName()).getLog();
-                TestUtils.createDirectory(dirName);
-                TestUtils.createFile(fileName, podLog);
+                for (Container container : containers) {
+                    containerName = container.getName();
+                    String fileName = dirName + Constants.FILE_SEPARATOR + "pod_" + pod.getMetadata().getName() + "_c_" + containerName + ".log";
+                    String containerLog = kubeClient.getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace())
+                            .withName(pod.getMetadata().getName()).inContainer(containerName).getLog();
+
+                    TestUtils.createDirectory(dirName);
+                    TestUtils.createFile(fileName, containerLog);
+                }
             } catch (KubernetesClientException e) {
-                LOGGER.error("[{}] Unable to get pod logs {} - skipping. {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(), e.getMessage());
+                LOGGER.error("[{}] Unable to get pod/container logs {} - skipping. {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName() + "/" + containerName, e.getMessage());
             }
         }
     }

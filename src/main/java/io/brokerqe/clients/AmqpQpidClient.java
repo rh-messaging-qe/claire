@@ -7,6 +7,7 @@ package io.brokerqe.clients;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.Constants;
 import io.brokerqe.executor.Executor;
+import io.brokerqe.security.KeyStoreData;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import org.json.JSONException;
@@ -15,11 +16,13 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 
 public class AmqpQpidClient extends MessagingAmqpClient {
 
+    public static final String SASL_ANON = "ANONYMOUS";
+    public static final String SASL_PLAIN = "PLAIN";
+    public static final String SASL_EXTERNAL = "EXTERNAL";
     private String keystorePassword;
     private String trustStore;
     private String trustStorePassword;
@@ -30,11 +33,10 @@ public class AmqpQpidClient extends MessagingAmqpClient {
     private String destinationPort;
     private String destinationAddress;
     private String destinationQueue;
+    private String saslMechanism;
     String clientDestination;
     private int messageCount;
-
     private boolean secured;
-
     private ExecWatch subscriberExecWatch;
     private Executor backgroundExecutor;
     private List<JSONObject> sentMessages;
@@ -50,7 +52,7 @@ public class AmqpQpidClient extends MessagingAmqpClient {
         this.messageCount = messageCount;
     }
 
-    public AmqpQpidClient(Pod clientsPod, String brokerUri, ActiveMQArtemisAddress address, int messageCount,
+    public AmqpQpidClient(Pod clientsPod, String brokerUri, ActiveMQArtemisAddress address, int messageCount, String saslMechanism,
                           String keystore, String keystorePassword, String trustStore, String trustStorePassword) {
         this.secured = true;
         this.clientsPod = clientsPod;
@@ -58,11 +60,18 @@ public class AmqpQpidClient extends MessagingAmqpClient {
         this.destinationAddress = address.getSpec().getAddressName();
         this.destinationQueue = address.getSpec().getQueueName();
         this.messageCount = messageCount;
+        this.saslMechanism = saslMechanism;
         this.keystore = keystore;
         this.keystorePassword = keystorePassword;
         this.trustStore = trustStore;
         this.trustStorePassword = trustStorePassword;
 
+    }
+
+    public AmqpQpidClient(Pod clientsPod, String brokerUri, ActiveMQArtemisAddress address, int messageCount, String saslMechanism, KeyStoreData keystoreData, KeyStoreData truststoreData, String secretName) {
+        this(clientsPod, brokerUri, address, messageCount, saslMechanism,
+                "/etc/" + secretName + "/" + keystoreData.getIdentifier(), keystoreData.getPassword(),
+                "/etc/" + secretName + "/" + truststoreData.getIdentifier(), truststoreData.getPassword());
     }
 
     @Override
@@ -103,41 +112,27 @@ public class AmqpQpidClient extends MessagingAmqpClient {
             try {
                 jsonMessages.add(new JSONObject(line));
             } catch (JSONException e) {
-                LOGGER.error("Unable to parse messages from client output. Some error happened! \n{}", output);
-                throw new RuntimeException(e); // do we want to carry on with execution?
+                // do we want to carry on with execution?
+                LOGGER.error("Unable to parse {} ", output);
+                throw new MessagingClientException("Unable to get messages \n" + output, e);
             }
         }
         return jsonMessages;
     }
 
     @Override
+    public Object getSentMessages() {
+        return sentMessages;
+    }
+
+    @Override
+    public Object getReceivedMessages() {
+        return receivedMessages;
+    }
+
+    @Override
     public boolean compareMessages() {
-        // Method compares only number of sent and received messages and real comparision of messageIDs (if is present in other group)
-        if (sentMessages.size() != receivedMessages.size()) {
-            LOGGER.warn("Sent {} and received {} messages are not same!", sentMessages.size(), receivedMessages.size());
-            return false;
-        } else {
-            try {
-                // compare message IDs
-                List<String> receivedIds = receivedMessages.stream().map(receivedMsg -> {
-                    try {
-                        return (String) receivedMsg.get("id");
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).collect(Collectors.toList());
-                for (JSONObject message : sentMessages) {
-                    if (!receivedIds.contains(message.get("id"))) {
-                        LOGGER.warn("Unable to find/compare messageId {}", message);
-                        return false;
-                    }
-                }
-            } catch (JSONException e) {
-                LOGGER.error("Unable to parse/compare messages! {}", e.getMessage());
-            }
-            LOGGER.debug("All messages are same. Good.");
-            return true;
-        }
+        return compareMessages(this.sentMessages, this.receivedMessages);
     }
 
     @Override
@@ -191,26 +186,32 @@ public class AmqpQpidClient extends MessagingAmqpClient {
         // cli-qpid-sender --broker 172.30.177.210:5672 --address myAddress0::myQueue0 --count 10 --log-msgs dict
         // cli-qpid-receiver --broker 172.30.177.210:5672 --address myAddress0::myQueue0 --count 10 --log-msgs dict
         String command;
+        String clientOptions = "";
         if (destinationAddress.equals(destinationQueue)) {
             clientDestination = destinationAddress;
         } else {
             clientDestination = String.format("%s::%s", destinationAddress, destinationQueue);
         }
+
+        if (saslMechanism != null) {
+            clientOptions += "?amqp.saslMechanisms=" + saslMechanism;
+        }
+
         if (secured) {
             // java -Djavax.net.ssl.keyStore="/etc/ssl-stores/$CLIENT_KEYSTORE" -Djavax.net.ssl.keyStorePassword="$PASSWORD" -Djavax.net.ssl.trustStore="/etc/ssl-stores/$CLIENT_TRUSTSTORE" -Djavax.net.ssl.trustStorePassword="$PASSWORD"
             // -jar /client_executable/cli-qpid-jms.jar sender --broker-uri $broker_address:443 --log-msgs json --conn-auth-mechanisms PLAIN --conn-username admin --conn-password admin --address "MyQueue0" --count 1 --msg-content "content" --conn-ssl-verify-host true
-            String javaPrefix = String.format("java -Djavax.net.ssl.keyStore=/etc/ssl-stores/%s " +
+            String javaPrefix = String.format("java -Djavax.net.ssl.keyStore=%s " +
                             "-Djavax.net.ssl.keyStorePassword=%s " +
-                            "-Djavax.net.ssl.trustStore=/etc/ssl-stores/%s " +
+                            "-Djavax.net.ssl.trustStore=%s " +
                             "-Djavax.net.ssl.trustStorePassword=%s -jar",
                     keystore, keystorePassword, trustStore, trustStorePassword);
 //            https://github.com/rh-messaging/cli-java/issues/139
 //            String tlsOptions = String.format("--conn-ssl-keystore-location %s --conn-ssl-keystore-password %s --conn-ssl-truststore-location %s --conn-ssl-truststore-password %s", keystore, keystorePassword, trustStore, trustStorePassword);
-            command = String.format("%s /main/cli-qpid.jar %s --broker-uri amqps://%s:443 --address %s --log-msgs json --conn-ssl-verify-host true ",
-                    javaPrefix, clientType, brokerUri, clientDestination);
+            command = String.format("%s /main/cli-qpid.jar %s --broker-uri amqps://%s:443%s --address %s --log-msgs json --conn-ssl-verify-host true ",
+                    javaPrefix, clientType, brokerUri, clientOptions, clientDestination);
         } else {
-            command = String.format("cli-qpid-%s --broker %s:%s --address %s --log-msgs json",
-                    clientType, destinationUrl, destinationPort, clientDestination);
+            command = String.format("cli-qpid-%s --broker %s:%s%s --address %s --log-msgs json",
+                    clientType, destinationUrl, destinationPort, clientOptions, clientDestination);
         }
 
         if (messageCount != -2) {
@@ -220,6 +221,8 @@ public class AmqpQpidClient extends MessagingAmqpClient {
         if (timeout != -2) {
             command += " --timeout " + timeout;
         }
+
+
 
         return command;
     }

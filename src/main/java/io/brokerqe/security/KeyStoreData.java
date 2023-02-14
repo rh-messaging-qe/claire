@@ -8,16 +8,22 @@ import java.security.KeyStore;
 
 public class KeyStoreData {
 
+    private final CertificateData certificateData;
     private KeyStore keyStore;
     private String keyStorePath;
     private String identifier;
     private String password;
 
     public KeyStoreData(KeyStore keyStore, String keyStorePath, String identifier, String password) {
+        this(keyStore, keyStorePath, identifier, password, null);
+    }
+
+    public KeyStoreData(KeyStore keyStore, String keyStorePath, String identifier, String password, CertificateData certificateData) {
         this.keyStore = keyStore;
         this.keyStorePath = keyStorePath;
         this.identifier = identifier;
         this.password = password;
+        this.certificateData = certificateData;
     }
 
     public String getIdentifier() {
@@ -40,11 +46,16 @@ public class KeyStoreData {
     public String getPassword() {
         return password;
     }
+
     public String getEncodedPassword() {
         return CertificateManager.getEncodedString(password);
     }
 
     public String getEncodedKeystoreFileData() {
         return CertificateManager.readCertificateFromFile(keyStorePath);
+    }
+
+    public CertificateData getCertificateData() {
+        return certificateData;
     }
 }

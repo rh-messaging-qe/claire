@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -267,6 +268,17 @@ public class KubeClient {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public void uploadFilesToPod(String namespace, Pod pod, List<String> localSourcePaths, String podDestinationDirPath) {
+        for (String fileToUpload : localSourcePaths) {
+            String filename = Paths.get(fileToUpload).getFileName().toString();
+            uploadFileToPod(namespace, pod, fileToUpload, podDestinationDirPath + "/" + Paths.get(filename));
+        }
+    }
+
+    public void uploadFileToPod(String namespace, Pod pod, String localSourcePath, String podDestinationPath) {
+        getKubernetesClient().pods().inNamespace(namespace).withName(pod.getMetadata().getName()).file(podDestinationPath).upload(Paths.get(localSourcePath));
     }
 
     // ==================================

@@ -21,10 +21,10 @@ public class Environment {
     private final String bundleImage;
     private final boolean projectManagedClusterOperator;
     private final String logsDirLocation;
-
     private final String keycloakVersion;
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     private final KubeClient kubeClient;
+    private final boolean collectTestData;
 
     public Environment() {
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
@@ -36,6 +36,7 @@ public class Environment {
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
         logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR);
         projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
+        collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
         kubeClient = new KubeClient("default");
         keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
 
@@ -47,6 +48,7 @@ public class Environment {
         StringBuilder envVarsSB = new StringBuilder("List of all used Claire related variables:").append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_DISABLE_RANDOM_NAMESPACES).append("=").append(disabledRandomNs).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_CLUSTER_OPERATOR_MANAGED).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
+        envVarsSB.append(Constants.EV_COLLECT_TEST_DATA).append("=").append(collectTestData).append(Constants.LINE_SEPARATOR);
 
         if (testLogLevel != null) {
             envVarsSB.append(Constants.EV_TEST_LOG_LEVEL).append("=").append(testLogLevel).append(Constants.LINE_SEPARATOR);
@@ -103,6 +105,10 @@ public class Environment {
 
     public boolean isProjectManagedClusterOperator() {
         return projectManagedClusterOperator;
+    }
+
+    public boolean isCollectTestData() {
+        return collectTestData;
     }
 
     public String getTestLogLevel() {

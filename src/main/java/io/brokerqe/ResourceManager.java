@@ -4,6 +4,7 @@
  */
 package io.brokerqe;
 
+import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
@@ -209,6 +210,40 @@ public class ResourceManager {
         return artemisAddress;
     }
 
+    public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String addressName, String queueName) {
+        return createArtemisAddress(namespace, addressName, queueName, Constants.ROUTING_TYPE_ANYCAST);
+    }
+
+    public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String addressName, String queueName, String routingType) {
+        String compoundName = addressName;
+        if (queueName == null || queueName.equals("")) {
+            queueName = addressName;
+        } else {
+            compoundName += "-" + queueName;
+        }
+
+        ActiveMQArtemisAddress artemisAddress = new ActiveMQArtemisAddressBuilder()
+                .editOrNewMetadata()
+                    .withName(compoundName)
+                .endMetadata()
+                .editOrNewSpec()
+                    .withAddressName(addressName)
+                    .withQueueName(queueName)
+                    .withRoutingType(routingType)
+                .endSpec()
+                .build();
+        artemisAddress = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).createOrReplace();
+        // TODO check it programmatically
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        ResourceManager.addArtemisAddress(artemisAddress);
+        LOGGER.info("[{}] Created ActiveMQArtemisAddress {}", namespace, artemisAddress.getMetadata().getName());
+        return artemisAddress;
+    }
+
     public static List<StatusDetails> deleteArtemisAddress(String namespace, String addressName) {
         throw new NotImplementedException();
     }
@@ -269,8 +304,8 @@ public class ResourceManager {
         return deployment;
     }
 
-    public static Deployment deploySecuredClientsContainer(String testNamespace, String secret) {
-        Deployment deployment = MessagingAmqpClient.deployClientsContainer(testNamespace, true, secret);
+    public static Deployment deploySecuredClientsContainer(String testNamespace, List<String> secrets) {
+        Deployment deployment = MessagingAmqpClient.deployClientsContainer(testNamespace, true, secrets);
         deployedContainers.put(deployment, testNamespace);
         return deployment;
     }
