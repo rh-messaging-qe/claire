@@ -2,18 +2,19 @@ ROOT_DIR 				= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ARTEMIS_PROPERTIES_FILE 		= ${ROOT_DIR}/artemis/project-settings.properties
 
 ARTEMIS_VERSION 			?= 7.10.2
+LATEST_ARTEMIS_VERSION			= 7.11
 OPERATOR_INSTALL_ZIP			?= https://download.eng.bos.redhat.com/released/jboss/amq/broker/${ARTEMIS_VERSION}/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples-rhel8.zip
 OPERATOR_VERSION_UPSTREAM 		?= main
 
 all: test_smoke_downstream
 
-build_downstream: prepare_dirs downstream_files copy_ocp_zip_files build_java
+build_downstream: clean_all prepare_dirs downstream_files copy_ocp_zip_files copy_latest_crd_files build_java
 
-build_upstream: prepare_dirs upstream_files build_java
+build_upstream: clean_all prepare_dirs upstream_files build_java
 
-test_smoke_downstream: prepare_dirs downstream_files copy_ocp_zip_files test_smoke
+test_smoke_downstream: clean_all prepare_dirs downstream_files copy_ocp_zip_files copy_latest_crd_files test_smoke
 
-test_smoke_upstream: prepare_dirs upstream_files test_smoke
+test_smoke_upstream: clean_all prepare_dirs upstream_files test_smoke
 
 clean: clean_all
 
@@ -28,7 +29,6 @@ clean_all:
 	rm -rf ${ROOT_DIR}/artemis
 
 prepare_dirs:
-	rm -rf ${ROOT_DIR}/artemis
 	mkdir -p ${ROOT_DIR}/artemis/{crds,examples,install}
 	mkdir -p ${ROOT_DIR}/artemis/examples/{artemis,address}
 
@@ -39,18 +39,27 @@ downstream_files:
 	unzip -o ${ROOT_DIR}/artemis/ocp_install_examples.zip -d ${ROOT_DIR}/artemis/tmp/
 
 copy_ocp_zip_files:
-	# Copy CRDs, examples and install files; Execute as one shell command
-	set -e ;\
-	EXAMPLES_ZIP_DIR=$$(find ${ROOT_DIR} -iname "*ocp-install-examples" -type d ) ;\
-	cp -r $${EXAMPLES_ZIP_DIR}/deploy/crds/* ${ROOT_DIR}/artemis/crds/ ;\
-        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemis_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
-        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemissecurity_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
-        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisaddress_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
-        wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisscaledown_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
-	cp $${EXAMPLES_ZIP_DIR}/deploy/examples/artemis-basic-deployment.yaml ${ROOT_DIR}/artemis/examples/artemis/ ;\
-	cp $${EXAMPLES_ZIP_DIR}/deploy/examples/address-queue-create.yaml ${ROOT_DIR}/artemis/examples/address/ ;\
-	cp -r $${EXAMPLES_ZIP_DIR}/deploy/*yaml ${ROOT_DIR}/artemis/install/
+	# Copy CRDs, examples and install files
+	$(eval EXAMPLES_ZIP_DIR := $(shell find ${ROOT_DIR} -iname "*ocp-install-examples" -type d ))
+	cp ${EXAMPLES_ZIP_DIR}/deploy/examples/artemis/*.yaml ${ROOT_DIR}/artemis/examples/artemis/ || cp ${EXAMPLES_ZIP_DIR}/deploy/examples/artemis-basic-deployment.yaml ${ROOT_DIR}/artemis/examples/artemis/
+	cp ${EXAMPLES_ZIP_DIR}/deploy/examples/address/*.yaml ${ROOT_DIR}/artemis/examples/address/ || cp ${EXAMPLES_ZIP_DIR}/deploy/examples/address-queue-create.yaml ${ROOT_DIR}/artemis/examples/address/
+	cp -r ${EXAMPLES_ZIP_DIR}/deploy/*yaml ${ROOT_DIR}/artemis/install/
+
+copy_latest_crd_files:
+	$(eval EXAMPLES_ZIP_DIR := $(shell find ${ROOT_DIR} -iname "*ocp-install-examples" -type d ))
+	@if [[ ${OPERATOR_INSTALL_ZIP} =~ ${LATEST_ARTEMIS_VERSION} ]]; then \
+		echo "[CRD] Using zip provided crds from ${LATEST_ARTEMIS_VERSION}" ;\
+		cp -r ${EXAMPLES_ZIP_DIR}/deploy/crds/* ${ROOT_DIR}/artemis/crds/ ;\
+	else \
+		echo "[CRD] Using latest upstream crds" ;\
+		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemis_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemissecurity_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisaddress_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisscaledown_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+	fi ;
+	# Clean tmp folder
 	rm -rf ${ROOT_DIR}/artemis/tmp ${ROOT_DIR}/artemis/ocp_install_examples.zip
+
 
 upstream_files:
 	# CRDs
@@ -75,6 +84,5 @@ upstream_files:
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/artemis/artemis_resources.yaml -P ${ROOT_DIR}/artemis/examples/artemis/
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/address/address_queue.yaml -P ${ROOT_DIR}/artemis/examples/address/
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/address/address_topic.yaml -P ${ROOT_DIR}/artemis/examples/address/
-
 
 .PHONY: build clean
