@@ -8,18 +8,13 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.activemqartemisspec.Env;
 import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.ResourceManager;
-import io.brokerqe.TestUtils;
 import io.brokerqe.executor.Executor;
-import io.brokerqe.operator.ArtemisFileProvider;
 import io.brokerqe.smoke.SmokeTests;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +23,8 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
 
 
 public class BrokerConfigurationTests extends AbstractSystemTests {
@@ -63,7 +58,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     void initialVariableSettingTest() {
-        ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(ArtemisFileProvider.getArtemisSingleExampleFile(), ActiveMQArtemis.class);
+        ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, "env-broker");
         artemisBroker.getSpec().getEnv().add(getEnvItem());
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(artemisBroker).createOrReplace();
         ResourceManager.waitForBrokerDeployment(testNamespace, artemisBroker);
@@ -88,21 +83,21 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     void variableAddedAfterDeployTest() {
-        ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(ArtemisFileProvider.getArtemisSingleExampleFile(), ActiveMQArtemis.class);
-        artemisBroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(artemisBroker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, artemisBroker);
+        ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, "env-broker");
         artemisBroker.getSpec().getEnv().add(getEnvItem());
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(artemisBroker).createOrReplace();
         ResourceManager.waitForBrokerDeployment(testNamespace, artemisBroker);
+
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, artemisBroker.getMetadata().getName());
         List<EnvVar> envVars = brokerPod.getSpec().getContainers().get(0).getEnv();
         EnvVar envItem = null;
-        for (int i = 0; i < envVars.size(); i++) {
-            if (envVars.get(i).getName().equals(name)) {
-                envItem = envVars.get(i);
+        for (EnvVar envVar : envVars) {
+            if (envVar.getName().equals(name)) {
+                envItem = envVar;
                 break;
             }
         }
+
         String processes = getPs(testNamespace, artemisBroker.getMetadata().getName());
         assertThat(processes, containsString(val));
         assertThat(envItem, is(notNullValue()));

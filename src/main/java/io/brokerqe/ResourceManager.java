@@ -4,11 +4,12 @@
  */
 package io.brokerqe;
 
-import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
-import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
-import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
+import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
+import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
+import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.security.Keycloak;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -113,6 +115,22 @@ public class ResourceManager {
         }
     }
 
+    public static void deployArtemisClusterOperatorCRDs() {
+        if (projectCODeploy) {
+            ArtemisCloudClusterOperator.deployOperatorCRDs();
+        } else {
+            LOGGER.warn("Not undeploying operator CRDs! " + "'" + Constants.EV_CLUSTER_OPERATOR_MANAGED + "' is 'false'");
+        }
+    }
+
+    public static void undeployArtemisClusterOperatorCRDs() {
+        if (projectCODeploy) {
+            ArtemisCloudClusterOperator.undeployOperatorCRDs(false);
+        } else {
+            LOGGER.warn("Not undeploying operator CRDs! " + "'" + Constants.EV_CLUSTER_OPERATOR_MANAGED + "' is 'false'");
+        }
+    }
+
     public static void undeployArtemisClusterOperator(ArtemisCloudClusterOperator clusterOperator) {
         if (projectCODeploy) {
             clusterOperator.undeployOperator(true);
@@ -137,12 +155,28 @@ public class ResourceManager {
     /*******************************************************************************************************************
      *  ActiveMQArtemis Usage of generated typed API
      ******************************************************************************************************************/
-    public static ActiveMQArtemis createArtemis(String namespace, String filePath) {
+
+    public static ActiveMQArtemis createArtemis(String namespace, String name) {
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName("my-broker")
+                    .withNamespace(namespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .withNewDeploymentPlan()
+                        .withSize(2)
+                    .endDeploymentPlan()
+                .endSpec()
+                .build();
+        return createArtemis(namespace, broker, true);
+    }
+
+    public static ActiveMQArtemis createArtemis(String namespace, Path filePath) {
         return createArtemis(namespace, filePath, true);
     }
 
-    public static ActiveMQArtemis createArtemis(String namespace, String filePath, boolean waitForDeployment) {
-        ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(filePath, ActiveMQArtemis.class);
+    public static ActiveMQArtemis createArtemis(String namespace, Path filePath, boolean waitForDeployment) {
+        ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(filePath.toFile(), ActiveMQArtemis.class);
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
         LOGGER.info("[{}] Created ActiveMQArtemis {}", namespace, artemisBroker);
         if (waitForDeployment) {
@@ -196,8 +230,8 @@ public class ResourceManager {
         LOGGER.info("[{}] Deleted ActiveMQArtemis {}", namespace, broker.getMetadata().getName());
     }
 
-    public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String filePath) {
-        ActiveMQArtemisAddress artemisAddress = TestUtils.configFromYaml(filePath, ActiveMQArtemisAddress.class);
+    public static ActiveMQArtemisAddress createArtemisAddress(String namespace, Path filePath) {
+        ActiveMQArtemisAddress artemisAddress = TestUtils.configFromYaml(filePath.toFile(), ActiveMQArtemisAddress.class);
         artemisAddress = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).createOrReplace();
         // TODO check it programmatically
         try {
@@ -417,6 +451,9 @@ public class ResourceManager {
     }
 
     public static Environment getEnvironment() {
+        if (environment == null) {
+            environment = new Environment();
+        }
         return environment;
     }
 }

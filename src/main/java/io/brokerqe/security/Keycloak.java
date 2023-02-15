@@ -68,7 +68,7 @@ public class Keycloak {
 
     public void undeployOperator() {
         kubeClient.getKubernetesClient().resourceList(keycloakResources).inNamespace(namespace).delete();
-        TestUtils.deleteFile(deployRealmFilePath);
+        TestUtils.deleteFile(Paths.get(deployRealmFilePath));
         LOGGER.info("[{}] [KC] Successfully undeployed Keycloak.", namespace);
     }
 

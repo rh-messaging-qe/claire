@@ -181,16 +181,16 @@ public final class TestUtils {
 
     // File Operations
 
-    public static String updateClusterRoleBindingFileNamespace(Path yamlFile, String namespace) {
+    public static Path updateClusterRoleBindingFileNamespace(Path yamlFile, String namespace) {
         String newCRBFileName = "cluster_role_binding_" + TestUtils.getRandomString(3) + ".yaml";
         Path copyPath = Paths.get(yamlFile.toAbsolutePath().toString().replace("cluster_role_binding.yaml", newCRBFileName));
         ClusterRoleBinding updatedCRB = configFromYaml(yamlFile.toFile(), ClusterRoleBinding.class);
         updatedCRB.getSubjects().get(0).setNamespace(namespace);
         configToYaml(copyPath.toFile(), updatedCRB);
-        return copyPath.toString();
+        return copyPath;
     }
 
-    public static String updateOperatorFileWatchNamespaces(Path yamlFile, List<String> watchedNamespaces) {
+    public static Path updateOperatorFileWatchNamespaces(Path yamlFile, List<String> watchedNamespaces) {
         String newCOFileName = "operator_cw_" + TestUtils.getRandomString(3) + ".yaml";
         Path copyPath = Paths.get(yamlFile.toAbsolutePath().toString().replace("operator.yaml", newCOFileName));
 
@@ -208,12 +208,12 @@ public final class TestUtils {
         // Write updated Deployment into file
         // mapper.writeValue(copyPath.toFile(), updatedCO);
         configToYaml(copyPath.toFile(), updatedCO);
-        return copyPath.toString();
+        return copyPath;
     }
 
-    public static void deleteFile(String fileName) {
+    public static void deleteFile(Path fileName) {
         try {
-            Files.delete(Paths.get(fileName));
+            Files.delete(fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

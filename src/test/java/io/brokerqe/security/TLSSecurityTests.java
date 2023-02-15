@@ -45,7 +45,7 @@ public class TLSSecurityTests extends AbstractSystemTests {
         String amqpAcceptorName = "my-amqp";
         String owireAcceptorName = "my-owire";
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "tls-broker");
         ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, true);
         Acceptors owireAcceptors = createAcceptor(owireAcceptorName, "openwire", 61618, true, true, bugBrokerSecretName, true);

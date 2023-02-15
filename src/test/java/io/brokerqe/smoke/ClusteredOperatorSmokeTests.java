@@ -27,9 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
-    private final String testNamespace = getRandomNamespaceName("cluster-test", 4);
-    private final String testNamespaceA = getRandomNamespaceName("cluster-testa", 4);
-    private final String testNamespaceB = getRandomNamespaceName("cluster-testb", 4);
+    private final String testNamespace = getRandomNamespaceName("cluster-tests", 4);
+    private final String testNamespaceA = testNamespace + "a";
+    private final String testNamespaceB = testNamespace + "b";
 
     @BeforeAll
     void setupClusterOperator() {

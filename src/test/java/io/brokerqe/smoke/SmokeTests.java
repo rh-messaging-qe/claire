@@ -4,11 +4,10 @@
  */
 package io.brokerqe.smoke;
 
+import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
-
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
-import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
@@ -17,7 +16,6 @@ import io.brokerqe.clients.BundledAmqpMessagingClient;
 import io.brokerqe.clients.BundledCoreMessagingClient;
 import io.brokerqe.clients.MessagingClient;
 import io.brokerqe.operator.ArtemisFileProvider;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -27,12 +25,12 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class SmokeTests extends AbstractSystemTests {
 
@@ -52,23 +50,11 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     @Disabled
     void brokerErrorTest() {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "my-broken-artemis");
         broker.getSpec().getDeploymentPlan().setSize(3);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
         ResourceManager.waitForBrokerDeployment(testNamespace, broker, true);
         throw new RuntimeException("Throwing random exception, to trigger TestDataCollection.");
-    }
-
-    @Test
-    @Disabled("ENTMQBR-7377")
-    void defaultSingleBrokerDeploymentTest() {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
-        String brokerName = broker.getMetadata().getName();
-        LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
-        List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
-        assertThat(brokerPods.size(), is(1));
-        ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        assertDoesNotThrow(() -> ResourceManager.waitForBrokerDeletion(testNamespace, brokerName, Constants.DURATION_1_MINUTE));
     }
 
     @Test

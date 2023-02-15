@@ -4,10 +4,9 @@
  */
 package io.brokerqe;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemisSpecBuilder;
 import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.broker.Permissions;
 import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.broker.PermissionsBuilder;
 import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.management.authorisation.RoleAccess;
@@ -16,23 +15,19 @@ import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.manage
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.clients.AmqpQpidClient;
 import io.brokerqe.clients.MessagingClient;
-import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.junit.TestSeparator;
+import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import okhttp3.OkHttpClient;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,9 +45,13 @@ public class AbstractSystemTests implements TestSeparator {
     protected ArtemisCloudClusterOperator operator;
 
     protected Environment testEnvironment;
-    protected ResourceManager resourceManager;
 
     public KubeClient getClient() {
+        if (ResourceManager.getKubeClient() != null) {
+            client = ResourceManager.getKubeClient();
+        } else {
+            LOGGER.error("KubeClient not initialized!");
+        }
         return client;
     }
     public KubernetesClient getKubernetesClient() {
@@ -60,50 +59,11 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     public String getRandomNamespaceName(String nsPrefix, int randomLength) {
-        if (testEnvironment == null) {
-            testEnvironment = new Environment();
-        }
+        testEnvironment = ResourceManager.getEnvironment();
         if (testEnvironment.isDisabledRandomNs()) {
             return nsPrefix;
         } else {
             return nsPrefix + "-" + TestUtils.getRandomString(randomLength);
-        }
-    }
-
-    @BeforeAll
-    void setupTestEnvironment() {
-        if (testEnvironment == null) {
-            testEnvironment = new Environment();
-        }
-        setupLoggingLevel();
-        resourceManager = ResourceManager.getInstance(testEnvironment);
-        client = ResourceManager.getKubeClient();
-        // Following log is added for debugging purposes, when OkHttpClient leaks connection
-        java.util.logging.Logger.getLogger(OkHttpClient.class.getName()).setLevel(java.util.logging.Level.FINE);
-    }
-
-    @AfterAll
-    void teardownTestEnvironment() {
-        ResourceManager.undeployAllResources();
-    }
-
-    void setupLoggingLevel() {
-        String envLogLevel = testEnvironment.getTestLogLevel();
-        if (envLogLevel == null || envLogLevel.equals("")) {
-            LOGGER.debug("Not setting log level at all.");
-        } else {
-            Level envLevel = Level.toLevel(envLogLevel.toUpperCase(Locale.ROOT));
-            LOGGER.info("All logging changed to level: {}", envLevel.levelStr);
-            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            List<ch.qos.logback.classic.Logger> loggerList = loggerContext.getLoggerList();
-            loggerList.stream().forEach(
-                    tmpLogger -> {
-                        // Do not set `ROOT` and `io` logger, as it would set it on all used components, not just this project.
-//                        if (!List.of("ROOT", "io").contains(tmpLogger.getName())) {
-                        if (tmpLogger.getName().contains("io.brokerqe")) {
-                            tmpLogger.setLevel(envLevel);
-                        }
-                    });
         }
     }
 
@@ -189,7 +149,11 @@ public class AbstractSystemTests implements TestSeparator {
     protected ActiveMQArtemis addAcceptorsWaitForPodReload(String namespace, List<Acceptors> acceptors, ActiveMQArtemis broker) {
         List<String> acceptorNames = acceptors.stream().map(Acceptors::getName).collect(Collectors.toList());
         LOGGER.info("[{}] Adding acceptors {} to broker {}", namespace, acceptorNames, broker.getMetadata().getName());
-        broker.getSpec().setAcceptors(acceptors);
+        if (broker.getSpec() == null) {
+            broker.setSpec(new ActiveMQArtemisSpecBuilder().withAcceptors(acceptors).build());
+        } else {
+            broker.getSpec().setAcceptors(acceptors);
+        }
         broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
         String brokerName = broker.getMetadata().getName();
         client.waitForPodReload(namespace, getClient().getFirstPodByPrefixName(namespace, brokerName), brokerName);

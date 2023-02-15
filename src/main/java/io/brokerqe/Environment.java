@@ -8,7 +8,8 @@ import io.brokerqe.operator.ArtemisFileProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Environment {
 
@@ -34,7 +35,7 @@ public class Environment {
         brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
         operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE);
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
-        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR);
+        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + createArchiveName();
         projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
         kubeClient = new KubeClient("default");
@@ -76,22 +77,22 @@ public class Environment {
     }
 
     private void checkSetProvidedImages() {
-        String operatorFile = ArtemisFileProvider.getOperatorInstallFile();
+        Path operatorFile = ArtemisFileProvider.getOperatorInstallFile();
 
-        Path operatorFilePath = Paths.get(operatorFile);
+//        Path operatorFilePath = Paths.get(operatorFile);
         if (brokerImage != null && !brokerImage.equals("")) {
             LOGGER.debug("Updating {} with {}", operatorFile, brokerImage);
-            TestUtils.updateImagesInOperatorFile(operatorFilePath, Constants.BROKER_IMAGE_OPERATOR_PREFIX, brokerImage, artemisVersion);
+            TestUtils.updateImagesInOperatorFile(operatorFile, Constants.BROKER_IMAGE_OPERATOR_PREFIX, brokerImage, artemisVersion);
         }
 
         if (brokerInitImage != null && !brokerInitImage.equals("")) {
             LOGGER.debug("Updating {} with {}", operatorFile, brokerInitImage);
-            TestUtils.updateImagesInOperatorFile(operatorFilePath, Constants.BROKER_INIT_IMAGE_OPERATOR_PREFIX, brokerInitImage, artemisVersion);
+            TestUtils.updateImagesInOperatorFile(operatorFile, Constants.BROKER_INIT_IMAGE_OPERATOR_PREFIX, brokerInitImage, artemisVersion);
         }
 
         if (operatorImage != null && !operatorImage.equals("")) {
             LOGGER.debug("Updating {} with {}", operatorFile, operatorImage);
-            TestUtils.updateImagesInOperatorFile(operatorFilePath, Constants.OPERATOR_IMAGE_OPERATOR_PREFIX, operatorImage, null);
+            TestUtils.updateImagesInOperatorFile(operatorFile, Constants.OPERATOR_IMAGE_OPERATOR_PREFIX, operatorImage, null);
         }
     }
 
@@ -149,5 +150,12 @@ public class Environment {
 
     public KubeClient getKubeClient() {
         return kubeClient;
+    }
+
+    private static String createArchiveName() {
+        LocalDateTime date = LocalDateTime.now();
+        String archiveName = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss"));
+        LOGGER.debug(archiveName);
+        return archiveName;
     }
 }

@@ -37,6 +37,7 @@ downstream_files:
 	# Download ocp-install-examples candidate files
 	wget ${OPERATOR_INSTALL_ZIP} -O ${ROOT_DIR}/artemis/ocp_install_examples.zip
 	unzip -o ${ROOT_DIR}/artemis/ocp_install_examples.zip -d ${ROOT_DIR}/artemis/tmp/
+	echo "artemis.zip=${OPERATOR_INSTALL_ZIP}" >> ${ARTEMIS_PROPERTIES_FILE}
 
 copy_ocp_zip_files:
 	# Copy CRDs, examples and install files
@@ -46,16 +47,21 @@ copy_ocp_zip_files:
 	cp -r ${EXAMPLES_ZIP_DIR}/deploy/*yaml ${ROOT_DIR}/artemis/install/
 
 copy_latest_crd_files:
+	echo "artemis.type=downstream" >> ${ARTEMIS_PROPERTIES_FILE}
 	$(eval EXAMPLES_ZIP_DIR := $(shell find ${ROOT_DIR} -iname "*ocp-install-examples" -type d ))
 	@if [[ ${OPERATOR_INSTALL_ZIP} =~ ${LATEST_ARTEMIS_VERSION} ]]; then \
 		echo "[CRD] Using zip provided crds from ${LATEST_ARTEMIS_VERSION}" ;\
 		cp -r ${EXAMPLES_ZIP_DIR}/deploy/crds/* ${ROOT_DIR}/artemis/crds/ ;\
+		echo "artemis.version=${LATEST_ARTEMIS_VERSION}" >> ${ARTEMIS_PROPERTIES_FILE} ;\
+		echo "artemis.crds=provided_zip" >> ${ARTEMIS_PROPERTIES_FILE} ;\
 	else \
 		echo "[CRD] Using latest upstream crds" ;\
 		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemis_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
 		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemissecurity_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
 		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisaddress_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
 		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisscaledown_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
+		echo "artemis.version=${ARTEMIS_VERSION}" >> ${ARTEMIS_PROPERTIES_FILE} ;\
+		echo "artemis.crds=upstream" >> ${ARTEMIS_PROPERTIES_FILE} ;\
 	fi ;
 	# Clean tmp folder
 	rm -rf ${ROOT_DIR}/artemis/tmp ${ROOT_DIR}/artemis/ocp_install_examples.zip
@@ -84,5 +90,8 @@ upstream_files:
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/artemis/artemis_resources.yaml -P ${ROOT_DIR}/artemis/examples/artemis/
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/address/address_queue.yaml -P ${ROOT_DIR}/artemis/examples/address/
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/address/address_topic.yaml -P ${ROOT_DIR}/artemis/examples/address/
+	echo "artemis.type=upstream" >> ${ARTEMIS_PROPERTIES_FILE}
+	echo "artemis.version=${OPERATOR_VERSION_UPSTREAM}" >> ${ARTEMIS_PROPERTIES_FILE}
+	echo "artemis.crds=upstream" >> ${ARTEMIS_PROPERTIES_FILE}
 
 .PHONY: build clean

@@ -20,7 +20,7 @@ Review `Makefile` for more details.
 To execute specific tests with maven, you need to build project (make) and execute maven tests, with skipping clean & compilation part
 ```bash
 make build_upstream
-mvn test -Dmaven.install.skip=true -Dtest=<my-specific-test>
+mvn test -Dmaven.main.skip=true -Dtest=<my-specific-test>
 ```
 
 

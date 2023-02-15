@@ -10,83 +10,86 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class ArtemisFileProvider {
 
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
 
-    public static String getArtemisCrdFile() {
+    public static Path getArtemisCrdFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_010_CRD_ARTEMIS_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_010_CRD_ARTEMIS_PATH);
     }
 
-    public static String getSecurityCrdFile() {
+    public static Path getSecurityCrdFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_020_CRD_SECURITY_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_020_CRD_SECURITY_PATH);
     }
 
-    public static String getAddressCrdFile() {
+    public static Path getAddressCrdFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_030_CRD_ADDRESS_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_030_CRD_ADDRESS_PATH);
     }
 
-    public static String getScaledownCrdFile() {
+    public static Path getScaledownCrdFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_040_CRD_SCALEDOWN_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_040_CRD_SCALEDOWN_PATH);
     }
 
-    public static String getServiceAccountInstallFile() {
+    public static Path getServiceAccountInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_050_SERVICE_ACCOUNT_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_050_SERVICE_ACCOUNT_PATH);
     }
 
-    public static String getClusterRoleInstallFile() {
+    public static Path getClusterRoleInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_060_CLUSTER_ROLE_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_060_CLUSTER_ROLE_PATH);
     }
 
-    public static String getClusterRoleBindingInstallFile() {
+    public static Path getClusterRoleBindingInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_070_CLUSTER_ROLE_BINDING_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_070_CLUSTER_ROLE_BINDING_PATH);
     }
 
-    public static String getNamespaceRoleInstallFile() {
+    public static Path getNamespaceRoleInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_060_NAMESPACE_ROLE_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_060_NAMESPACE_ROLE_PATH);
     }
 
-    public static String getNamespaceRoleBindingInstallFile() {
+    public static Path getNamespaceRoleBindingInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_070_NAMESPACE_ROLE_BINDING_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_070_NAMESPACE_ROLE_BINDING_PATH);
     }
 
-    public static String getElectionRoleInstallFile() {
+    public static Path getElectionRoleInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_080_ELECTION_ROLE_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_080_ELECTION_ROLE_PATH);
     }
 
-    public static String getElectionRoleBindingInstallFile() {
+    public static Path getElectionRoleBindingInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_090_ELECTION_ROLE_BINDING_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_090_ELECTION_ROLE_BINDING_PATH);
     }
 
-    public static String getOperatorConfigInstallFile() {
+    public static Path getOperatorConfigInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_100_OPERATOR_CONFIG_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_100_OPERATOR_CONFIG_PATH);
     }
 
-    public static String getOperatorInstallFile() {
+    public static Path getOperatorInstallFile() {
         return getPresentFile(Constants.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH, Constants.OLD_INSTALL_ARTEMIS_CO_110_OPERATOR_PATH);
     }
 
     // Examples
-    public static String getArtemisSingleExampleFile() {
+    public static Path getArtemisSingleExampleFile() {
         return getPresentFile(Constants.EXAMPLE_ARTEMIS_SINGLE_PATH, Constants.OLD_EXAMPLE_ARTEMIS_SINGLE_PATH);
     }
 
-    public static String getAddressQueueExampleFile() {
+    public static Path getAddressQueueExampleFile() {
         return getPresentFile(Constants.EXAMPLE_ADDRESS_QUEUE_PATH, Constants.OLD_EXAMPLE_ADDRESS_QUEUE_PATH);
     }
 
-    public static String getAddressTopicExampleFile() {
+    public static Path getAddressTopicExampleFile() {
         // TODO match here something newer instead of null?
         return getPresentFile(Constants.EXAMPLE_ADDRESS_TOPIC_PATH, null);
     }
 
-    private static String getPresentFile(String newStyleFile, String oldStyleFile) {
-        if (Files.exists(Paths.get(newStyleFile))) {
-            return newStyleFile;
-        } else if (Files.exists(Paths.get(oldStyleFile))) {
-            return oldStyleFile;
+    private static Path getPresentFile(String newStyleFile, String oldStyleFile) {
+        Path newPath = Paths.get(newStyleFile);
+        Path oldPath = Paths.get(oldStyleFile);
+        if (Files.exists(newPath)) {
+            return newPath;
+        } else if (Files.exists(oldPath)) {
+            return oldPath;
         } else {
             LOGGER.error("Can't find any file! Have you ran `Makefile` properly? Exiting.");
             System.exit(2);

@@ -41,11 +41,7 @@ public class MessageRedistributionTests extends AbstractSystemTests {
 
     @Test
     void simpleRedistributionTest() {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
-        broker.getSpec().getDeploymentPlan().setSize(2);
-        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true);
-
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "my-broker");
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         String brokerName = broker.getMetadata().getName();

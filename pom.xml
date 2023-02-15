@@ -24,7 +24,6 @@
         <slf4j.version>2.0.5</slf4j.version>
         <log4j.version>2.19.0</log4j.version>
         <maven.checkstyle.version>3.1.2</maven.checkstyle.version>
-        <strimzi.version>0.32.0</strimzi.version>
         <reportportal.version>5.1.0</reportportal.version>
         <lombok.version>1.18.24</lombok.version>
         <sundrio.version>0.93.2</sundrio.version>

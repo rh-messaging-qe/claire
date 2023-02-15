@@ -7,8 +7,8 @@ package io.brokerqe;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
-import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.junit.TestSeparator;
+import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Event;
@@ -33,8 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +43,6 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
 
     static final Logger LOGGER = LoggerFactory.getLogger(TestDataCollector.class);
     KubeClient kubeClient;
-
     static String archiveDir = null;
 
     @Override
@@ -61,7 +58,7 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
             LOGGER.info("Gathering of debug data is disabled!");
             throw throwable;
         }
-        archiveDir = testEnv.getLogsDirLocation() + Constants.FILE_SEPARATOR + createArchiveName();
+        archiveDir = testEnv.getLogsDirLocation();
         kubeClient = (KubeClient) getTestInstanceDeclaredField(testInstance, "client");
 
         LOGGER.info("Error detected will gather data from namespace: {}", String.join(" ", testNamespaces));
@@ -97,14 +94,6 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
     private ArtemisCloudClusterOperator getOperatorDifferentNamespace() {
         LOGGER.error("Not implemented yet!");
         return null;
-    }
-
-    private static String createArchiveName() {
-        LocalDateTime date = LocalDateTime.now();
-        String dateFormat = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss"));
-        String archiveName = dateFormat;
-        LOGGER.debug(archiveName);
-        return archiveName;
     }
 
     private void collectTestData(String namespace, String archiveLocation) {
