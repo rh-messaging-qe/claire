@@ -157,6 +157,9 @@ public class ResourceManager {
      ******************************************************************************************************************/
 
     public static ActiveMQArtemis createArtemis(String namespace, String name) {
+        return createArtemis(namespace, name, 1);
+    }
+    public static ActiveMQArtemis createArtemis(String namespace, String name, int size) {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
                     .withName("my-broker")
@@ -164,7 +167,7 @@ public class ResourceManager {
                 .endMetadata()
                 .editOrNewSpec()
                     .withNewDeploymentPlan()
-                        .withSize(2)
+                        .withSize(size)
                     .endDeploymentPlan()
                 .endSpec()
                 .build();
@@ -314,7 +317,7 @@ public class ResourceManager {
         String brokerName = broker.getMetadata().getName();
         if (reloadExisting) {
             // TODO: make more generic and resource specific wait
-            LOGGER.debug("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
+            LOGGER.info("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
             TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
         }
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
