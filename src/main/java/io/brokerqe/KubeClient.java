@@ -152,18 +152,6 @@ public class KubeClient {
         return client.namespaces().withName(namespaceName).isReady();
     }
 
-    public long getAvailableUserId(String namespace, long defaultUserId) {
-        long userId = defaultUserId;
-        try {
-            String range = getNamespace(namespace).getMetadata().getAnnotations().get("openshift.io/sa.scc.uid-range");
-            // 1001040000/10000
-            userId = Long.parseLong(range.split("/")[0]) + defaultUserId;
-        } catch (NullPointerException e) {
-            LOGGER.debug("[{}] Unable to detect 'openshift.io/sa.scc.uid-range', using default userId {}", namespace, userId);
-        }
-        return userId;
-    }
-
     // ================================
     // ---------> CONFIG MAP <---------
     // ================================

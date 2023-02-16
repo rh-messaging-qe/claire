@@ -60,9 +60,10 @@ public abstract class MessagingAmqpClient implements MessagingClient {
     }
 
     private static Deployment createSystemTestsDeployment(String namespace, boolean secured, List<Volume> secretVolumes, List<VolumeMount> secretVolumeMounts) {
-        long userId = kubeClient.getAvailableUserId(namespace, 1000L);
+        Deployment systemtestClients;
+        long defaultUserId = 1000L;
         if (!secured) {
-            return new DeploymentBuilder()
+            systemtestClients = new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(Constants.PREFIX_SYSTEMTESTS_CLIENTS)
                 .endMetadata()
@@ -78,10 +79,9 @@ public abstract class MessagingAmqpClient implements MessagingClient {
                         .withNewSpec()
                             .editOrNewSecurityContext()
                                 .withRunAsNonRoot(true)
-                                .withNewSeccompProfile()
-                                    .withType("RuntimeDefault") // localhost
-                                .endSeccompProfile()
-                            .withRunAsUser(userId)
+//                                .withNewSeccompProfile()
+//                                    .withType("RuntimeDefault") // localhost
+//                                .endSeccompProfile()
                             .endSecurityContext()
                             .addNewContainer()
                                 .withName(Constants.PREFIX_SYSTEMTESTS_CLIENTS)
@@ -103,7 +103,7 @@ public abstract class MessagingAmqpClient implements MessagingClient {
                 .endSpec()
                 .build();
         } else {
-            return new DeploymentBuilder()
+            systemtestClients = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(Constants.PREFIX_SYSTEMTESTS_CLIENTS)
             .endMetadata()
@@ -119,10 +119,9 @@ public abstract class MessagingAmqpClient implements MessagingClient {
                     .withNewSpec()
                         .editOrNewSecurityContext()
                             .withRunAsNonRoot(true)
-                            .withNewSeccompProfile()
-                                .withType("RuntimeDefault") // localhost
-                            .endSeccompProfile()
-                            .withRunAsUser(userId)
+//                            .withNewSeccompProfile()
+//                                .withType("RuntimeDefault") // localhost
+//                            .endSeccompProfile()
                         .endSecurityContext()
                         .withVolumes(secretVolumes)
                         .addNewContainer()
@@ -146,6 +145,11 @@ public abstract class MessagingAmqpClient implements MessagingClient {
             .endSpec()
             .build();
         }
+        if (kubeClient.isKubernetesPlatform()) {
+            // add userId
+            systemtestClients.getSpec().getTemplate().getSpec().getSecurityContext().setRunAsUser(defaultUserId);
+        }
+        return systemtestClients;
     }
 
     @Override
