@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -168,10 +169,19 @@ public class ResourceManager {
                 .editOrNewSpec()
                     .withNewDeploymentPlan()
                         .withSize(size)
+                        .withPersistenceEnabled()
+                        .withMessageMigration()
                     .endDeploymentPlan()
                 .endSpec()
                 .build();
-        return createArtemis(namespace, broker, true);
+
+        long waitTime;
+        if (size > 1) {
+            waitTime = Constants.DURATION_1_MINUTE * size + Constants.DURATION_1_MINUTE;
+        } else {
+            waitTime = Constants.DURATION_1_MINUTE;
+        }
+        return createArtemis(namespace, broker, true, waitTime);
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, Path filePath) {
@@ -313,7 +323,7 @@ public class ResourceManager {
     }
 
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout) {
-        LOGGER.info("[{}] Waiting for creation of broker {}", namespace, broker.getMetadata().getName());
+        LOGGER.info("[{}] Waiting {}s for creation of broker {}", namespace, Duration.ofMillis(maxTimeout).toSeconds(), broker.getMetadata().getName());
         String brokerName = broker.getMetadata().getName();
         if (reloadExisting) {
             // TODO: make more generic and resource specific wait
@@ -327,7 +337,7 @@ public class ResourceManager {
     }
 
     public static void waitForBrokerDeletion(String namespace, String brokerName, long maxTimeout) {
-        LOGGER.info("[{}] Waiting for deletion of broker {}", namespace, brokerName);
+        LOGGER.info("[{}] Waiting {}s for deletion of broker {}", namespace, Duration.ofMillis(maxTimeout).toSeconds(), brokerName);
         TestUtils.waitFor("ActiveMQArtemis statefulSet & related pods to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
             return ss == null && kubeClient.listPodsByPrefixInName(namespace, brokerName).size() == 0;

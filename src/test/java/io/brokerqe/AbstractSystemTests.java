@@ -27,7 +27,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -172,6 +176,35 @@ public class AbstractSystemTests implements TestSeparator {
         return service.getSpec().getPorts().stream().filter(port -> {
             return port.getName().equals(portName);
         }).toList().get(0);
+    }
+
+    /**
+     * We are looking for a log 'Drain pod my-broker-ss-1 finished.' which is present in ArtemisClusterOperator.
+     * It has to be present N times (based on scaledown factor (from 3 brokers to 1 broker -> 2)
+     * @param namespace
+     * @param operatorName
+     * @param brokerName
+     * @param maxTimeout
+     * @param expectedDrainPodsCount
+     */
+    public void waitForScaleDownDrainer(String namespace, String operatorName, String brokerName, long maxTimeout, int expectedDrainPodsCount) {
+        // Drain pod my-broker-ss-1 finished.
+        // Deleting drain pod my-broker-ss-1
+        Instant now = Instant.now();
+        Pod operatorPod = getClient().getFirstPodByPrefixName(namespace, operatorName);
+        Pattern pattern = Pattern.compile("Drain pod " + brokerName + ".* finished");
+
+        TestUtils.waitFor("Drain pod to finish", Constants.DURATION_10_SECONDS, maxTimeout, () -> {
+            String log = getKubernetesClient().pods().inNamespace(namespace).resource(operatorPod)
+                    .sinceTime(now.atOffset(ZoneOffset.UTC).toString()).getLog();
+            Matcher matcher = pattern.matcher(log);
+            int count = 0;
+            while (matcher.find()) {
+                count++;
+            }
+            LOGGER.info("[{}] Scaledown in progress. Finished Drainer {}/{}", namespace, count, expectedDrainPodsCount);
+            return count == expectedDrainPodsCount;
+        });
     }
 
     public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress myAddress,

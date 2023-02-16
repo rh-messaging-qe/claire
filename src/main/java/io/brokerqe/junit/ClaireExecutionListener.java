@@ -22,9 +22,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MyExecutionListener implements TestExecutionListener {
+public class ClaireExecutionListener implements TestExecutionListener {
 
-    static final Logger LOGGER = LoggerFactory.getLogger(MyExecutionListener.class);
+    static final Logger LOGGER = LoggerFactory.getLogger(ClaireExecutionListener.class);
     private static boolean setupPerformed = false;
     protected static Environment testEnvironment = null;
 
