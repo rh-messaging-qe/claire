@@ -2,12 +2,14 @@
  * Copyright Broker QE authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package specific;
+package io.brokerqe.specific;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.ArtemisVersion;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
+import io.brokerqe.junit.TestValidSince;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.brokerqe.smoke.SmokeTests;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
@@ -40,6 +42,7 @@ public class SpecificTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     void defaultSingleBrokerDeploymentTest() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         String brokerName = broker.getMetadata().getName();

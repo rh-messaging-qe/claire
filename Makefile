@@ -53,6 +53,7 @@ copy_latest_crd_files:
 		echo "[CRD] Using zip provided crds from ${LATEST_ARTEMIS_VERSION}" ;\
 		cp -r ${EXAMPLES_ZIP_DIR}/deploy/crds/* ${ROOT_DIR}/artemis/crds/ ;\
 		echo "artemis.version=${LATEST_ARTEMIS_VERSION}" >> ${ARTEMIS_PROPERTIES_FILE} ;\
+		echo "artemis.test.version=${LATEST_ARTEMIS_VERSION}" >> ${ARTEMIS_PROPERTIES_FILE} ;\
 		echo "artemis.crds=provided_zip" >> ${ARTEMIS_PROPERTIES_FILE} ;\
 	else \
 		echo "[CRD] Using latest upstream crds" ;\
@@ -61,6 +62,7 @@ copy_latest_crd_files:
 		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisaddress_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
 		wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/deploy/crds/broker_activemqartemisscaledown_crd.yaml -P ${ROOT_DIR}/artemis/crds/ ;\
 		echo "artemis.version=${ARTEMIS_VERSION}" >> ${ARTEMIS_PROPERTIES_FILE} ;\
+		echo "artemis.test.version=${ARTEMIS_VERSION}" >> ${ARTEMIS_PROPERTIES_FILE} ;\
 		echo "artemis.crds=upstream" >> ${ARTEMIS_PROPERTIES_FILE} ;\
 	fi ;
 	# Clean tmp folder
@@ -92,6 +94,7 @@ upstream_files:
 	wget https://raw.githubusercontent.com/artemiscloud/activemq-artemis-operator/${OPERATOR_VERSION_UPSTREAM}/examples/address/address_topic.yaml -P ${ROOT_DIR}/artemis/examples/address/
 	echo "artemis.type=upstream" >> ${ARTEMIS_PROPERTIES_FILE}
 	echo "artemis.version=${OPERATOR_VERSION_UPSTREAM}" >> ${ARTEMIS_PROPERTIES_FILE}
+	echo "artemis.test.version=${OPERATOR_VERSION_UPSTREAM}" >> ${ARTEMIS_PROPERTIES_FILE}
 	echo "artemis.crds=upstream" >> ${ARTEMIS_PROPERTIES_FILE}
 
 .PHONY: build clean

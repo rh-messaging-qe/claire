@@ -19,9 +19,11 @@ import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.deploymentplan.ExtraMountsBuilder;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.ArtemisVersion;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
+import io.brokerqe.junit.TestValidSince;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Disabled("Keycloak integration not ready yet")
+@TestValidSince(ArtemisVersion.VERSION_2_28)
 public class OauthSecurityTests extends AbstractSystemTests {
     /* Keycloak tests */
 

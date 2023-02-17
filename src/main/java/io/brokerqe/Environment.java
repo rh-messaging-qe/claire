@@ -7,15 +7,20 @@ package io.brokerqe;
 import io.brokerqe.operator.ArtemisFileProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Properties;
 
 public class Environment {
 
     private final boolean disabledRandomNs;
     private final String testLogLevel;
-    private final String artemisVersion;
+    private String artemisVersion;
+    private final ArtemisVersion artemisTestVersion;
     private final String brokerImage;
     private final String brokerInitImage;
     private final String operatorImage;
@@ -41,6 +46,19 @@ public class Environment {
         kubeClient = new KubeClient("default");
         keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
 
+        Properties projectSettings = new Properties();
+        FileInputStream projectSettingsFile;
+        try {
+            projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
+            projectSettings.load(projectSettingsFile);
+            artemisVersion = artemisVersion == null ? String.valueOf(projectSettings.get("artemis.version")) : artemisVersion;
+            // Use ENV Var, project property or default to artemisVersion
+            String artemisTestVersionStr = System.getenv().getOrDefault(Constants.EV_ARTEMIS_TEST_VERSION, String.valueOf(projectSettings.get("artemis.test.version")));
+            artemisTestVersionStr = artemisTestVersionStr == null || artemisTestVersionStr.equals("null") ? artemisVersion : artemisTestVersionStr;
+            artemisTestVersion = convertArtemisVersion(artemisTestVersionStr);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         printAllUsedTestVariables();
         checkSetProvidedImages();
     }
@@ -56,6 +74,9 @@ public class Environment {
         }
         if (artemisVersion != null) {
             envVarsSB.append(Constants.EV_ARTEMIS_VERSION).append("=").append(artemisVersion).append(Constants.LINE_SEPARATOR);
+        }
+        if (artemisTestVersion != null) {
+            envVarsSB.append(Constants.EV_ARTEMIS_TEST_VERSION).append("=").append(artemisTestVersion).append(Constants.LINE_SEPARATOR);
         }
         if (brokerImage != null) {
             envVarsSB.append(Constants.EV_BROKER_IMAGE).append("=").append(brokerImage).append(Constants.LINE_SEPARATOR);
@@ -79,19 +100,18 @@ public class Environment {
     private void checkSetProvidedImages() {
         Path operatorFile = ArtemisFileProvider.getOperatorInstallFile();
 
-//        Path operatorFilePath = Paths.get(operatorFile);
         if (brokerImage != null && !brokerImage.equals("")) {
-            LOGGER.debug("Updating {} with {}", operatorFile, brokerImage);
+            LOGGER.debug("[ENV] Updating {} with {}", operatorFile, brokerImage);
             TestUtils.updateImagesInOperatorFile(operatorFile, Constants.BROKER_IMAGE_OPERATOR_PREFIX, brokerImage, artemisVersion);
         }
 
         if (brokerInitImage != null && !brokerInitImage.equals("")) {
-            LOGGER.debug("Updating {} with {}", operatorFile, brokerInitImage);
+            LOGGER.debug("[ENV] Updating {} with {}", operatorFile, brokerInitImage);
             TestUtils.updateImagesInOperatorFile(operatorFile, Constants.BROKER_INIT_IMAGE_OPERATOR_PREFIX, brokerInitImage, artemisVersion);
         }
 
         if (operatorImage != null && !operatorImage.equals("")) {
-            LOGGER.debug("Updating {} with {}", operatorFile, operatorImage);
+            LOGGER.debug("[ENV] Updating {} with {}", operatorFile, operatorImage);
             TestUtils.updateImagesInOperatorFile(operatorFile, Constants.OPERATOR_IMAGE_OPERATOR_PREFIX, operatorImage, null);
         }
     }
@@ -102,6 +122,10 @@ public class Environment {
 
     public String getArtemisVersion() {
         return artemisVersion;
+    }
+
+    public ArtemisVersion getArtemisTestVersion() {
+        return artemisTestVersion;
     }
 
     public boolean isProjectManagedClusterOperator() {
@@ -157,5 +181,34 @@ public class Environment {
         String archiveName = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss"));
         LOGGER.debug(archiveName);
         return archiveName;
+    }
+
+    public ArtemisVersion convertArtemisVersion(String version) {
+        ArtemisVersion versionRet = null;
+        if (version.equals("main") || version.equals("upstream")) {
+            return ArtemisVersion.values()[ArtemisVersion.values().length - 1];
+        }
+        // TODO: temporary downstream workaround
+        if (version.startsWith("7.11")) {
+            return ArtemisVersion.VERSION_2_28;
+        }
+        if (version.startsWith("7.10")) {
+            return ArtemisVersion.VERSION_2_21;
+        }
+
+        String versionSplitted = version.replace(".", "");
+        int dotsCount = version.length() - versionSplitted.length();
+        if (dotsCount <= 2) {
+            try {
+                versionRet = ArtemisVersion.getByOrdinal(Integer.parseInt(versionSplitted));
+            } catch (RuntimeException e) {
+                LOGGER.error("[ENV] Provided unknown {} value {}!", Constants.EV_ARTEMIS_TEST_VERSION, version);
+                throw new IllegalArgumentException("Unknown " + Constants.EV_ARTEMIS_TEST_VERSION + " version: " + version);
+            }
+        } else {
+            LOGGER.error("[ENV] Provided incorrect {} value {}! Exiting.", Constants.EV_ARTEMIS_TEST_VERSION, version);
+            throw new IllegalArgumentException("Unknown " + Constants.EV_ARTEMIS_TEST_VERSION + " version: " + version);
+        }
+        return versionRet;
     }
 }

@@ -8,8 +8,10 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisSpecBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Env;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.ArtemisVersion;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
+import io.brokerqe.junit.TestValidSince;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -52,6 +54,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     void initialVariableSettingTest() {
         ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(ArtemisFileProvider.getArtemisSingleExampleFile().toFile(), ActiveMQArtemis.class);
         artemisBroker.setSpec(new ActiveMQArtemisSpecBuilder()
@@ -62,6 +65,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     void variableAddedAfterDeployTest() {
         ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, "env-broker");
         artemisBroker.setSpec(new ActiveMQArtemisSpecBuilder()

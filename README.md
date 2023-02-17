@@ -29,6 +29,7 @@ mvn test -Dmaven.main.skip=true -Dtest=<my-specific-test>
 | Name                      | Description                                      | Default                     | Possible values                                  |
 |---------------------------|--------------------------------------------------|-----------------------------|--------------------------------------------------|
 | ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)       | 7.10.2                      | <url>                                            |
+| ARTEMIS_TEST_VERSION      | ArtemisCloud Version to be used by tests         | not set                     | <major>.<minor>                                  |
 | OPERATOR_IMAGE            | ArtemisCloud Operator image url                  | not set                     | <url>                                            |
 | BROKER_IMAGE              | Broker image url                                 | not set                     | <url>                                            |
 | BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | <url>                                            |
