@@ -32,7 +32,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,25 +48,32 @@ public class OauthSecurityTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(OauthSecurityTests.class);
     private final String testNamespace = getRandomNamespaceName("oauth-tests", 6);
     private Keycloak keycloak;
-
+    private Openldap openldap;
+    String brokerName = "artemis";
+    String amqpAcceptorName = "my-amqp";
+    String brokerSecretName = "broker-tls-secret";
+    String clientSecretName = "client-tls-secret";
+    String consoleSecretName = brokerName + "-console-secret";
+    Map<String, KeyStoreData> keystores;
 
     @BeforeAll
     void setupClusterOperator() {
-        getClient().createNamespace(testNamespace, true);
         setupDefaultClusterOperator(testNamespace);
         keycloak = ResourceManager.getKeycloakInstance(testNamespace);
         keycloak.deployOperator();
+        openldap = ResourceManager.getOpenldapInstance(testNamespace);
+        openldap.deployLdap();
+        setupEnvironment();
     }
 
     @AfterAll
     void teardownClusterOperator() {
         keycloak.undeployOperator();
+        openldap.undeployLdap();
         teardownDefaultClusterOperator(testNamespace);
-        getClient().deleteNamespace(testNamespace);
     }
 
     public ActiveMQArtemisSecurity createArtemisSecurity() {
-
         //TODO: Jaas is deprecated?!
         List<KeycloakLoginModules> kcLoginModules = List.of(new KeycloakLoginModulesBuilder()
                 .withName("login-keycloak-broker-module")
@@ -157,16 +163,9 @@ public class OauthSecurityTests extends AbstractSystemTests {
                 .build();
         return artemisSecurity;
     }
-    @Test
-    @Tag("jaas")
-    public void keycloakDeploymentTest() {
-        String brokerName = "artemis";
-        String amqpAcceptorName = "my-amqp";
-        String brokerSecretName = "broker-tls-secret";
-        String clientSecretName = "client-tls-secret";
-        String consoleSecretName = brokerName + "-console-secret";
+
+    public void setupEnvironment() {
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, false);
-        ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
@@ -189,7 +188,7 @@ public class OauthSecurityTests extends AbstractSystemTests {
                 .endSpec()
                 .build();
 //        Map<String, KeyStoreData> keystores = CertificateManager.reuseDefaultGeneratedKeystoresFromFiles();
-        Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
+        keystores = CertificateManager.generateDefaultCertificateKeystores(
                 testNamespace,
                 artemis,
                 CertificateManager.generateDefaultBrokerDN(getKubernetesClient()),
@@ -201,7 +200,7 @@ public class OauthSecurityTests extends AbstractSystemTests {
         // https://access.redhat.com/solutions/6973839 Get route secret
         KeyStoreData truststoreBrokerData = keystores.get(Constants.BROKER_TRUSTSTORE_ID);
         Secret routeSecret = getKubernetesClient().secrets().inNamespace("openshift-ingress").withName("router-certs-default").get();
-        String routeAlias =  "*." + testNamespace + "." + getKubernetesClient().getMasterUrl().getHost().replace("api", "apps");
+        String routeAlias = "*." + testNamespace + "." + getKubernetesClient().getMasterUrl().getHost().replace("api", "apps");
         CertificateManager.addToTruststore(truststoreBrokerData, routeSecret.getData().get("tls.crt"), routeAlias);
 //        CertificateManager.addToTruststore(keystores.get(Constants.CLIENT_TRUSTSTORE_ID), routeSecret.getData().get("tls.crt"), routeAlias);
 
@@ -235,13 +234,17 @@ public class OauthSecurityTests extends AbstractSystemTests {
         TestUtils.waitFor("webconsole external uri availability", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX + "-").size() == brokerConsoles;
         });
-        keycloak.importRealm("amq-broker-realm", keycloak.realmArtemis, artemis.getMetadata().getName());
+        keycloak.importRealm("amq-broker-realm", keycloak.realmArtemis, artemis.getMetadata().getName(), true);
+        keycloak.importRealm("amq-broker-ldap-realm", keycloak.realmArtemisLdap, artemis.getMetadata().getName(), false);
         LOGGER.info("[{}] Starting KC test. Deployed pods {}", testNamespace,
                 getClient().listPods(testNamespace).stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()));
+    }
 
+    @Test
+    public void keycloakJaasExternalCertificatesTest() {
+        ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         Pod artemisPod0 = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         List<String> brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
-
         // Create clients and send messages
         LOGGER.info("ENV is set up properly. Deploy clients now");
         testTlsMessaging(testNamespace, artemisPod0, tlsAddress, brokerUris.get(0), null, clientSecretName,
@@ -250,9 +253,9 @@ public class OauthSecurityTests extends AbstractSystemTests {
     }
 
     @Test
-    @Tag("jaas")
-    public void keycloakJAASExternalTest() {
-        // ENTMQBR-5918 Allow to configure TextFileCertificateLoginModule
+    @Disabled
+    public void keycloakJAASLdapTest() {
+
     }
 
 }

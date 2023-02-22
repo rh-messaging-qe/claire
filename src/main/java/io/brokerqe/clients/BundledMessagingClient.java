@@ -21,6 +21,8 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private final String destinationPort;
     private final String destinationQueue;
     private final String protocol;
+    private final String username;
+    private final String password;
     // -1 is usually used for infinite number of messages, so use -2 as default unset value
     private int messageCount = -2;
     String clientDestination;
@@ -31,12 +33,18 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private final KubeClient kubeClient;
 
     public BundledMessagingClient(Pod sourcePod, String destinationUrl, String destinationPort, String destinationAddress, String destinationQueue, int messageCount) {
+        this(sourcePod, destinationUrl, destinationPort, destinationAddress, destinationQueue, messageCount, null, null);
+    }
+    public BundledMessagingClient(Pod sourcePod, String destinationUrl, String destinationPort, String destinationAddress,
+                                  String destinationQueue, int messageCount, String username, String password) {
         this.brokerPod = sourcePod;
         this.destinationUrl = destinationUrl;
         this.destinationPort = destinationPort;
         this.destinationAddress = destinationAddress;
         this.destinationQueue = destinationQueue;
         this.messageCount = messageCount;
+        this.username = username;
+        this.password = password;
 
         this.kubeClient = ResourceManager.getKubeClient().inNamespace(brokerPod.getMetadata().getNamespace());
         this.protocol = getProtocol();
@@ -75,7 +83,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
             return messageCount;
         } else {
             LOGGER.error("Unable to parse number of messages!\n" + clientStdout);
-            return -1;
+            throw new MessagingClientException("Unable to parse number of messages \n" + clientStdout);
         }
     }
 
@@ -93,6 +101,14 @@ public abstract class BundledMessagingClient implements MessagingClient {
 
         if (messageCount != -2) {
             command += " --message-count " + messageCount;
+        }
+
+        if (username != null) {
+            command += " --user " + username;
+        }
+
+        if (password != null) {
+            command += " --password " + password;
         }
 
         return command;

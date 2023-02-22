@@ -35,14 +35,16 @@ public class Rhsso extends Keycloak {
     }
 
     private void applyOperatorGroup() {
-        String operatorGroupString = String.format("apiVersion: operators.coreos.com/v1\n" +
-                "kind: OperatorGroup\n" +
-                "metadata:\n" +
-                "  name: broker-group\n" +
-                "  namespace: %s\n" +
-                "spec:\n" +
-                "  targetNamespaces:\n" +
-                "    - %s", namespace, namespace);
+        String operatorGroupString = String.format(
+            """
+            apiVersion: operators.coreos.com/v1
+            kind: OperatorGroup
+            metadata:
+              name: broker-group
+              namespace: %s
+            spec:
+              targetNamespaces:
+                - %s""", namespace, namespace);
 
         HasMetadata operatorGroup = kubeClient.getKubernetesClient().resource(operatorGroupString).inNamespace(namespace).createOrReplace();
         kubeClient.getKubernetesClient().resourceList(operatorGroup).inNamespace(namespace).createOrReplace();
@@ -51,18 +53,19 @@ public class Rhsso extends Keycloak {
 
     private void applySubscription() {
         String subscriptionString = String.format(
-                "apiVersion: operators.coreos.com/v1alpha1\n" +
-                        "kind: Subscription\n" +
-                        "metadata:\n" +
-                        "  name: rhsso-operator-my\n" +
-                        "  namespace: %s\n" +
-                        "spec:\n" +
-                        "  channel: stable\n" +
-                        "  installPlanApproval: Automatic\n" +
-                        "  name: rhsso-operator\n" +
-                        "  source: redhat-operators\n" +
-                        "  startingCSV: %s\n" +
-                        "  sourceNamespace: openshift-marketplace", namespace, keycloakVersion);
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: Subscription
+            metadata:
+              name: rhsso-operator-my
+              namespace: %s
+            spec:
+              channel: stable
+              installPlanApproval: Automatic
+              name: rhsso-operator
+              source: redhat-operators
+              startingCSV: %s
+              sourceNamespace: openshift-marketplace""", namespace, keycloakVersion);
 
         HasMetadata subscription = kubeClient.getKubernetesClient().resource(subscriptionString).inNamespace(namespace).createOrReplace();
         keycloakResources.add(subscription);
@@ -79,17 +82,18 @@ public class Rhsso extends Keycloak {
 
     private void applyKeycloakResources() {
         String keycloakString = String.format(
-                "apiVersion: keycloak.org/v1alpha1\n" +
-                        "kind: Keycloak\n" +
-                        "metadata:\n" +
-                        "  name: example-keycloak\n" +
-                        "  labels:\n" +
-                        "    app: sso\n" +
-                        "  namespace: ${KEYCLOAK_INSTANCE_NAMESPACE}\n" +
-                        "spec:\n" +
-                        "  externalAccess:\n" +
-                        "    enabled: true\n" +
-                        "  instances: 1", namespace);
+            """
+            apiVersion: keycloak.org/v1alpha1
+            kind: Keycloak
+            metadata:
+              name: example-keycloak
+              labels:
+                app: sso
+              namespace: %s
+            spec:
+              externalAccess:
+                enabled: true
+              instances: 1""", namespace);
 
         HasMetadata keycloak = kubeClient.getKubernetesClient().resource(keycloakString).inNamespace(namespace).createOrReplace();
         keycloakResources.add(keycloak);

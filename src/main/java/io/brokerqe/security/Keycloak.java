@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +37,7 @@ public class Keycloak {
     protected Pod keycloakSqlPod;
     protected Pod keycloakPod;
     protected final String realmArtemis = Constants.PROJECT_TEST_DIR + "/resources/keycloak/amqbroker_realm.json_template";
+    protected final String realmArtemisLdap = Constants.PROJECT_TEST_DIR + "/resources/keycloak/ldap_realm.json";
     protected final String adminUsernameKey = "ADMIN_USERNAME";
     protected final String adminPasswordKey = "ADMIN_PASSWORD";
     protected String deployRealmFilePath;
@@ -83,23 +83,22 @@ public class Keycloak {
         LOGGER.warn("[{}] [KC] Constructed routes\n{}", namespace, constructRoutes);
 
         deployRealmFilePath = Constants.PROJECT_TEST_DIR + "resources/keycloak/amqbroker_realm_" + TestUtils.getRandomString(3) + ".json";
-        try {
-            File jsonRealmfile = new File(realmFilePath);
-            String data = FileUtils.readFileToString(jsonRealmfile);
-            data = data.replace("ROUTES", constructRoutes);
-            TestUtils.createFile(deployRealmFilePath, data);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+        File jsonRealmfile = new File(realmFilePath);
+        String data = TestUtils.readFileContent(jsonRealmfile);
+        data = data.replace("ROUTES", constructRoutes);
+        TestUtils.createFile(deployRealmFilePath, data);
         return deployRealmFilePath;
     }
 
-    public void importRealm(String realmName, String realmFilePath, String brokerName) {
+    public void importRealm(String realmName, String realmFilePath, String brokerName, boolean updateRealm) {
         // oc cp claire/src/test/resources/keycloak/internal_realm.json oauth-tests/keycloak-0:/tmp/ -c keycloak
         // kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password l_dtMCUpuZU0iw==
         // /opt/eap/bin/kcadm.sh create realms -s realm=internal -s enabled=true
         // /opt/eap/bin/kcadm.sh create partialImport -r internal -s ifResourceExists=FAIL -o -f /tmp/internal_realm.json
-        realmFilePath = updateRealmImportTemplate(realmFilePath, brokerName);
+        if (updateRealm) {
+            realmFilePath = updateRealmImportTemplate(realmFilePath, brokerName);
+        }
         LOGGER.debug("[{}] [KC] Importing realm {} from file {}", namespace, realmName, realmFilePath);
         String realmPodFilePath = "/tmp/" + realmName + "_realm.json";
 

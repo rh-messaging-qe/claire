@@ -256,15 +256,18 @@ public final class TestUtils {
 
     public String replaceFileContent(String realmFilePath, String toReplace, String replaceWith) {
         String newFilePath = "amqbroker_realm_" + TestUtils.getRandomString(3) + ".json";
+        String data = readFileContent(new File(realmFilePath));
+        data = data.replace(toReplace, replaceWith);
+        TestUtils.createFile(newFilePath, data);
+        return newFilePath;
+    }
+
+    public static String readFileContent(File file) {
         try {
-            File jsonRealmfile = new File(realmFilePath);
-            String data = FileUtils.readFileToString(jsonRealmfile);
-            data = data.replace(toReplace, replaceWith);
-            TestUtils.createFile(newFilePath, data);
+            return FileUtils.readFileToString(file);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return newFilePath;
     }
 
     public static void updateImagesInOperatorFile(Path operatorFile, String imageType, String imageUrl, String version) {

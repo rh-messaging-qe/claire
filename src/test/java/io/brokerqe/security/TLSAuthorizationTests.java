@@ -95,7 +95,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
 
     protected void createArtemisDeployment() {
         Map<String, String> jaasData = Map.of(
-            "login.config", """
+            Constants.LOGIN_CONFIG_CONFIG_KEY, """
                 activemq {
                     org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
                         reload=false

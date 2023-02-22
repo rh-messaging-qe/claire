@@ -36,6 +36,7 @@ public interface Constants {
     String CRD_ACTIVEMQ_ARTEMIS = "activemqartemises" + "." + CRD_ACTIVEMQ_ARTEMIS_GROUP;
     String WATCH_ALL_NAMESPACES = "*";
     String LOGGING_PROPERTIES_CONFIG_KEY = "logging.properties";
+    String LOGIN_CONFIG_CONFIG_KEY = "login.config";
 
     // Project related strings
     String ROUTING_TYPE_ANYCAST = "anycast";
@@ -111,6 +112,7 @@ public interface Constants {
 
     String PREFIX_SYSTEMTESTS_CLIENTS = "systemtests-clients";
     String IMAGE_SYSTEMTEST_CLIENTS = "quay.io/messaging/cli-java:latest";
+    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
 
     // Container folder paths
     String CONTAINER_BROKER_HOME_DIR = "/home/jboss/amq-broker/";

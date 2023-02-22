@@ -13,6 +13,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.security.Keycloak;
+import io.brokerqe.security.Openldap;
 import io.brokerqe.security.Rhsso;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.StatusDetails;
@@ -417,6 +418,11 @@ public class ResourceManager {
         } else {
             return new Keycloak(environment, kubeClient, namespace);
         }
+    }
+
+    public static Openldap getOpenldapInstance(String namespace) {
+        // Keycloak resources manage
+        return new Openldap(environment, kubeClient, namespace);
     }
 
     public static void undeployAllResources() {

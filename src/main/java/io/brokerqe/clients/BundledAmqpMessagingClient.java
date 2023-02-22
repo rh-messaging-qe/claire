@@ -12,6 +12,11 @@ public class BundledAmqpMessagingClient extends BundledMessagingClient {
         super(sourcePod, destinationUrl, destinationPort, destinationAddress, destinationQueue, messageCount);
     }
 
+    public BundledAmqpMessagingClient(Pod sourcePod, String destinationUrl, String destinationPort, String destinationAddress,
+                                      String destinationQueue, int messageCount, String username, String password) {
+        super(sourcePod, destinationUrl, destinationPort, destinationAddress, destinationQueue, messageCount, username, password);
+    }
+
     @Override
     String getProtocol() {
         return "amqp";
