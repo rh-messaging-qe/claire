@@ -15,7 +15,8 @@ import io.brokerqe.smoke.SmokeTests;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,27 +46,15 @@ public class LoggingTests extends AbstractSystemTests {
         teardownDefaultClusterOperator(testNamespace);
     }
 
-    @Test
-    public void testOperatorLogLevelDebug() {
-        testLogging(DEBUG.toLowerCase(Locale.ROOT));
-    }
-    @Test
-    public void testOperatorLogLevelInfo() {
-        testLogging(INFO.toLowerCase(Locale.ROOT));
-    }
-
-    @Test
-    public void testOperatorLogLevelError() {
-        testLogging(ERROR.toLowerCase(Locale.ROOT));
-    }
-
-    void testLogging(String logLevel) {
+    @ParameterizedTest
+    @ValueSource(strings = {DEBUG, INFO, ERROR})
+    void testOperatorLogLevel(String logLevel) {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "artemis-log");
-        getClient().setOperatorLogLevel(operator, logLevel);
+        getClient().setOperatorLogLevel(operator, logLevel.toLowerCase(Locale.ROOT));
 
         LOGGER.info("[{}] Deploying wrongly defined ActiveMQArtemisAddress", testNamespace);
         ActiveMQArtemisAddress wrongAddress = ResourceManager.createArtemisAddress(testNamespace, "lala", "lala", "wrongRoutingType");
-        LOGGER.info("[{}] Waiting for logs to show up");
+        LOGGER.info("[{}] Waiting 15secs for logs to populate", testNamespace);
         TestUtils.threadSleep(15000);
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         String operatorLog = getClient().getLogsFromPod(testNamespace, operatorPod);
