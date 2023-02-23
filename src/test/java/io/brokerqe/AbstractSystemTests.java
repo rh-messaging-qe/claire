@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -195,8 +194,7 @@ public class AbstractSystemTests implements TestSeparator {
         Pattern pattern = Pattern.compile("Drain pod " + brokerName + ".* finished");
 
         TestUtils.waitFor("Drain pod to finish", Constants.DURATION_10_SECONDS, maxTimeout, () -> {
-            String log = getKubernetesClient().pods().inNamespace(namespace).resource(operatorPod)
-                    .sinceTime(now.atOffset(ZoneOffset.UTC).toString()).getLog();
+            String log = getClient().getLogsFromPod(namespace, operatorPod, now);
             Matcher matcher = pattern.matcher(log);
             int count = 0;
             while (matcher.find()) {

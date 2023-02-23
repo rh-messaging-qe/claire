@@ -5,6 +5,7 @@
 package io.brokerqe;
 
 import io.brokerqe.executor.Executor;
+import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -37,9 +38,12 @@ import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -238,7 +242,7 @@ public class KubeClient {
     public void waitForPodReload(String namespace, Pod pod, String podName, long maxTimeout) {
         String originalUid = pod.getMetadata().getUid();
 
-        LOGGER.info("Waiting for pod {} reload in namespace {}", podName, namespace);
+        LOGGER.info("[{}] Waiting for pod {} reload", namespace, podName);
 
         TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             Pod newPod = this.getFirstPodByPrefixName(namespace, podName);
@@ -315,6 +319,19 @@ public class KubeClient {
             deployment -> deployment.getMetadata().getName().equals(deploymentName))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    public void setDeployment(String namespaceName, Deployment deployment) {
+        setDeployment(namespaceName, deployment, true);
+    }
+
+    public void setDeployment(String namespaceName, Deployment deployment, boolean waitForDeployment) {
+        getKubernetesClient().apps().deployments().inNamespace(namespaceName).resource(deployment).createOrReplace();
+        if (waitForDeployment) {
+            LOGGER.info("[{}] Waiting for deployment {} to be ready", namespaceName, deployment.getMetadata().getName());
+            TestUtils.threadSleep(5000);
+            getKubernetesClient().resource(deployment).waitUntilReady(1, TimeUnit.MINUTES);
+        }
     }
 
     /**
@@ -495,6 +512,51 @@ public class KubeClient {
     public List<Job> listJobs(String namePrefix) {
         return client.batch().v1().jobs().inNamespace(getNamespace()).list().getItems().stream()
             .filter(job -> job.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
+    }
+
+    // ============================
+    // ----------> LOGS <----------
+    // ============================
+
+    public String getLogsFromPod(String namespaceName, Pod pod) {
+        return getLogsFromPod(namespaceName, pod, null);
+    }
+
+    public String getLogsFromPod(String namespaceName, Pod pod, Instant since) {
+        if (since == null) {
+            return getKubernetesClient().pods().inNamespace(namespaceName).resource(pod).getLog();
+        } else {
+            return getKubernetesClient().pods().inNamespace(namespaceName).resource(pod)
+                    .sinceTime(since.atOffset(ZoneOffset.UTC).toString()).getLog();
+        }
+    }
+
+    public void setOperatorLogLevel(ArtemisCloudClusterOperator operator, String logLevel) {
+        if (ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
+            Deployment deployment = getDeployment(namespace, operator.getOperatorName());
+            Pod podOld = getFirstPodByPrefixName(operator.getNamespace(), operator.getOperatorName());
+            List<String> args = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getArgs();
+            List<String> argsUpdated = new ArrayList<>();
+
+            for (String arg : args) {
+                if (arg.contains("zap-log-level")) {
+                    argsUpdated.add("--zap-log-level=" + logLevel.toLowerCase(Locale.ROOT));
+                } else {
+                    argsUpdated.add(arg);
+                }
+            }
+
+            if (!args.equals(argsUpdated)) {
+                deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setArgs(argsUpdated);
+                setDeployment(operator.getNamespace(), deployment);
+                waitForPodReload(operator.getNamespace(), podOld, operator.getOperatorName());
+                LOGGER.info("[{}] Changed operator {} log level to {}", operator.getNamespace(), operator.getOperatorName(), logLevel);
+            } else {
+                LOGGER.debug("[{}] Reload is not needed, zap-log-level is {} as expected", namespace, logLevel);
+            }
+        } else {
+            LOGGER.error("[{}] Unable to set provided log level to operator {}", operator.getNamespace(), operator.getOperatorName());
+        }
     }
 
     // ============================

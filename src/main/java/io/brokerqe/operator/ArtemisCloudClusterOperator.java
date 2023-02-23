@@ -36,6 +36,8 @@ public class ArtemisCloudClusterOperator {
 
     private final String operatorName;
 
+    public static final List<String> ZAP_LOG_LEVELS = List.of("debug", "info", "error");
+
     static final List<Path> DEFAULT_OPERATOR_INSTALL_CRD_FILES = Arrays.asList(
             ArtemisFileProvider.getArtemisCrdFile(),
             ArtemisFileProvider.getSecurityCrdFile(),
@@ -146,12 +148,12 @@ public class ArtemisCloudClusterOperator {
         }
     }
 
-    private void waitForCoDeployment() {
+    public void waitForCoDeployment() {
         // operator pod/deployment name activemq-artemis-controller-manager vs amq-broker-controller-manager
         kubeClient.getKubernetesClient().resource(kubeClient.getDeployment(namespace, operatorName)).waitUntilReady(3, TimeUnit.MINUTES);
     }
 
-    private void waitForCoUndeployment() {
+    public void waitForCoUndeployment() {
         Deployment amqCoDeployment = kubeClient.getDeployment(namespace, operatorName);
 //        kubeClient.getKubernetesClient().resource(amqCoDeployment).waitUntilCondition(removed, 3, TimeUnit.MINUTES);
         TestUtils.waitFor("ClusterOperator to stop", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
