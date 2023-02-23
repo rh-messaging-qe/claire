@@ -79,7 +79,7 @@ public class LoggingTests extends AbstractSystemTests {
         List<String> unexpectedLevels = new ArrayList<>();
 
         switch (level.toUpperCase(Locale.ROOT)) {
-            case DEBUG -> expectedLevels.add(DEBUG);
+            case DEBUG -> expectedLevels.addAll(List.of(DEBUG, INFO, ERROR));
             case INFO -> {
                 expectedLevels.addAll(List.of(INFO, ERROR));
                 unexpectedLevels.add(DEBUG);
