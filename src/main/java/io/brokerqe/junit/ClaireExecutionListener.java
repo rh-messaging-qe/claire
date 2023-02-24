@@ -41,7 +41,9 @@ public class ClaireExecutionListener implements TestExecutionListener {
             ResourceManager.getInstance(testEnvironment);
             // Following log is added for debugging purposes, when OkHttpClient leaks connection
             java.util.logging.Logger.getLogger(OkHttpClient.class.getName()).setLevel(java.util.logging.Level.FINE);
-            ResourceManager.deployArtemisClusterOperatorCRDs();
+            if (!testEnvironment.isOlmInstallation()) {
+                ResourceManager.deployArtemisClusterOperatorCRDs();
+            }
             setupPerformed = true;
         }
         LOGGER.debug("Setup environment finished");
@@ -79,7 +81,7 @@ public class ClaireExecutionListener implements TestExecutionListener {
             LOGGER.info("All logging changed to level: {}", envLevel.levelStr);
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
             List<ch.qos.logback.classic.Logger> loggerList = loggerContext.getLoggerList();
-            loggerList.stream().forEach(
+            loggerList.forEach(
                 tmpLogger -> {
                     // Do not set `ROOT` and `io` logger, as it would set it on all used components, not just this project.
 //                        if (!List.of("ROOT", "io").contains(tmpLogger.getName())) {
@@ -93,7 +95,9 @@ public class ClaireExecutionListener implements TestExecutionListener {
     public void testPlanExecutionFinished(TestPlan testPlan) {
         LOGGER.debug("Teardown environment started");
         ResourceManager.undeployAllResources();
-        ResourceManager.undeployArtemisClusterOperatorCRDs();
+        if (!testEnvironment.isOlmInstallation()) {
+            ResourceManager.undeployArtemisClusterOperatorCRDs();
+        }
         LOGGER.debug("Teardown environment finished");
     }
 }

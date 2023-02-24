@@ -34,6 +34,8 @@ mvn test -Dmaven.main.skip=true -Dtest=<my-specific-test>
 | BROKER_IMAGE              | Broker image url                                 | not set                     | <url>                                            |
 | BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | <url>                                            |
 | BUNDLE_IMAGE              | Bundle image url                                 | not set                     | <url>                                            |
+| OLM_IIB                   | OLM Index Image Bundle to use                    | not set                     | <iib-url>                                        |
+| OLM_CHANNEL               | OLM channel to use with Subscription             | not set                     | <channel>                                        |
 | DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices            | not set (`false`)           | `true`, `false`                                  |
 | LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | <directory>                                      |
 | TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
@@ -51,13 +53,11 @@ Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using
 Example `test-namespace-2a6c` will be always `test-namespace`.
 
 ## TODO
-- [ ] Add OLM installation
 - [ ] Implement management client (amqx)
 - [ ] (?) Use Velocity project to manage usage of ArtemisCloud CRD versions
 - [ ] Add option to build dockerfile with the tests inside
 
 ## Hints
-- Use hamcrest matchers for asserts
 - keep code clean
 
 ## Attribution

@@ -17,6 +17,8 @@ public interface Constants {
     String EV_ARTEMIS_TEST_VERSION = "ARTEMIS_TEST_VERSION";
     String EV_DISABLE_RANDOM_NAMESPACES = "DISABLE_RANDOM_NAMESPACES";
     String EV_TEST_LOG_LEVEL = "TEST_LOG_LEVEL";
+    String EV_OLM_IIB = "OLM_IIB";
+    String EV_OLM_CHANNEL = "OLM_CHANNEL";
     String EV_OPERATOR_IMAGE = "OPERATOR_IMAGE";
     String EV_BROKER_IMAGE = "BROKER_IMAGE";
     String EV_BROKER_INIT_IMAGE = "BROKER_INIT_IMAGE";
@@ -112,7 +114,8 @@ public interface Constants {
 
     String PREFIX_SYSTEMTESTS_CLIENTS = "systemtests-clients";
     String IMAGE_SYSTEMTEST_CLIENTS = "quay.io/messaging/cli-java:latest";
-    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
+//    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
+    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:2.6.3";
 
     // Container folder paths
     String CONTAINER_BROKER_HOME_DIR = "/home/jboss/amq-broker/";

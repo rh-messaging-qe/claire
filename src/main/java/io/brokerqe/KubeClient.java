@@ -534,7 +534,7 @@ public class KubeClient {
     public void setOperatorLogLevel(ArtemisCloudClusterOperator operator, String logLevel) {
         if (ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
             Deployment deployment = getDeployment(namespace, operator.getOperatorName());
-            Pod podOld = getFirstPodByPrefixName(operator.getNamespace(), operator.getOperatorName());
+            Pod podOld = getFirstPodByPrefixName(operator.getDeploymentNamespace(), operator.getOperatorName());
             List<String> args = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getArgs();
             List<String> argsUpdated = new ArrayList<>();
 
@@ -548,14 +548,14 @@ public class KubeClient {
 
             if (!args.equals(argsUpdated)) {
                 deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setArgs(argsUpdated);
-                setDeployment(operator.getNamespace(), deployment);
-                waitForPodReload(operator.getNamespace(), podOld, operator.getOperatorName());
-                LOGGER.info("[{}] Changed operator {} log level to {}", operator.getNamespace(), operator.getOperatorName(), logLevel);
+                setDeployment(operator.getDeploymentNamespace(), deployment);
+                waitForPodReload(operator.getDeploymentNamespace(), podOld, operator.getOperatorName());
+                LOGGER.info("[{}] Changed operator {} log level to {}", operator.getDeploymentNamespace(), operator.getOperatorName(), logLevel);
             } else {
                 LOGGER.debug("[{}] Reload is not needed, zap-log-level is {} as expected", namespace, logLevel);
             }
         } else {
-            LOGGER.error("[{}] Unable to set provided log level to operator {}", operator.getNamespace(), operator.getOperatorName());
+            LOGGER.error("[{}] Unable to set provided log level to operator {}", operator.getDeploymentNamespace(), operator.getOperatorName());
         }
     }
 

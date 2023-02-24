@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,6 +29,7 @@ public @interface TestValidSince {
 
     ArtemisVersion value();
     class TestVersionValidityCondition implements ExecutionCondition {
+        private final static Logger LOGGER = LoggerFactory.getLogger(TestVersionValidityCondition.class);
         private static final ConditionEvaluationResult ENABLED = ConditionEvaluationResult.enabled("@TestValidSince is not present");
 
         @Override
@@ -46,7 +49,8 @@ public @interface TestValidSince {
             if (artemisTestVersionAnnotated.getVersionNumber() <= artemisTestVersionEnv.getVersionNumber()) {
                 return ConditionEvaluationResult.enabled("Test enabled. TestValidSince " + artemisTestVersionAnnotated + " < " + artemisTestVersionEnv);
             } else {
-                return ConditionEvaluationResult.disabled("[SKIP] TestValidSince " + artemisTestVersionAnnotated +
+                LOGGER.info("[TEST] Skipped: Test/class does not meet TestValidSince criteria.");
+                return ConditionEvaluationResult.disabled("[TEST] Skipped: TestValidSince " + artemisTestVersionAnnotated +
                         " > " + artemisTestVersionEnv + " than provided.");
             }
         }

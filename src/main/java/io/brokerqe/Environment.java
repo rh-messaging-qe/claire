@@ -19,6 +19,9 @@ public class Environment {
 
     private final boolean disabledRandomNs;
     private final String testLogLevel;
+    private final String olmIndexImageBundle;
+    private final String olmChannel;
+    private final boolean olmInstallation;
     private String artemisVersion;
     private final ArtemisVersion artemisTestVersion;
     private final String brokerImage;
@@ -33,17 +36,24 @@ public class Environment {
     private final boolean collectTestData;
 
     public Environment() {
+        kubeClient = new KubeClient("default");
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
         testLogLevel = System.getenv(Constants.EV_TEST_LOG_LEVEL);
+        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + createArchiveName();
+        collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
+
+        projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
+
+        olmIndexImageBundle = System.getenv().getOrDefault(Constants.EV_OLM_IIB, null);
+        olmChannel = System.getenv().getOrDefault(Constants.EV_OLM_CHANNEL, null);
+        olmInstallation = olmChannel != null && olmIndexImageBundle != null;
+
         artemisVersion = System.getenv(Constants.EV_ARTEMIS_VERSION);
         brokerImage = System.getenv(Constants.EV_BROKER_IMAGE);
         brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
         operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE);
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
-        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + createArchiveName();
-        projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
-        collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
-        kubeClient = new KubeClient("default");
+
         keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
 
         Properties projectSettings = new Properties();
@@ -77,6 +87,12 @@ public class Environment {
         }
         if (artemisTestVersion != null) {
             envVarsSB.append(Constants.EV_ARTEMIS_TEST_VERSION).append("=").append(artemisTestVersion).append(Constants.LINE_SEPARATOR);
+        }
+        if (olmIndexImageBundle != null) {
+            envVarsSB.append(Constants.EV_OLM_IIB).append("=").append(olmIndexImageBundle).append(Constants.LINE_SEPARATOR);
+        }
+        if (olmChannel != null) {
+            envVarsSB.append(Constants.EV_OLM_CHANNEL).append("=").append(olmChannel).append(Constants.LINE_SEPARATOR);
         }
         if (brokerImage != null) {
             envVarsSB.append(Constants.EV_BROKER_IMAGE).append("=").append(brokerImage).append(Constants.LINE_SEPARATOR);
@@ -174,6 +190,18 @@ public class Environment {
 
     public KubeClient getKubeClient() {
         return kubeClient;
+    }
+
+    public String getOlmIndexImageBundle() {
+        return olmIndexImageBundle;
+    }
+
+    public String getOlmChannel() {
+        return olmChannel;
+    }
+
+    public boolean isOlmInstallation() {
+        return olmInstallation;
     }
 
     private static String createArchiveName() {

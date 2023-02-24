@@ -12,16 +12,16 @@ import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
+import io.brokerqe.operator.ArtemisCloudClusterOperatorFile;
+import io.brokerqe.operator.ArtemisCloudClusterOperatorOlm;
 import io.brokerqe.security.Keycloak;
 import io.brokerqe.security.Openldap;
 import io.brokerqe.security.Rhsso;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,12 +101,11 @@ public class ResourceManager {
     public static ArtemisCloudClusterOperator deployArtemisClusterOperator(String namespace, boolean isNamespaced, List<String> watchedNamespaces) {
         if (projectCODeploy) {
             LOGGER.info("Deploying Artemis CO");
-            ArtemisCloudClusterOperator clusterOperator = null;
-            clusterOperator = new ArtemisCloudClusterOperator(namespace, isNamespaced);
-
-            if (!isNamespaced) {
-                clusterOperator.watchNamespaces(watchedNamespaces);
-                clusterOperator.updateClusterRoleBinding(namespace);
+            ArtemisCloudClusterOperator clusterOperator;
+            if (environment.isOlmInstallation()) {
+                clusterOperator = new ArtemisCloudClusterOperatorOlm(namespace, isNamespaced, watchedNamespaces);
+            } else {
+                clusterOperator = new ArtemisCloudClusterOperatorFile(namespace, isNamespaced, watchedNamespaces);
             }
             clusterOperator.deployOperator(true);
             deployedOperators.add(clusterOperator);
@@ -119,7 +118,7 @@ public class ResourceManager {
 
     public static void deployArtemisClusterOperatorCRDs() {
         if (projectCODeploy) {
-            ArtemisCloudClusterOperator.deployOperatorCRDs();
+            ArtemisCloudClusterOperatorFile.deployOperatorCRDs();
         } else {
             LOGGER.warn("Not undeploying operator CRDs! " + "'" + Constants.EV_CLUSTER_OPERATOR_MANAGED + "' is 'false'");
         }
@@ -127,7 +126,7 @@ public class ResourceManager {
 
     public static void undeployArtemisClusterOperatorCRDs() {
         if (projectCODeploy) {
-            ArtemisCloudClusterOperator.undeployOperatorCRDs(false);
+            ArtemisCloudClusterOperatorFile.undeployOperatorCRDs(false);
         } else {
             LOGGER.warn("Not undeploying operator CRDs! " + "'" + Constants.EV_CLUSTER_OPERATOR_MANAGED + "' is 'false'");
         }
@@ -151,7 +150,7 @@ public class ResourceManager {
     }
 
     public static ArtemisCloudClusterOperator getArtemisClusterOperator(String namespace) {
-        return deployedOperators.stream().filter(operator -> operator.getNamespace().equals(namespace)).findFirst().orElse(null);
+        return deployedOperators.stream().filter(operator -> operator.getDeploymentNamespace().equals(namespace)).findFirst().orElse(null);
     }
 
     /*******************************************************************************************************************
@@ -292,11 +291,8 @@ public class ResourceManager {
         return artemisAddress;
     }
 
-    public static List<StatusDetails> deleteArtemisAddress(String namespace, String addressName) {
-        throw new NotImplementedException();
-    }
     public static void deleteArtemisAddress(String namespace, ActiveMQArtemisAddress artemisAddress) {
-        List<StatusDetails> status = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).delete();
+        ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).delete();
         ResourceManager.removeArtemisAddress(artemisAddress);
         LOGGER.info("[{}] Deleted ActiveMQArtemisAddress {}", namespace, artemisAddress.getMetadata().getName());
     }
@@ -308,11 +304,10 @@ public class ResourceManager {
         return artemisSecurity;
     }
 
-    public static List<StatusDetails> deleteArtemisSecurity(String namespace, ActiveMQArtemisSecurity artemisSecurity) {
-        List<StatusDetails> status = ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).delete();
+    public static void deleteArtemisSecurity(String namespace, ActiveMQArtemisSecurity artemisSecurity) {
+        ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).delete();
         LOGGER.info("[{}] Deleted ActiveMQArtemisSecurity {}", namespace, artemisSecurity.getMetadata().getName());
         ResourceManager.removeArtemisSecurity(artemisSecurity);
-        return status;
     }
 
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker) {
@@ -436,7 +431,7 @@ public class ResourceManager {
 
     public static void undeployAllArtemisClusterOperators() {
         for (ArtemisCloudClusterOperator operator : deployedOperators) {
-            LOGGER.warn("[{}] Undeploying orphaned ArtemisOperator {} !", operator.getNamespace(), operator.getOperatorName());
+            LOGGER.warn("[{}] Undeploying orphaned ArtemisOperator {} !", operator.getDeploymentNamespace(), operator.getOperatorName());
             undeployArtemisClusterOperator(operator);
         }
     }

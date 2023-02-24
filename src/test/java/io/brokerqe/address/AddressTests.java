@@ -14,6 +14,7 @@ import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ public class AddressTests extends AbstractSystemTests {
     }
 
     @Test
+    @Tag("operator")
     void persistAddressAfterCoBrokerRestart() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());

@@ -15,6 +15,7 @@ import io.brokerqe.smoke.SmokeTests;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ public class LoggingTests extends AbstractSystemTests {
         teardownDefaultClusterOperator(testNamespace);
     }
 
+    @Tag("operator")
     @ParameterizedTest
     @ValueSource(strings = {DEBUG, INFO, ERROR})
     void testOperatorLogLevel(String logLevel) {
