@@ -130,4 +130,9 @@ public interface Constants {
     long DURATION_2_MINUTES = Duration.ofMinutes(2).toMillis();
     long DURATION_3_MINUTES = Duration.ofMinutes(3).toMillis();
     long DURATION_5_MINUTES = Duration.ofMinutes(5).toMillis();
+
+    // Test tags
+    String TAG_OPERATOR = "operator";
+    String TAG_JAAS = "jaas";
+    String TAG_TLS = "tls";
 }

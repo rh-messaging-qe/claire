@@ -8,6 +8,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.ArtemisVersion;
+import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
 import io.brokerqe.junit.TestValidSince;
@@ -47,7 +48,7 @@ public class LoggingTests extends AbstractSystemTests {
         teardownDefaultClusterOperator(testNamespace);
     }
 
-    @Tag("operator")
+    @Tag(Constants.TAG_OPERATOR)
     @ParameterizedTest
     @ValueSource(strings = {DEBUG, INFO, ERROR})
     void testOperatorLogLevel(String logLevel) {

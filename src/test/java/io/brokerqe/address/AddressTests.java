@@ -39,7 +39,7 @@ public class AddressTests extends AbstractSystemTests {
     }
 
     @Test
-    @Tag("operator")
+    @Tag(Constants.TAG_OPERATOR)
     void persistAddressAfterCoBrokerRestart() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());

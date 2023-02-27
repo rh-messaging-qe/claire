@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag("tls")
-@Tag("jaas")
+@Tag(Constants.TAG_TLS)
+@Tag(Constants.TAG_JAAS)
 public class TLSCACertsTests extends TLSAuthorizationTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TLSCACertsTests.class);

@@ -13,6 +13,7 @@ import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
     }
 
     @Test
+    @Tag(Constants.TAG_OPERATOR)
     void simpleBrokerClusteredDeploymentTest() {
         // testNamespace & testNamespaceA should work, testNamespaceB should fail
         LOGGER.info("[{}] Expecting PASS: Deploy broker in namespace {}", testNamespace, testNamespaceA);

@@ -39,8 +39,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Tag("tls")
-@Tag("jaas")
+@Tag(Constants.TAG_TLS)
+@Tag(Constants.TAG_JAAS)
 public abstract class TLSAuthorizationTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TLSAuthorizationTests.class);

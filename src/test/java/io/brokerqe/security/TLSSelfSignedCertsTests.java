@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag("tls")
-@Tag("jaas")
+@Tag(Constants.TAG_JAAS)
+@Tag(Constants.TAG_TLS)
 public class TLSSelfSignedCertsTests extends TLSAuthorizationTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TLSSelfSignedCertsTests.class);
