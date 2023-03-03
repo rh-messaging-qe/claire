@@ -25,7 +25,9 @@ public abstract class ArtemisCloudClusterOperator {
     protected final Environment environment;
     protected final List<String> watchedNamespaces;
     protected final KubeClient kubeClient;
-    protected final String operatorName;
+    protected String operatorName;
+    protected final String operatorOldName = "amq-broker-operator";
+    protected final String operatorNewName = "amq-broker-controller-manager";
 
     public ArtemisCloudClusterOperator(String namespace) {
         this(namespace, true, null);
@@ -38,7 +40,8 @@ public abstract class ArtemisCloudClusterOperator {
         this.watchedNamespaces = watchedNamespaces;
 
         if (environment.isOlmInstallation()) {
-            this.operatorName = "amq-broker-controller-manager"; // TODO: ?
+            // try amq-broker-operator or new name
+            this.operatorName = operatorNewName;
         } else {
             this.operatorName = TestUtils.getOperatorControllerManagerName(ArtemisFileProvider.getOperatorInstallFile());
         }
@@ -51,14 +54,25 @@ public abstract class ArtemisCloudClusterOperator {
 
     public void waitForCoDeployment() {
         // operator pod/deployment name activemq-artemis-controller-manager vs amq-broker-controller-manager
-        kubeClient.getKubernetesClient().resource(kubeClient.getDeployment(deploymentNamespace, operatorName)).waitUntilReady(3, TimeUnit.MINUTES);
+        TestUtils.waitFor("deployment to be active", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES,
+                () -> kubeClient.getDeployment(deploymentNamespace, operatorNewName) != null ||
+                        kubeClient.getDeployment(deploymentNamespace, operatorOldName) != null);
+
+        Deployment deployment = kubeClient.getDeployment(deploymentNamespace, operatorNewName);
+        if (deployment == null) {
+            deployment = kubeClient.getDeployment(deploymentNamespace, operatorOldName);
+            this.operatorName = operatorOldName;
+        } else {
+            this.operatorName = operatorNewName;
+        }
+        kubeClient.getKubernetesClient().resource(deployment).waitUntilReady(3, TimeUnit.MINUTES);
     }
 
     public void waitForCoUndeployment() {
         Deployment amqCoDeployment = kubeClient.getDeployment(deploymentNamespace, operatorName);
 //        kubeClient.getKubernetesClient().resource(amqCoDeployment).waitUntilCondition(removed, 3, TimeUnit.MINUTES);
         TestUtils.waitFor("ClusterOperator to stop", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
-            return amqCoDeployment == null && kubeClient.listPodsByPrefixInName(deploymentNamespace, operatorName).size() == 0;
+            return amqCoDeployment == null && kubeClient.listPodsByPrefixName(deploymentNamespace, operatorName).size() == 0;
         });
     }
 

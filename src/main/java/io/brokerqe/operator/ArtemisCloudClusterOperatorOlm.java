@@ -8,6 +8,7 @@ import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
@@ -18,8 +19,10 @@ import java.util.List;
 
 public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator {
     final static Logger LOGGER = LoggerFactory.getLogger(ArtemisCloudClusterOperatorOlm.class);
-    private final String olmChannel;
-    private final String indexImageBundle;
+    private String olmChannel;
+    private String indexImageBundle;
+    private String brokerCatalogSourceName = "broker-source-" + TestUtils.getRandomString(2);
+    private String subscriptionName = "amq-broker-rhel8-" + TestUtils.getRandomString(2);
     private List<HasMetadata> olmResources = new ArrayList<>();
 
     public ArtemisCloudClusterOperatorOlm(String deploymentNamespace, boolean isNamespaced, List<String> watchedNamespaces) {
@@ -32,10 +35,16 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         this.olmChannel = olmChannel;
     }
 
-    public void deployOlmInstallation() {
-        String brokerSourceName = "broker-source-" + TestUtils.getRandomString(2);
-        String subscriptionName = "amq-broker-rhel8-" + TestUtils.getRandomString(2);
+    public String getOlmChannel() {
+        return olmChannel;
+    }
 
+    public String getSubscriptionName() {
+        return subscriptionName;
+    }
+
+
+    public void deployCatalogSource(String indexImageBundle) {
         String catalogSource = String.format("""
             apiVersion: operators.coreos.com/v1alpha1
             kind: CatalogSource
@@ -45,8 +54,13 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
             spec:
               sourceType: grpc
               image: %s           
-            """, brokerSourceName, indexImageBundle);
+            """, brokerCatalogSourceName, indexImageBundle);
 
+        LOGGER.info("[OLM] Creating CatalogSource");
+        deployOlmResource(catalogSource);
+    }
+
+    public void deploySubscription(String olmChannel) {
         String subscriptionString = String.format("""
             apiVersion: operators.coreos.com/v1alpha1
             kind: Subscription
@@ -59,8 +73,20 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
               name: amq-broker-rhel8
               source: %s
               sourceNamespace: openshift-marketplace
-            """, subscriptionName, deploymentNamespace, olmChannel, brokerSourceName);
+            """, subscriptionName, deploymentNamespace, olmChannel, brokerCatalogSourceName);
 
+        LOGGER.info("[OLM] Creating Subscription");
+        deployOlmResource(subscriptionString);
+
+        TestUtils.waitFor("subscription to be active", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
+            List<Subscription> subs = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).list().getItems();
+            return subs != null && subs.size() > 0;
+            // TODO: check installplans here?
+        });
+
+    }
+
+    public void deployOperatorGroup() {
         String watchedNamespacesString;
         if (watchedNamespaces != null) {
             watchedNamespacesString = String.join("\n    - ", watchedNamespaces);
@@ -78,29 +104,22 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
                 - %s
             """, subscriptionName, deploymentNamespace, watchedNamespacesString);
 
-        LOGGER.info("[OLM] Creating CatalogSource");
-        LOGGER.debug(catalogSource);
-        olmResources.add(kubeClient.getKubernetesClient().resource(catalogSource).createOrReplace());
-
         LOGGER.info("[OLM] Creating OperatorGroup");
-        LOGGER.debug("[{}] [OLM] {} ", deploymentNamespace, operatorGroup);
-        olmResources.add(kubeClient.getKubernetesClient().resource(operatorGroup).inNamespace(deploymentNamespace).createOrReplace());
+        deployOlmResource(operatorGroup);
+    }
 
-        LOGGER.info("[OLM] Creating Subscription");
-        LOGGER.debug("[{}] [OLM] {} ", deploymentNamespace, subscriptionString);
-        Subscription subscription = (Subscription) kubeClient.getKubernetesClient().resource(subscriptionString).inNamespace(deploymentNamespace).createOrReplace();
-        olmResources.add(subscription);
-        // waitFor
-        TestUtils.waitFor("subscription to be active", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
-            List<Subscription> subs = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).list().getItems();
-            return subs != null && subs.size() > 0;
-        });
+    private void deployOlmResource(String yamlStringConfig) {
+        LOGGER.debug("[{}] [OLM] \n{} ", deploymentNamespace, yamlStringConfig);
+        olmResources.add(kubeClient.getKubernetesClient().resource(yamlStringConfig).createOrReplace());
+    }
 
-        TestUtils.waitFor("deployment to be active", Constants.DURATION_5_SECONDS, Constants.DURATION_5_MINUTES, () -> {
-            return kubeClient.getDeployment(deploymentNamespace, operatorName) != null;
-        });
+    public void deployOlmInstallation() {
+        deployCatalogSource(indexImageBundle);
+        deployOperatorGroup();
+        deploySubscription(olmChannel);
 
-        LOGGER.info("[{}] [OLM] Subscription & installplans sucessfully installed", deploymentNamespace);
+        waitForCoDeployment();
+        LOGGER.info("[{}] [OLM] Subscription & installplans successfully installed", deploymentNamespace);
     }
 
 
@@ -112,7 +131,6 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         if (waitForDeployment) {
             waitForCoDeployment();
         }
-
         LOGGER.info("[{}] [OLM] Cluster operator {} successfully deployed!", deploymentNamespace, operatorName);
     }
 
@@ -120,5 +138,38 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     public void undeployOperator(boolean waitForUndeployment) {
         kubeClient.getKubernetesClient().resourceList(olmResources).delete();
         LOGGER.info("[{}] [OLM] Successfully undeployed ArtemisCloudOperator", deploymentNamespace);
+    }
+
+    public void deleteClusterServiceVersion() {
+        List<ClusterServiceVersion> clusterServiceVersions = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().clusterServiceVersions().inNamespace(deploymentNamespace).list().getItems();
+        for (ClusterServiceVersion csv : clusterServiceVersions) {
+            LOGGER.info("[{}] [OLM] Deleting ClusterServiceVersion {}", deploymentNamespace, csv.getMetadata().getName());
+            kubeClient.getKubernetesClient().resource(csv).inNamespace(deploymentNamespace).delete();
+        }
+    }
+
+    public void deleteSubscription(String name) {
+        List<Subscription> subs = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).list().getItems();
+        for (Subscription subscription: subs) {
+            if (subscription.getMetadata().getName().equals(name)) {
+                kubeClient.getKubernetesClient().resource(subscription).inNamespace(deploymentNamespace).delete();
+                olmResources.remove(subscription);
+            }
+        }
+    }
+
+    public ArtemisCloudClusterOperatorOlm upgradeClusterOperator(String olmChannel, String indexImageBundle) {
+        deployCatalogSource(indexImageBundle);
+        this.indexImageBundle = indexImageBundle;
+        if (!getOlmChannel().equals(olmChannel)) {
+            deleteClusterServiceVersion();
+            deleteSubscription(getSubscriptionName());
+
+            TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
+            deploySubscription(olmChannel);
+            this.olmChannel = olmChannel;
+            waitForCoDeployment();
+        }
+        return this;
     }
 }

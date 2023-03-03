@@ -8,6 +8,7 @@ import io.brokerqe.operator.ArtemisFileProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -28,6 +29,7 @@ public class Environment {
     private final String brokerInitImage;
     private final String operatorImage;
     private final String bundleImage;
+    private final String testUpgradePlan;
     private final boolean projectManagedClusterOperator;
     private final String logsDirLocation;
     private final String keycloakVersion;
@@ -44,9 +46,10 @@ public class Environment {
 
         projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
 
+        testUpgradePlan = System.getenv(Constants.EV_UPGRADE_PLAN);
         olmIndexImageBundle = System.getenv().getOrDefault(Constants.EV_OLM_IIB, null);
         olmChannel = System.getenv().getOrDefault(Constants.EV_OLM_CHANNEL, null);
-        olmInstallation = olmChannel != null && olmIndexImageBundle != null;
+        olmInstallation = olmChannel != null && olmIndexImageBundle != null || testUpgradePlan != null;
 
         artemisVersion = System.getenv(Constants.EV_ARTEMIS_VERSION);
         brokerImage = System.getenv(Constants.EV_BROKER_IMAGE);
@@ -105,6 +108,9 @@ public class Environment {
         }
         if (bundleImage != null) {
             envVarsSB.append(Constants.EV_ARTEMIS_VERSION).append("=").append(bundleImage).append(Constants.LINE_SEPARATOR);
+        }
+        if (testUpgradePlan != null) {
+            envVarsSB.append(Constants.EV_UPGRADE_PLAN).append("=").append(testUpgradePlan).append(Constants.LINE_SEPARATOR);
         }
         if (logsDirLocation != null) {
             envVarsSB.append(Constants.EV_LOGS_LOCATION).append("=").append(logsDirLocation).append(Constants.LINE_SEPARATOR);
@@ -170,6 +176,13 @@ public class Environment {
 
     public String getBundleImage() {
         return bundleImage;
+    }
+    public String getTestUpgradePlanContent() {
+        if (testUpgradePlan != null) {
+            return TestUtils.readFileContent(new File(testUpgradePlan));
+        } else {
+            throw new IllegalArgumentException(Constants.EV_UPGRADE_PLAN + " variable has not been set!");
+        }
     }
 
     public String getLogsDirLocation() {

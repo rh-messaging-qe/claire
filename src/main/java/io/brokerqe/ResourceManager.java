@@ -116,6 +116,18 @@ public class ResourceManager {
         }
     }
 
+    public static ArtemisCloudClusterOperatorOlm deployArtemisClusterOperatorOlm(String namespace, List<String> watchedNamespaces, String channel, String indexImageBundle) {
+        if (environment.isOlmInstallation()) {
+            ArtemisCloudClusterOperatorOlm clusterOperator = new ArtemisCloudClusterOperatorOlm(namespace, true, watchedNamespaces, indexImageBundle, channel);
+            clusterOperator.deployOperator(true);
+            deployedOperators.add(clusterOperator);
+            return clusterOperator;
+        } else {
+            LOGGER.warn("Not deploying operator! Not an OLM installation type.");
+            return null;
+        }
+    }
+
     public static void deployArtemisClusterOperatorCRDs() {
         if (projectCODeploy) {
             ArtemisCloudClusterOperatorFile.deployOperatorCRDs();
@@ -161,9 +173,13 @@ public class ResourceManager {
         return createArtemis(namespace, name, 1);
     }
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size) {
+        return createArtemis(namespace, name, size, false, false);
+    }
+
+    public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor) {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
-                    .withName("my-broker")
+                    .withName(name)
                     .withNamespace(namespace)
                 .endMetadata()
                 .editOrNewSpec()
@@ -172,14 +188,16 @@ public class ResourceManager {
                         .withPersistenceEnabled()
                         .withMessageMigration()
                     .endDeploymentPlan()
+                    .editOrNewUpgrades()
+                        .withEnabled(upgradeEnabled)
+                        .withMinor(upgradeMinor)
+                    .endUpgrades()
                 .endSpec()
                 .build();
 
-        long waitTime;
+        long waitTime = Constants.DURATION_1_MINUTE + Constants.DURATION_30_SECONDS;
         if (size > 1) {
-            waitTime = Constants.DURATION_1_MINUTE * size + Constants.DURATION_1_MINUTE;
-        } else {
-            waitTime = Constants.DURATION_1_MINUTE;
+            waitTime += Constants.DURATION_1_MINUTE * size;
         }
         return createArtemis(namespace, broker, true, waitTime);
     }
@@ -319,16 +337,26 @@ public class ResourceManager {
     }
 
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout) {
+        waitForBrokerDeployment(namespace, broker, reloadExisting, maxTimeout, null);
+    }
+
+    public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout, StatefulSet oldStatefulSet) {
         LOGGER.info("[{}] Waiting {}s for creation of broker {}", namespace, Duration.ofMillis(maxTimeout).toSeconds(), broker.getMetadata().getName());
         String brokerName = broker.getMetadata().getName();
+
         if (reloadExisting) {
-            // TODO: make more generic and resource specific wait
             LOGGER.info("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
             TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
         }
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+            boolean toReturn = false;
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
-            return ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
+            toReturn = ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
+            if (reloadExisting && oldStatefulSet != null) {
+                LOGGER.warn("WAIT FOR RELOAD OF SS");
+                toReturn = toReturn && !oldStatefulSet.getMetadata().getUid().equals(ss.getMetadata().getUid());
+            }
+            return toReturn;
         });
     }
 
@@ -336,7 +364,7 @@ public class ResourceManager {
         LOGGER.info("[{}] Waiting {}s for deletion of broker {}", namespace, Duration.ofMillis(maxTimeout).toSeconds(), brokerName);
         TestUtils.waitFor("ActiveMQArtemis statefulSet & related pods to be removed", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
-            return ss == null && kubeClient.listPodsByPrefixInName(namespace, brokerName).size() == 0;
+            return ss == null && kubeClient.listPodsByPrefixName(namespace, brokerName).size() == 0;
         });
     }
 
@@ -430,7 +458,7 @@ public class ResourceManager {
     }
 
     public static void undeployAllArtemisClusterOperators() {
-        for (ArtemisCloudClusterOperator operator : deployedOperators) {
+        for (ArtemisCloudClusterOperator operator : List.copyOf(deployedOperators)) {
             LOGGER.warn("[{}] Undeploying orphaned ArtemisOperator {} !", operator.getDeploymentNamespace(), operator.getOperatorName());
             undeployArtemisClusterOperator(operator);
         }

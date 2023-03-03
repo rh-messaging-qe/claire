@@ -197,7 +197,7 @@ public class KubeClient {
      * @param podNamePrefix prefix with which the name should begin
      * @return List of pods
      */
-    public List<Pod> listPodsByPrefixInName(String namespaceName, String podNamePrefix) {
+    public List<Pod> listPodsByPrefixName(String namespaceName, String podNamePrefix) {
         return listPods(namespaceName)
                 .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
                 .collect(Collectors.toList());
@@ -215,7 +215,7 @@ public class KubeClient {
     }
 
     public Pod getFirstPodByPrefixName(String namespaceName, String podNamePrefix) {
-        List<Pod> pods = listPodsByPrefixInName(namespaceName, podNamePrefix);
+        List<Pod> pods = listPodsByPrefixName(namespaceName, podNamePrefix);
         if (pods.size() > 1) {
             LOGGER.warn("[{}] Returning first found pod with name '{}' of many ({})!", namespaceName, podNamePrefix, pods.size());
             return pods.get(0);
@@ -231,8 +231,12 @@ public class KubeClient {
         waitForPodReload(namespaceName, pod, podName);
     }
 
-    public void waitUntilPodIsReady(String namespaceName, String podName) {
-        client.pods().inNamespace(namespaceName).withName(podName).waitUntilReady(3, TimeUnit.MINUTES);
+    public void waitUntilPodIsReady(String namespaceName, Pod pod) {
+        client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(3, TimeUnit.MINUTES);
+    }
+
+    public void waitUntilPodIsRemoved(String namespaceName, Pod pod) {
+        client.pods().inNamespace(namespaceName).resource(pod).waitUntilCondition(tmpPod -> tmpPod.getStatus().getPhase().equals("Succeeded"), 3, TimeUnit.MINUTES);
     }
 
     public void waitForPodReload(String namespace, Pod pod, String podName) {
@@ -245,10 +249,17 @@ public class KubeClient {
         LOGGER.info("[{}] Waiting for pod {} reload", namespace, podName);
 
         TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
-            Pod newPod = this.getFirstPodByPrefixName(namespace, podName);
+            Pod newPod = getFirstPodByPrefixName(namespace, podName);
             return newPod != null && !newPod.getMetadata().getUid().equals(originalUid);
         });
-        this.waitUntilPodIsReady(namespace, this.getFirstPodByPrefixName(namespace, podName).getMetadata().getName());
+
+        for (Pod podTmp : listPodsByPrefixName(namespace, podName)) {
+            if (!podTmp.getMetadata().getUid().equals(originalUid)) {
+                this.waitUntilPodIsReady(namespace, podTmp);
+                break;
+            }
+        }
+//        TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
     }
 
     public String executeCommandInPod(String namespace, Pod pod, String cmd, long timeout) {
@@ -518,15 +529,15 @@ public class KubeClient {
     // ----------> LOGS <----------
     // ============================
 
-    public String getLogsFromPod(String namespaceName, Pod pod) {
-        return getLogsFromPod(namespaceName, pod, null);
+    public String getLogsFromPod(Pod pod) {
+        return getLogsFromPod(pod, null);
     }
 
-    public String getLogsFromPod(String namespaceName, Pod pod, Instant since) {
+    public String getLogsFromPod(Pod pod, Instant since) {
         if (since == null) {
-            return getKubernetesClient().pods().inNamespace(namespaceName).resource(pod).getLog();
+            return getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).resource(pod).getLog();
         } else {
-            return getKubernetesClient().pods().inNamespace(namespaceName).resource(pod)
+            return getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).resource(pod)
                     .sinceTime(since.atOffset(ZoneOffset.UTC).toString()).getLog();
         }
     }

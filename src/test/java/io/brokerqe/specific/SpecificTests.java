@@ -47,7 +47,7 @@ public class SpecificTests extends AbstractSystemTests {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
-        List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
+        List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(1));
         ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         assertDoesNotThrow(() -> ResourceManager.waitForBrokerDeletion(testNamespace, brokerName, Constants.DURATION_1_MINUTE));

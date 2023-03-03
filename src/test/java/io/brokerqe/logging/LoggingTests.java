@@ -60,7 +60,7 @@ public class LoggingTests extends AbstractSystemTests {
         LOGGER.info("[{}] Waiting 15secs for logs to populate", testNamespace);
         TestUtils.threadSleep(15000);
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
-        String operatorLog = getClient().getLogsFromPod(testNamespace, operatorPod);
+        String operatorLog = getClient().getLogsFromPod(operatorPod);
         logContainsLevel(operatorLog, logLevel);
         ResourceManager.deleteArtemis(testNamespace, broker);
         ResourceManager.deleteArtemisAddress(testNamespace, wrongAddress);

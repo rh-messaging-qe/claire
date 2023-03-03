@@ -23,6 +23,12 @@ make build_upstream
 mvn test -Dmaven.main.skip=true -Dtest=<my-specific-test>
 ```
 
+By default, Claire executes tests with `file based` Artemis Cloud Cluster Operator deployment, which is downloaded from provided installation examples.
+
+## How to run tests with OLM
+To override default file based Artemis Cloud Cluster Operator installation by Operator Lifecycle Management, you need to specify `OLM_IIB` Index Image Bundle and
+`OLM_CHANNEL` environment variables, which specifies Subscription channel to use for Operator installation.
+
 
 ## List of available Environment Variables
 

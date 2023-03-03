@@ -47,7 +47,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
 
         String brokerName = broker.getMetadata().getName();
-        List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
+        List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         Pod brokerPod1 = brokerPods.get(0);
         Pod brokerPod2 = brokerPods.get(1);
         String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
@@ -69,7 +69,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         waitForScaleDownDrainer(testNamespace, operator.getOperatorName(), brokerName, Constants.DURATION_2_MINUTES, initialSize - scaledDownSize);
         LOGGER.info("[{}] Performed Broker scaledown {} -> {}", testNamespace, initialSize, scaledDownSize);
 
-        brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
+        brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         assertThat(brokerPods.size(), equalTo(1));
 
         brokerPod1 = brokerPods.get(0);

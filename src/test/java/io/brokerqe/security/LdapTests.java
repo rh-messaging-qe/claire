@@ -133,7 +133,7 @@ public class LdapTests extends AbstractSystemTests {
             .build();
         broker = ResourceManager.createArtemis(testNamespace, broker);
         myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
-        brokerPod = getClient().listPodsByPrefixInName(testNamespace, brokerName).get(0);
+        brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
         allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
     }
 

@@ -194,7 +194,7 @@ public class AbstractSystemTests implements TestSeparator {
         Pattern pattern = Pattern.compile("Drain pod " + brokerName + ".* finished");
 
         TestUtils.waitFor("Drain pod to finish", Constants.DURATION_10_SECONDS, maxTimeout, () -> {
-            String log = getClient().getLogsFromPod(namespace, operatorPod, now);
+            String log = getClient().getLogsFromPod(operatorPod, now);
             Matcher matcher = pattern.matcher(log);
             int count = 0;
             while (matcher.find()) {

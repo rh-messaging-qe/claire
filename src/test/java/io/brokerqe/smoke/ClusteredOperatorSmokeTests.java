@@ -62,11 +62,11 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile());
         String brokerName = broker.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespace, brokerName);
-        List<Pod> brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
+        List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(1));
 
         ResourceManager.deleteArtemis(testNamespace, broker);
-        brokerPods = getClient().listPodsByPrefixInName(testNamespace, brokerName);
+        brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         assertThat(brokerPods.size(), is(0));
 
         // testNamespaceA - should work
@@ -74,10 +74,10 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         ActiveMQArtemis brokerA = ResourceManager.createArtemis(testNamespaceA, ArtemisFileProvider.getArtemisSingleExampleFile());
         String brokerNameA = brokerA.getMetadata().getName();
         LOGGER.info("[{}] Check if broker pod with name {} is present.", testNamespaceA, brokerNameA);
-        brokerPods = getClient().listPodsByPrefixInName(testNamespaceA, brokerNameA);
+        brokerPods = getClient().listPodsByPrefixName(testNamespaceA, brokerNameA);
         assertThat(brokerPods.size(), is(1));
         ResourceManager.deleteArtemis(testNamespaceA, brokerA);
-        brokerPods = getClient().listPodsByPrefixInName(testNamespaceA, brokerName);
+        brokerPods = getClient().listPodsByPrefixName(testNamespaceA, brokerName);
         assertThat(brokerPods.size(), is(0));
 
         // testNamespaceB - should fail
