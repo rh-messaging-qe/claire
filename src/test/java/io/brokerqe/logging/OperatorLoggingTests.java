@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
-public class LoggingTests extends AbstractSystemTests {
+public class OperatorLoggingTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
     private final String testNamespace = getRandomNamespaceName("log-tests", 6);
     final static String DEBUG = "DEBUG";

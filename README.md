@@ -34,21 +34,21 @@ To override default file based Artemis Cloud Cluster Operator installation by Op
 
 | Name                      | Description                                      | Default                     | Possible values                                  |
 |---------------------------|--------------------------------------------------|-----------------------------|--------------------------------------------------|
-| ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)       | 7.10.2                      | <url>                                            |
-| ARTEMIS_TEST_VERSION      | ArtemisCloud Version to be used by tests         | not set                     | <major>.<minor>                                  |
-| OPERATOR_IMAGE            | ArtemisCloud Operator image url                  | not set                     | <url>                                            |
-| BROKER_IMAGE              | Broker image url                                 | not set                     | <url>                                            |
-| BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | <url>                                            |
-| BUNDLE_IMAGE              | Bundle image url                                 | not set                     | <url>                                            |
-| OLM_IIB                   | OLM Index Image Bundle to use                    | not set                     | <iib-url>                                        |
-| OLM_CHANNEL               | OLM channel to use with Subscription             | not set                     | <channel>                                        |
+| ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)       | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
+| ARTEMIS_TEST_VERSION      | ArtemisCloud Version to be used by tests         | not set                     | \<major\>.\<minor\>                              |
+| OPERATOR_IMAGE            | ArtemisCloud Operator image url                  | not set                     | \<image registry url\>                           |
+| BROKER_IMAGE              | Broker image url                                 | not set                     | \<image registry url\>                           |
+| BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | \<image registry url\>                           |
+| BUNDLE_IMAGE              | Bundle image url                                 | not set                     | \<image registry url\>                           |
+| OLM_IIB                   | OLM Index Image Bundle to use                    | not set                     | \<iib image registry url\>                                      |
+| OLM_CHANNEL               | OLM channel to use with Subscription             | not set                     | \<channel\>                                      |
 | DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices            | not set (`false`)           | `true`, `false`                                  |
-| LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | <directory>                                      |
+| LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | \<directory\>                                    |
 | TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
 | CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)  | `true`                      | `false`                                          |
 | COLLECT_TEST_DATA         | Whether to gather test data on error or not      | `true`                      | `true`, `false`                                  |
-| OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile) | 7.10.1 url                  | <url>                                            |
-| OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)          | main                        | <branch>                                         |
+| OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile) | 7.10.2 url                  | \<url\>                                          |
+| OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)          | main                        | \<branch\>                                       |
 
 ## Setting log level
 Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.

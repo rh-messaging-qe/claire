@@ -32,6 +32,7 @@ public class Environment {
     private final String testUpgradePlan;
     private final boolean projectManagedClusterOperator;
     private final String logsDirLocation;
+    private final String tmpDirLocation;
     private final String keycloakVersion;
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     private final KubeClient kubeClient;
@@ -41,7 +42,8 @@ public class Environment {
         kubeClient = new KubeClient("default");
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
         testLogLevel = System.getenv(Constants.EV_TEST_LOG_LEVEL);
-        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + createArchiveName();
+        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
+        tmpDirLocation = System.getProperty(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
 
         projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
@@ -114,6 +116,9 @@ public class Environment {
         }
         if (logsDirLocation != null) {
             envVarsSB.append(Constants.EV_LOGS_LOCATION).append("=").append(logsDirLocation).append(Constants.LINE_SEPARATOR);
+        }
+        if (tmpDirLocation != null) {
+            envVarsSB.append(Constants.EV_TMP_LOCATION).append("=").append(tmpDirLocation).append(Constants.LINE_SEPARATOR);
         }
 
         LOGGER.info(envVarsSB.toString());
@@ -189,6 +194,10 @@ public class Environment {
         return logsDirLocation;
     }
 
+    public String getTmpDirLocation() {
+        return tmpDirLocation;
+    }
+
     public String getKeycloakVersion() {
         return keycloakVersion;
     }
@@ -217,11 +226,11 @@ public class Environment {
         return olmInstallation;
     }
 
-    private static String createArchiveName() {
+    private static String generateTimestamp() {
         LocalDateTime date = LocalDateTime.now();
-        String archiveName = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss"));
-        LOGGER.debug(archiveName);
-        return archiveName;
+        String timestamp = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss"));
+        LOGGER.debug(timestamp);
+        return timestamp;
     }
 
     public ArtemisVersion convertArtemisVersion(String version) {

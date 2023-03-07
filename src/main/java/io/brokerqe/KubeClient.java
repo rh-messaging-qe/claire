@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -49,6 +50,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class KubeClient {
     protected final KubernetesClient client;
@@ -613,6 +617,21 @@ public class KubeClient {
                 () -> client.secrets().inNamespace(namespaceName).withName(secretName).get() != null);
     }
 
+    public void deleteConfigMap(String namespaceName, String configMapName) {
+        deleteConfigMap(namespaceName, configMapName, true);
+    }
+
+    public void deleteConfigMap(String namespaceName, String configMapName, boolean waitForDeletion) {
+        client.configMaps().inNamespace(namespaceName).withName(configMapName).delete();
+        if (waitForDeletion) {
+            LOGGER.info("[{}] Waiting for config map deletion {}", namespaceName, configMapName);
+            TestUtils.waitFor(" deletion of config map " + configMapName, Constants.DURATION_5_SECONDS,
+                    Constants.DURATION_1_MINUTE,
+                    () -> client.configMaps().inNamespace(namespaceName).withName(configMapName).get() == null);
+        }
+        LOGGER.info("[{}] Deleted config map {}", namespaceName, configMapName);
+    }
+
     public void deleteSecret(String namespaceName, String secretName) {
         deleteSecret(namespaceName, secretName, true);
     }
@@ -640,4 +659,10 @@ public class KubeClient {
         return cacert;
     }
 
+    public Path getPodDir(Pod artemisPod, String srcDir, Path dstDir) {
+        boolean copyResult = client.pods().resource(artemisPod).
+                dir(srcDir).copy(dstDir);
+        assertThat(copyResult, is(Boolean.TRUE));
+        return Path.of(dstDir + Constants.FILE_SEPARATOR + srcDir);
+    }
 }

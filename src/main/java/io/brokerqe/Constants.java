@@ -25,9 +25,15 @@ public interface Constants {
     String EV_BUNDLE_IMAGE = "BUNDLE_IMAGE";
     String EV_UPGRADE_PLAN = "UPGRADE_PLAN";
     String EV_LOGS_LOCATION = "LOGS_LOCATION";
+    String EV_TMP_LOCATION = "TMP_LOCATION";
     String EV_CLUSTER_OPERATOR_MANAGED = "CLUSTER_OPERATOR_MANAGED";
     String EV_COLLECT_TEST_DATA = "COLLECT_TEST_DATA";
     String EV_KEYCLOAK_VERSION = "KEYCLOAK_VERSION";
+
+    // Artemis image related
+    String ARTEMIS_IS_LIVE_LOG_MSG = " INFO  [org.apache.activemq.artemis.core.server] AMQ221007: Server is now live";
+    String ARTEMIS_USING_CUSTOM_LOG_MSG = "There is a custom logger configuration defined in JAVA_ARGS_APPEND: -Dlog4j2.configurationFile=";
+    String ARTEMIS_USING_DEFAULT_LOG_MSG = "Using default logging configuration(console only)";
 
     String BROKER_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Kubernetes_";
     String BROKER_INIT_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Init_";
@@ -61,6 +67,7 @@ public interface Constants {
     String PROJECT_USER_DIR = System.getProperty("user.dir");
     String PROJECT_TEST_DIR = PROJECT_USER_DIR + "/src/test/";
     String LOGS_DEFAULT_DIR = PROJECT_USER_DIR + "/test-logs";
+    String TMP_DEFAULT_DIR = PROJECT_USER_DIR + "/test-tmp";
     String CERTS_GENERATION_DIR = PROJECT_USER_DIR + "/certificates/";
     // not used anymore ?
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
@@ -121,6 +128,7 @@ public interface Constants {
     // Container folder paths
     String CONTAINER_BROKER_HOME_DIR = "/home/jboss/amq-broker/";
     String CONTAINER_BROKER_HOME_ETC_DIR = CONTAINER_BROKER_HOME_DIR + "etc/";
+    String CONTAINER_BROKER_HOME_LOG_DIR = CONTAINER_BROKER_HOME_DIR + "log/";
 
     // Timing variables
     long DURATION_2_SECONDS = Duration.ofSeconds(2).toMillis();

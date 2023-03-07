@@ -22,11 +22,15 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -48,6 +52,13 @@ public class AbstractSystemTests implements TestSeparator {
     protected ArtemisCloudClusterOperator operator;
 
     protected Environment testEnvironment;
+
+    protected TestInfo testInfo;
+
+    @BeforeEach
+    void init(TestInfo testInfo) {
+        this.testInfo = testInfo;
+    }
 
     public KubeClient getClient() {
         if (ResourceManager.getKubeClient() != null) {
@@ -226,4 +237,10 @@ public class AbstractSystemTests implements TestSeparator {
         ResourceManager.undeployClientsContainer(namespace, clients);
     }
 
+    public Path createTestTemporaryDir(String name) {
+        String baseDirName = Paths.get(testEnvironment.getTmpDirLocation()).toString();
+        String dirName = baseDirName + Constants.FILE_SEPARATOR + name;
+        TestUtils.createDirectory(dirName);
+        return Paths.get(dirName);
+    }
 }

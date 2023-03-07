@@ -4,6 +4,8 @@
  */
 package io.brokerqe.security;
 
+import io.brokerqe.TestUtils;
+
 import java.security.KeyStore;
 
 public class KeyStoreData {
@@ -48,11 +50,11 @@ public class KeyStoreData {
     }
 
     public String getEncodedPassword() {
-        return CertificateManager.getEncodedString(password);
+        return TestUtils.getEncodedBase64String(password);
     }
 
     public String getEncodedKeystoreFileData() {
-        return CertificateManager.readCertificateFromFile(keyStorePath);
+        return TestUtils.getFileContentAsBase64(keyStorePath);
     }
 
     public CertificateData getCertificateData() {

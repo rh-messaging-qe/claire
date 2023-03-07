@@ -51,9 +51,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -67,7 +64,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -423,15 +419,6 @@ public class CertificateManager {
         TestUtils.createFile(fileName, sw.toString());
     }
 
-    public static String readCertificateFromFile(String certificatePath) {
-        try {
-            byte[] content = Files.readAllBytes(Paths.get(certificatePath));
-            return Base64.getEncoder().encodeToString(content);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static Map<String, KeyStoreData> generateDefaultCertificateKeystores(String namespace, ActiveMQArtemis broker, String brokerDN, String clientDN, List<Extension> extensions, CertificateData issuer) {
         LOGGER.info("[TLS] Generating Broker KeyPair, Certificates");
         CertificateData brokerCertData = new CertificateData(DEFAULT_BROKER_ALIAS, brokerDN, extensions, 30, issuer);
@@ -502,7 +489,8 @@ public class CertificateManager {
             if (stringTlsCert != null) {
                 CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
                 trustedCertificate = (X509Certificate)
-                        certificateFactory.generateCertificate(new ByteArrayInputStream(getDecodedString(stringTlsCert).getBytes()));
+                        certificateFactory.generateCertificate(new ByteArrayInputStream(
+                                TestUtils.getDecodedBase64String(stringTlsCert).getBytes()));
             } else {
                 trustedCertificate = certificate;
             }
@@ -555,13 +543,5 @@ public class CertificateManager {
             LOGGER.error("[TLS] {} does not exist! Can not reuse it!", Constants.CERTS_GENERATION_DIR);
             throw new RuntimeException("Can not find expected directory and load certificates!");
         }
-    }
-
-    public static String getEncodedString(String password) {
-        return Base64.getEncoder().encodeToString(password.getBytes());
-    }
-
-    public static String getDecodedString(String data) {
-        return new String(Base64.getDecoder().decode(data), StandardCharsets.UTF_8);
     }
 }

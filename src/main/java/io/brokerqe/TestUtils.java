@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,6 +32,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
@@ -219,6 +221,14 @@ public final class TestUtils {
         }
     }
 
+    public static void deleteDirectoryRecursively(Path fileName) {
+        try {
+            FileUtils.deleteDirectory(fileName.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void createFile(String fileName, String content) {
         try {
             Files.write(Paths.get(fileName), content.getBytes());
@@ -268,6 +278,18 @@ public final class TestUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String getFileContentAsBase64(String file) {
+        return getEncodedBase64String(readFileContent(Paths.get(file).toFile()));
+    }
+
+    public static String getEncodedBase64String(String data) {
+        return Base64.getEncoder().encodeToString(data.getBytes());
+    }
+
+    public static String getDecodedBase64String(String data) {
+        return new String(Base64.getDecoder().decode(data), StandardCharsets.UTF_8);
     }
 
     public static void updateImagesInOperatorFile(Path operatorFile, String imageType, String imageUrl, String version) {

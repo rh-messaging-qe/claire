@@ -57,8 +57,8 @@ public class Keycloak {
 
     protected void setupAdminLogin() {
         Map<String, String> adminPassword = kubeClient.getSecret(namespace, "credential-example-keycloak").getData();
-        admin.put(adminUsernameKey, CertificateManager.getDecodedString(adminPassword.get(adminUsernameKey)));
-        admin.put(adminPasswordKey, CertificateManager.getDecodedString(adminPassword.get(adminPasswordKey)));
+        admin.put(adminUsernameKey, TestUtils.getDecodedBase64String(adminPassword.get(adminUsernameKey)));
+        admin.put(adminPasswordKey, TestUtils.getDecodedBase64String(adminPassword.get(adminPasswordKey)));
 
         LOGGER.info("[{}] [KC] Using login credentials {}/{}", namespace, admin.get(adminUsernameKey), admin.get(adminPasswordKey));
         String loginCommand = String.format("/opt/eap/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user %s --password %s",
