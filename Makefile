@@ -38,6 +38,7 @@ downstream_files:
 	wget ${OPERATOR_INSTALL_ZIP} -O ${ROOT_DIR}/artemis/ocp_install_examples.zip
 	unzip -o ${ROOT_DIR}/artemis/ocp_install_examples.zip -d ${ROOT_DIR}/artemis/tmp/
 	echo "artemis.zip=${OPERATOR_INSTALL_ZIP}" >> ${ARTEMIS_PROPERTIES_FILE}
+	echo "artemis.name=amq-broker" >> ${ARTEMIS_PROPERTIES_FILE}
 
 copy_ocp_zip_files:
 	# Copy CRDs, examples and install files
@@ -96,5 +97,6 @@ upstream_files:
 	echo "artemis.version=${OPERATOR_VERSION_UPSTREAM}" >> ${ARTEMIS_PROPERTIES_FILE}
 	echo "artemis.test.version=${OPERATOR_VERSION_UPSTREAM}" >> ${ARTEMIS_PROPERTIES_FILE}
 	echo "artemis.crds=upstream" >> ${ARTEMIS_PROPERTIES_FILE}
+	echo "artemis.name=activemq-artemis" >> ${ARTEMIS_PROPERTIES_FILE}
 
 .PHONY: build clean

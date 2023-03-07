@@ -23,6 +23,7 @@ public class Environment {
     private final String olmIndexImageBundle;
     private final String olmChannel;
     private final boolean olmInstallation;
+    private final String artemisOperatorName;
     private String artemisVersion;
     private final ArtemisVersion artemisTestVersion;
     private final String brokerImage;
@@ -66,6 +67,7 @@ public class Environment {
         try {
             projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
             projectSettings.load(projectSettingsFile);
+            artemisOperatorName = String.valueOf(projectSettings.get("artemis.name"));
             artemisVersion = artemisVersion == null ? String.valueOf(projectSettings.get("artemis.version")) : artemisVersion;
             // Use ENV Var, project property or default to artemisVersion
             String artemisTestVersionStr = System.getenv().getOrDefault(Constants.EV_ARTEMIS_TEST_VERSION, String.valueOf(projectSettings.get("artemis.test.version")));
@@ -147,6 +149,9 @@ public class Environment {
         return disabledRandomNs;
     }
 
+    public String getArtemisOperatorName() {
+        return artemisOperatorName;
+    }
     public String getArtemisVersion() {
         return artemisVersion;
     }

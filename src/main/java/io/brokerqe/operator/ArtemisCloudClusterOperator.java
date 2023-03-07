@@ -26,8 +26,8 @@ public abstract class ArtemisCloudClusterOperator {
     protected final List<String> watchedNamespaces;
     protected final KubeClient kubeClient;
     protected String operatorName;
-    protected final String operatorOldName = "amq-broker-operator";
-    protected final String operatorNewName = "amq-broker-controller-manager";
+    private final String operatorOldNameSuffix = "-operator";
+    private final String operatorNewNameSuffix = "-controller-manager";
 
     public ArtemisCloudClusterOperator(String namespace) {
         this(namespace, true, null);
@@ -41,7 +41,7 @@ public abstract class ArtemisCloudClusterOperator {
 
         if (environment.isOlmInstallation()) {
             // try amq-broker-operator or new name
-            this.operatorName = operatorNewName;
+            this.operatorName = operatorNewNameSuffix;
         } else {
             this.operatorName = TestUtils.getOperatorControllerManagerName(ArtemisFileProvider.getOperatorInstallFile());
         }
@@ -55,15 +55,15 @@ public abstract class ArtemisCloudClusterOperator {
     public void waitForCoDeployment() {
         // operator pod/deployment name activemq-artemis-controller-manager vs amq-broker-controller-manager
         TestUtils.waitFor("deployment to be active", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES,
-                () -> kubeClient.getDeployment(deploymentNamespace, operatorNewName) != null ||
-                        kubeClient.getDeployment(deploymentNamespace, operatorOldName) != null);
+                () -> kubeClient.getDeployment(deploymentNamespace, getOperatorNewName()) != null ||
+                        kubeClient.getDeployment(deploymentNamespace, getOperatorOldName()) != null);
 
-        Deployment deployment = kubeClient.getDeployment(deploymentNamespace, operatorNewName);
+        Deployment deployment = kubeClient.getDeployment(deploymentNamespace, getOperatorNewName());
         if (deployment == null) {
-            deployment = kubeClient.getDeployment(deploymentNamespace, operatorOldName);
-            this.operatorName = operatorOldName;
+            deployment = kubeClient.getDeployment(deploymentNamespace, getOperatorOldName());
+            this.operatorName = getOperatorOldName();
         } else {
-            this.operatorName = operatorNewName;
+            this.operatorName = getOperatorNewName();
         }
         kubeClient.getKubernetesClient().resource(deployment).waitUntilReady(3, TimeUnit.MINUTES);
     }
@@ -84,4 +84,11 @@ public abstract class ArtemisCloudClusterOperator {
         return operatorName;
     }
 
+    public String getOperatorOldName() {
+        return environment.getArtemisOperatorName() + operatorOldNameSuffix;
+    }
+
+    public String getOperatorNewName() {
+        return environment.getArtemisOperatorName() + operatorNewNameSuffix;
+    }
 }
