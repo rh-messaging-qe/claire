@@ -54,7 +54,7 @@ public class KeyStoreData {
     }
 
     public String getEncodedKeystoreFileData() {
-        return TestUtils.getFileContentAsBase64(keyStorePath);
+        return CertificateManager.readCertificateFromFile(keyStorePath);
     }
 
     public CertificateData getCertificateData() {

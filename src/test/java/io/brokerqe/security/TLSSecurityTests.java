@@ -8,8 +8,11 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.ArtemisVersion;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
+import io.brokerqe.junit.TestValidSince;
+import io.brokerqe.junit.TestValidUntil;
 import io.brokerqe.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -37,9 +40,19 @@ public class TLSSecurityTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     public void testMutualAuthentication() {
+        doTestMutualAuthentication(true);
+    }
+
+    @Test
+    @TestValidUntil(ArtemisVersion.VERSION_2_28)
+    public void testMutualAuthenticationOldVersion() {
+        doTestMutualAuthentication(false);
+    }
+
+    public void doTestMutualAuthentication(boolean singleSecret) {
         String brokerSecretName = "broker-tls-secret";
-        //  Bug must have secret for each acceptor https://issues.redhat.com/browse/ENTMQBR-4268
         String bugBrokerSecretName = brokerSecretName + "-openwire";
         String clientSecret = "client-tls-secret";
         String amqpAcceptorName = "my-amqp";
@@ -48,7 +61,14 @@ public class TLSSecurityTests extends AbstractSystemTests {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "tls-broker");
         ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, true);
-        Acceptors owireAcceptors = createAcceptor(owireAcceptorName, "openwire", 61618, true, true, bugBrokerSecretName, true);
+        Acceptors owireAcceptors;
+
+        if (singleSecret) {
+            owireAcceptors = createAcceptor(owireAcceptorName, "openwire", 61618, true, true, brokerSecretName, true);
+        } else {
+            //  Bug must have secret for each acceptor https://issues.redhat.com/browse/ENTMQBR-4268
+            owireAcceptors = createAcceptor(owireAcceptorName, "openwire", 61618, true, true, bugBrokerSecretName, true);
+        }
 
 //        Map<String, KeyStoreData> keystores = CertificateManager.reuseDefaultGeneratedKeystoresFromFiles();
         Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
@@ -62,7 +82,10 @@ public class TLSSecurityTests extends AbstractSystemTests {
 
         // One Way TLS
         CertificateManager.createBrokerKeystoreSecret(getClient(), brokerSecretName, keystores);
-        CertificateManager.createBrokerKeystoreSecret(getClient(), bugBrokerSecretName, keystores);
+        if (!singleSecret) {
+            CertificateManager.createBrokerKeystoreSecret(getClient(), bugBrokerSecretName, keystores);
+        }
+
         // Two Way - Mutual Authentication (Clients TLS secret)
         CertificateManager.createClientKeystoreSecret(getClient(), clientSecret, keystores);
 
@@ -80,7 +103,9 @@ public class TLSSecurityTests extends AbstractSystemTests {
         ResourceManager.deleteArtemis(testNamespace, broker);
         ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress);
         getClient().deleteSecret(testNamespace, brokerSecretName);
-        getClient().deleteSecret(testNamespace, bugBrokerSecretName);
+        if (!singleSecret) {
+            getClient().deleteSecret(testNamespace, bugBrokerSecretName);
+        }
         getClient().deleteSecret(testNamespace, clientSecret);
     }
 

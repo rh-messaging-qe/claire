@@ -24,34 +24,33 @@ import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
 
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(TestValidSince.TestVersionValidityCondition.class)
-public @interface TestValidSince {
+@ExtendWith(TestValidUntil.TestVersionUntilValidityCondition.class)
+public @interface TestValidUntil {
 
     ArtemisVersion value();
-    class TestVersionValidityCondition implements ExecutionCondition {
-        private final static Logger LOGGER = LoggerFactory.getLogger(TestVersionValidityCondition.class);
-        private static final ConditionEvaluationResult ENABLED = ConditionEvaluationResult.enabled("@TestValidSince is not present");
+    class TestVersionUntilValidityCondition implements ExecutionCondition {
+        private final static Logger LOGGER = LoggerFactory.getLogger(TestVersionUntilValidityCondition.class);
+        private static final ConditionEvaluationResult ENABLED = ConditionEvaluationResult.enabled("@TestValidUntil is not present");
 
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
             AnnotatedElement element = context.getElement().orElse(null);
             ArtemisVersion artemisTestVersion = ResourceManager.getEnvironment().getArtemisTestVersion();
-            return findAnnotation(element, TestValidSince.class).map(annotation -> toResult(annotation, artemisTestVersion)).orElse(ENABLED);
+            return findAnnotation(element, TestValidUntil.class).map(annotation -> toResult(annotation, artemisTestVersion)).orElse(ENABLED);
         }
 
-        private ConditionEvaluationResult toResult(TestValidSince annotation, ArtemisVersion artemisTestVersionEnv) {
+        private ConditionEvaluationResult toResult(TestValidUntil annotation, ArtemisVersion artemisTestVersionEnv) {
             ArtemisVersion artemisTestVersionAnnotated = annotation.value();
 
             if (artemisTestVersionEnv == null) {
                 return ConditionEvaluationResult.enabled("Test enabled. ARTEMIS_TEST_VERSION is not specified.");
             }
 
-            if (artemisTestVersionAnnotated.getVersionNumber() <= artemisTestVersionEnv.getVersionNumber()) {
-                return ConditionEvaluationResult.enabled("Test enabled. TestValidSince " + artemisTestVersionAnnotated + " < " + artemisTestVersionEnv);
+            if (artemisTestVersionAnnotated.getVersionNumber() > artemisTestVersionEnv.getVersionNumber()) {
+                return ConditionEvaluationResult.enabled("Test enabled. TestValidUntil " + artemisTestVersionAnnotated + " > " + artemisTestVersionEnv);
             } else {
-                LOGGER.info("[TEST] Skipped: Test/class does not meet TestValidSince criteria.");
-                return ConditionEvaluationResult.disabled("[TEST] Skipped: TestValidSince(" + artemisTestVersionAnnotated +
-                        ") > " + artemisTestVersionEnv + " than provided.");
+                LOGGER.info("[TEST] Skipped: Test/class does not meet TestValidUntil criteria.");
+                return ConditionEvaluationResult.disabled("[TEST] Skipped: TestValidUntil(" + artemisTestVersionAnnotated + ") is not older as provided " + artemisTestVersionEnv);
             }
         }
     }

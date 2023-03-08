@@ -51,6 +51,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -64,6 +66,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -431,6 +434,15 @@ public class CertificateManager {
 
         return CertificateManager.createKeystores(brokerCertData, clientCertData,
                 DEFAULT_BROKER_ALIAS, DEFAULT_BROKER_PASSWORD, DEFAULT_CLIENT_ALIAS, DEFAULT_CLIENT_PASSWORD);
+    }
+
+    public static String readCertificateFromFile(String certificatePath) {
+        try {
+            byte[] content = Files.readAllBytes(Paths.get(certificatePath));
+            return Base64.getEncoder().encodeToString(content);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Secret createKeystoreSecret(KubeClient kubeClient, String secretName, Map<String, KeyStoreData> keystores, String alias) {
