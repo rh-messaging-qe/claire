@@ -299,6 +299,14 @@ public class KubeClient {
         return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get();
     }
 
+    public StatefulSet getDefaultArtemisStatefulSet(String brokerName) {
+        return getStatefulSet(brokerName + "-ss");
+    }
+
+    public Service getService(String namespaceName, String serviceName) {
+        return client.services().inNamespace(namespaceName).withName(serviceName).get();
+    }
+
     public StatefulSet getStatefulSet(String statefulSetName) {
         return getStatefulSet(namespace, statefulSetName);
     }

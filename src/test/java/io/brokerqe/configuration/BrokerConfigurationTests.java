@@ -9,15 +9,24 @@ import io.amq.broker.v1beta1.ActiveMQArtemisSpecBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Env;
 import io.brokerqe.AbstractSystemTests;
 import io.brokerqe.ArtemisVersion;
+import io.brokerqe.Constants;
+import io.brokerqe.KubeClient;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
 import io.brokerqe.junit.TestValidSince;
 import io.brokerqe.operator.ArtemisFileProvider;
+
+import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,8 +67,8 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     void initialVariableSettingTest() {
         ActiveMQArtemis artemisBroker = TestUtils.configFromYaml(ArtemisFileProvider.getArtemisSingleExampleFile().toFile(), ActiveMQArtemis.class);
         artemisBroker.setSpec(new ActiveMQArtemisSpecBuilder()
-            .addAllToEnv(List.of(getEnvItem()))
-            .build());
+                .addAllToEnv(List.of(getEnvItem()))
+                .build());
         artemisBroker = ResourceManager.createArtemis(testNamespace, artemisBroker);
         checkEnvVariables(artemisBroker);
     }
@@ -69,8 +78,8 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     void variableAddedAfterDeployTest() {
         ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, "env-broker");
         artemisBroker.setSpec(new ActiveMQArtemisSpecBuilder()
-            .withEnv(List.of(getEnvItem()))
-            .build());
+                .withEnv(List.of(getEnvItem()))
+                .build());
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(artemisBroker).createOrReplace();
         ResourceManager.waitForBrokerDeployment(testNamespace, artemisBroker, true);
         checkEnvVariables(artemisBroker);
@@ -87,12 +96,42 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
             }
         }
         LOGGER.info("[{}] Checking for expected variables {}:{}", testNamespace, envItem.getName(), envItem.getValue());
-        String processes = getClient().executeCommandInPod(testNamespace, brokerPod,  "ps ax | grep java", 10);
+        String processes = getClient().executeCommandInPod(testNamespace, brokerPod, "ps ax | grep java", 10);
         assertThat(processes, containsString(val));
         assertThat(envItem, is(notNullValue()));
         assertThat(envItem.getValue(), is(val));
         // should be pre-populated
         assertThat(envVars.size(), greaterThan(1));
+    }
+
+
+    @Test
+    void verifyStatefulSetContainerPort() {
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        StatefulSet amqss = getClient().getDefaultArtemisStatefulSet(broker.getMetadata().getName());
+        List<ContainerPort> amqPorts = amqss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
+        Assertions.assertThat(amqPorts)
+                .extracting(ContainerPort::getName)
+                .containsExactly(Constants.WEBCONSOLE_URI_PREFIX);
+        Assertions.assertThat(amqPorts)
+                .filteredOn("name", Constants.WEBCONSOLE_URI_PREFIX)
+                .extracting(ContainerPort::getContainerPort)
+                .containsOnly(Constants.CONSOLE_PORT);
+    }
+
+    @Test
+    void verifyServiceContainerPort() {
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        KubeClient kube = getClient();
+        Service svc = kube.getService(testNamespace, broker.getMetadata().getName() + "-wconsj-0-svc");
+        List<ServicePort> amqPorts = svc.getSpec().getPorts();
+        Assertions.assertThat(amqPorts)
+                .extracting(ServicePort::getName)
+                .containsExactly(Constants.WEBCONSOLE_URI_PREFIX);
+        Assertions.assertThat(amqPorts)
+                .filteredOn("name", Constants.WEBCONSOLE_URI_PREFIX)
+                .extracting(ServicePort::getPort)
+                .containsOnly(Constants.CONSOLE_PORT);
     }
 
 }

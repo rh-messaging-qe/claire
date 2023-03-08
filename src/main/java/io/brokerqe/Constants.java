@@ -56,6 +56,7 @@ public interface Constants {
     String CLIENT_TRUSTSTORE_ID = "client.ts";
     String KEY_TRUSTSTORE_PASSWORD = "trustStorePassword";
     String KEY_KEYSTORE_PASSWORD = "keyStorePassword";
+    int CONSOLE_PORT = 8161;
 
     String WEBCONSOLE_URI_PREFIX = "wconsj";
 
