@@ -7,14 +7,19 @@ package io.brokerqe.webconsole;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.brokerqe.AbstractSystemTests;
+import io.brokerqe.ArtemisVersion;
 import io.brokerqe.Constants;
 import io.brokerqe.KubernetesPlatform;
 import io.brokerqe.junit.TestSupportedPlatform;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
+
+import io.brokerqe.junit.TestValidSince;
+import io.brokerqe.junit.TestValidUntil;
 import io.brokerqe.security.CertificateManager;
 import io.brokerqe.security.KeyStoreData;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
@@ -37,8 +42,10 @@ import java.util.Map;
 import java.util.Scanner;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
 public class WebConsoleTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebConsoleTests.class);
@@ -123,7 +130,18 @@ public class WebConsoleTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidUntil(ArtemisVersion.VERSION_2_28)
+    public void connectSecurelyConsoleTestOld() {
+        doConnectSecurelyConsoleTest(false);
+    }
+
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     public void connectSecurelyConsoleTest() {
+        doConnectSecurelyConsoleTest(true);
+    }
+
+    public void doConnectSecurelyConsoleTest(boolean checkLogForSecret) {
         String brokerName = "artemis";
         String amqpAcceptorName = "my-amqp";
         String brokerSecretName = "broker-tls-secret";
@@ -159,9 +177,20 @@ public class WebConsoleTests extends AbstractSystemTests {
         );
         Secret consoleSecret = CertificateManager.createConsoleKeystoreSecret(getClient(), consoleSecretName, keystores);
 
+        Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         ResourceManager.createArtemis(testNamespace, artemis, true);
         List<HasMetadata> webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace, brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX);
         LOGGER.info("[{}] webservice url {}", testNamespace, webserviceUrl);
-        // TODO make assertions of accessibility etc.
+
+        if (checkLogForSecret) {
+            LOGGER.info("[{}] Checking for 'Failed to create new Secret error' in CO log", testNamespace);
+            String operatorLog = getClient().getLogsFromPod(operatorPod);
+            assertThat(operatorLog, not(anyOf(
+                    containsString("Failed to create new *v1.Secret"),
+                    containsString("\"error\": \"resourceVersion should not be set on objects to be created")
+                ))
+            );
+        }
+        // TODO make more assertions of accessibility etc.
     }
 }
