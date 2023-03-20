@@ -141,8 +141,25 @@ public interface Constants {
     long DURATION_3_MINUTES = Duration.ofMinutes(3).toMillis();
     long DURATION_5_MINUTES = Duration.ofMinutes(5).toMillis();
 
+    String MONITORING_NAMESPACE = "openshift-monitoring";
+    String MONITORING_NAMESPACE_USER = "openshift-user-workload-monitoring";
+    String PROMETHEUS_USER_SS = "prometheus-user-workload";
+    String THANOS_USER_SS = "thanos-ruler-user-workload";
     // Test tags
     String TAG_OPERATOR = "operator";
     String TAG_JAAS = "jaas";
     String TAG_TLS = "tls";
+
+    // For use in Artemis spec
+    String SCHEME_HTTP = "http";
+
+    String BROKER_PROPERTIES_APPLIED = "BrokerPropertiesApplied";
+    String CONDITION_TYPE_DELPOYED = "Deployed";
+    String CONDITION_TYPE_VALIDATION = "Validation";
+    String CONDITION_TYPE_READY = "Ready";
+    String CONDITION_STATUS_READY = "AllPodsReady";
+    String CONDITION_REASON_VALIDATION = "ValidationSucceded";
+    String CONDITION_REASON_ALL_PODS_VALID = "AllPodsReady";
+    String CONDITION_REASON_APPLIED = "Applied";
+    String CONDITION_REASON_OUT_OF_SYNC = "OutOfSync";
 }

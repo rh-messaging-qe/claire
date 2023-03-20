@@ -10,6 +10,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
+import io.amq.broker.v1beta1.activemqartemisstatus.Conditions;
 import io.brokerqe.clients.MessagingAmqpClient;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.operator.ArtemisCloudClusterOperatorFile;
@@ -28,10 +29,13 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class ResourceManager {
 
@@ -326,6 +330,25 @@ public class ResourceManager {
         ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).delete();
         LOGGER.info("[{}] Deleted ActiveMQArtemisSecurity {}", namespace, artemisSecurity.getMetadata().getName());
         ResourceManager.removeArtemisSecurity(artemisSecurity);
+    }
+
+    public static void waitForArtemisResourceStatusUpdate(ActiveMQArtemis initialArtemis, String namespace, String updateType, long timeoutMillis) {
+        LOGGER.info("[{}] Waiting for 5 minutes for broker {} custom resource status update", namespace, initialArtemis.getMetadata().getName());
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        getArtemisClient().inNamespace(namespace).resource(initialArtemis).waitUntilCondition(updatedBroker -> {
+            for (Conditions cond : updatedBroker.getStatus().getConditions()) {
+                if (cond.getType().equals(updateType)) {
+                    if (cond.getReason().equals(Constants.CONDITION_REASON_APPLIED)) {
+                        LocalDateTime updateDate = LocalDateTime.parse(cond.getLastTransitionTime(), dtf);
+                        LocalDateTime initialDate = LocalDateTime.parse(initialArtemis.getMetadata().getManagedFields().get(0).getTime(), dtf);
+                        if (updateDate.isAfter(initialDate)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }, timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker) {

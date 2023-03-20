@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -177,6 +178,17 @@ public final class TestUtils {
             HttpsURLConnection.setDefaultHostnameVerifier(CertificateManager.trustAllHostnames);
             return new URL(uri).openConnection();
         } catch (IOException | NoSuchAlgorithmException | KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static URLConnection makeHttpRequest(String uri, String method) {
+        try {
+            URL url = new URL(uri);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod(method);
+            return con;
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

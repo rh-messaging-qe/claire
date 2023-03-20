@@ -299,14 +299,6 @@ public class KubeClient {
         return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get();
     }
 
-    public StatefulSet getDefaultArtemisStatefulSet(String brokerName) {
-        return getStatefulSet(brokerName + "-ss");
-    }
-
-    public Service getService(String namespaceName, String serviceName) {
-        return client.services().inNamespace(namespaceName).withName(serviceName).get();
-    }
-
     public StatefulSet getStatefulSet(String statefulSetName) {
         return getStatefulSet(namespace, statefulSetName);
     }
@@ -377,7 +369,7 @@ public class KubeClient {
     }
 
 
-    public Service geServiceBrokerAcceptorFirst(String namespaceName, String brokerName, String acceptorName) {
+    public Service getFirstServiceBrokerAcceptor(String namespaceName, String brokerName, String acceptorName) {
         return getServiceBrokerAcceptors(namespaceName, brokerName, acceptorName).get(0);
     }
 
@@ -580,6 +572,18 @@ public class KubeClient {
         } else {
             LOGGER.error("[{}] Unable to set provided log level to operator {}", operator.getDeploymentNamespace(), operator.getOperatorName());
         }
+    }
+
+    public void createConfigMap(String namespaceName, ConfigMap configMap) {
+        client.configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+    }
+    
+    public StatefulSet getDefaultArtemisStatefulSet(String brokerName) {
+        return getStatefulSet(brokerName + "-ss");
+    }
+
+    public Service getService(String namespaceName, String serviceName) {
+        return client.services().inNamespace(namespaceName).withName(serviceName).get();
     }
 
     // ============================

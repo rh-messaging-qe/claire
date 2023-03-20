@@ -102,7 +102,7 @@ public class SmokeTests extends AbstractSystemTests {
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
 
         // Get service/amqp acceptor name - svcName = "brokerName-XXXX-svc"
-        Service amqp = getClient().geServiceBrokerAcceptorFirst(testNamespace, brokerName, "amqp-owire-acceptor");
+        Service amqp = getClient().getFirstServiceBrokerAcceptor(testNamespace, brokerName, "amqp-owire-acceptor");
         assertThat(amqp.getSpec().getPorts().get(0).getPort(), equalTo(5672));
 
         // Messaging tests
