@@ -62,7 +62,7 @@ public interface Constants {
 
     // Test related strings
     String DEFAULT_KEYCLOAK_VERSION = "20.0.3";
-    String DEFAULT_RHSSO_VERSION = "rhsso-operator.7.6.1-opr-005";
+    String DEFAULT_RHSSO_VERSION = "rhsso-operator.7.6.2-opr-001";
 
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");

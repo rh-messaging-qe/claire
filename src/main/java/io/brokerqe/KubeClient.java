@@ -7,6 +7,7 @@ package io.brokerqe;
 import io.brokerqe.executor.Executor;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
@@ -33,16 +34,11 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -447,7 +443,7 @@ public class KubeClient {
 
     public Route getRouteByName(String namespaceName, String routeName) {
         Route route = null;
-        LOGGER.debug("[{}] Searching for route with {}*", namespaceName, routeName);
+        LOGGER.debug("[{}] Searching for route with {}", namespaceName, routeName);
         try {
             route = ((OpenShiftClient) client).routes().inNamespace(namespaceName).withName(routeName).get();
         } catch (KubernetesClientException e) {
@@ -589,15 +585,19 @@ public class KubeClient {
     // ============================
     // ---------> SECRET <---------
     // ============================
+    public Secret createSecretEncodedData(String namespaceName, String secretName, Map<String, String> data) {
+        return createSecretEncodedData(namespaceName, secretName, data, true);
+    }
+
     public Secret createSecretEncodedData(String namespaceName, String secretName, Map<String, String> data, boolean waitForCreation) {
         Secret secret = new SecretBuilder()
-                .withNewMetadata()
-                    .withName(secretName)
-                    .withNamespace(namespaceName)
-                .endMetadata()
-                .withData(data)
-                .build();
-        client.secrets().inNamespace(namespaceName).resource(secret).createOrReplace();
+            .withNewMetadata()
+                .withName(secretName)
+                .withNamespace(namespaceName)
+            .endMetadata()
+            .withData(data)
+            .build();
+        secret = client.secrets().inNamespace(namespaceName).resource(secret).createOrReplace();
         if (waitForCreation) {
             waitForSecretCreation(namespaceName, secretName);
         }
@@ -613,7 +613,7 @@ public class KubeClient {
                 .withType("generic")
                 .withStringData(data)
                 .build();
-        client.secrets().inNamespace(namespaceName).resource(secret).createOrReplace();
+        secret = client.secrets().inNamespace(namespaceName).resource(secret).createOrReplace();
         if (waitForCreation) {
             waitForSecretCreation(namespaceName, secretName);
         }
@@ -627,6 +627,69 @@ public class KubeClient {
     public void waitForSecretCreation(String namespaceName, String secretName) {
         TestUtils.waitFor("creation of secret " + secretName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
                 () -> client.secrets().inNamespace(namespaceName).withName(secretName).get() != null);
+    }
+
+    public void deleteSecret(String namespaceName, String secretName) {
+        deleteSecret(namespaceName, secretName, true);
+    }
+
+    public void deleteSecret(String namespaceName, String secretName, boolean waitForDeletion) {
+        client.secrets().inNamespace(namespaceName).withName(secretName).delete();
+        if (waitForDeletion) {
+            LOGGER.info("[{}] Waiting for secret deletion {}", namespaceName, secretName);
+            TestUtils.waitFor(" deletion of secret " + secretName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
+                    () -> client.secrets().inNamespace(namespaceName).withName(secretName).get() == null);
+        }
+        LOGGER.info("[{}] Deleted secret {}", namespaceName, secretName);
+    }
+
+    public Secret getRouterDefaultSecret() {
+        return getSecret("openshift-ingress", "router-certs-default");
+    }
+
+    // ===============================
+    // ---------> CONFIGMAP <---------
+    // ===============================
+    public ConfigMap createConfigMap(String namespaceName, String configmapName, Map<String, String> data) {
+        return createConfigMap(namespaceName, configmapName, data, true);
+    }
+
+    public ConfigMap createConfigMap(String namespaceName, String configmapName, Map<String, String> data, boolean waitForCreation) {
+        ConfigMap configMap = new ConfigMapBuilder()
+            .editOrNewMetadata()
+                .withName(configmapName)
+            .endMetadata()
+            .withData(data)
+            .build();
+
+        configMap = getKubernetesClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+        if (waitForCreation) {
+            waitForConfigmapCreation(namespaceName, configmapName);
+        }
+        return configMap;
+    }
+
+    public ConfigMap createConfigMapBinaryData(String namespaceName, String configmapName, Map<String, String> binaryData) {
+        return createConfigMapBinaryData(namespaceName, configmapName, binaryData, true);
+    }
+
+    public ConfigMap createConfigMapBinaryData(String namespaceName, String configmapName, Map<String, String> binaryData, boolean waitForCreation) {
+        ConfigMap configMap = new ConfigMapBuilder()
+            .editOrNewMetadata()
+                .withName(configmapName)
+            .endMetadata()
+            .withBinaryData(binaryData)
+            .build();
+
+        if (waitForCreation) {
+            waitForConfigmapCreation(namespaceName, configmapName);
+        }
+        return getKubernetesClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+    }
+
+    public void waitForConfigmapCreation(String namespaceName, String configmapName) {
+        TestUtils.waitFor("creation of configmap " + configmapName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
+                () -> client.configMaps().inNamespace(namespaceName).withName(configmapName).get() != null);
     }
 
     public void deleteConfigMap(String namespaceName, String configMapName) {
@@ -644,36 +707,12 @@ public class KubeClient {
         LOGGER.info("[{}] Deleted config map {}", namespaceName, configMapName);
     }
 
-    public void deleteSecret(String namespaceName, String secretName) {
-        deleteSecret(namespaceName, secretName, true);
-    }
+    // =============================
+    // ---------> HELPERS <---------
+    // =============================
 
-    public void deleteSecret(String namespaceName, String secretName, boolean waitForDeletion) {
-        client.secrets().inNamespace(namespaceName).withName(secretName).delete();
-        if (waitForDeletion) {
-            LOGGER.info("[{}] Waiting for secret deletion {}", namespaceName, secretName);
-            TestUtils.waitFor(" deletion of secret " + secretName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
-                    () -> client.secrets().inNamespace(namespaceName).withName(secretName).get() == null);
-        }
-        LOGGER.info("[{}] Deleted secret {}", namespaceName, secretName);
-
-    }
-
-    public X509Certificate getCertificateFromSecret(Secret secret, String dataKey) {
-        String caCert = secret.getData().get(dataKey);
-        byte[] decoded = Base64.getDecoder().decode(caCert);
-        X509Certificate cacert = null;
-        try {
-            cacert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(decoded));
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        }
-        return cacert;
-    }
-
-    public Path getPodDir(Pod artemisPod, String srcDir, Path dstDir) {
-        boolean copyResult = client.pods().resource(artemisPod).
-                dir(srcDir).copy(dstDir);
+    public Path copyPodDir(Pod artemisPod, String srcDir, Path dstDir) {
+        boolean copyResult = client.pods().resource(artemisPod).dir(srcDir).copy(dstDir);
         assertThat(copyResult, is(Boolean.TRUE));
         return Path.of(dstDir + Constants.FILE_SEPARATOR + srcDir);
     }

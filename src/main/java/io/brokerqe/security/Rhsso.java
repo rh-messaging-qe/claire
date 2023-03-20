@@ -15,7 +15,6 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 public class Rhsso extends Keycloak {
@@ -116,20 +115,4 @@ public class Rhsso extends Keycloak {
         LOGGER.info("[{}] Keycloak pods are ready", namespace);
     }
 
-    public void importRealm(String realmName, String realmFilePath, String brokerName) {
-        // oc cp claire/src/test/resources/keycloak/internal_realm.json oauth-tests/keycloak-0:/tmp/ -c keycloak
-        // kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password l_dtMCUpuZU0iw==
-        // /opt/eap/bin/kcadm.sh create realms -s realm=internal -s enabled=true
-        // /opt/eap/bin/kcadm.sh create partialImport -r internal -s ifResourceExists=FAIL -o -f /tmp/internal_realm.json
-        realmFilePath = updateRealmImportTemplate(realmFilePath, brokerName);
-        LOGGER.debug("[{}] [KC] Importing realm {} from file {}", namespace, realmName, realmFilePath);
-        String realmPodFilePath = "/tmp/" + realmName + "_realm.json";
-
-        // Update redirectUris with current webconsole routes ex-aao-wconsj-0-svc-rte-oauth-tests
-        kubeClient.getKubernetesClient().pods().inNamespace(namespace).withName(keycloakPod.getMetadata().getName()).file(realmPodFilePath).upload(Paths.get(realmFilePath));
-
-        String createImportRealm = String.format("/opt/eap/bin/kcadm.sh create realms -s realm=%s -s enabled=true &&" +
-                " /opt/eap/bin/kcadm.sh create partialImport -r %s -s ifResourceExists=SKIP -o -f %s", realmName, realmName, realmPodFilePath);
-        kubeClient.executeCommandInPod(namespace, keycloakPod, createImportRealm, Constants.DURATION_1_MINUTE);
-    }
 }

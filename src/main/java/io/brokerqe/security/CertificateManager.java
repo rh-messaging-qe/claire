@@ -342,28 +342,47 @@ public class CertificateManager {
 
             LOGGER.info("Created {}, {} with password {}", brokerKeyStoreFileName, brokerTrustStoreFileName, brokerPassword);
 
-            LOGGER.info("[TLS] Creating Client keystore");
-            KeyStore clientKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
-            clientKeyStore.load(null, clientPassword.toCharArray());
-            clientKeyStore.setCertificateEntry(clientAlias, clientCertificateData.getCertificate());
-            clientKeyStore.setKeyEntry(clientAlias, clientCertificateData.getKeyPair().getPrivate(), clientPassword.toCharArray(),
-                    new java.security.cert.Certificate[]{clientCertificateData.getCertificate()});
-            clientKeyStore.store(new FileOutputStream(clientKeyStoreFileName), clientPassword.toCharArray());
-            keystores.put(Constants.CLIENT_KEYSTORE_ID, new KeyStoreData(clientKeyStore, clientKeyStoreFileName, Constants.CLIENT_KEYSTORE_ID, clientPassword, clientCertificateData));
+            if (clientCertificateData != null && clientAlias != null && clientPassword != null) {
+                LOGGER.info("[TLS] Creating Client keystore");
+                KeyStore clientKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
+                clientKeyStore.load(null, clientPassword.toCharArray());
+                clientKeyStore.setCertificateEntry(clientAlias, clientCertificateData.getCertificate());
+                clientKeyStore.setKeyEntry(clientAlias, clientCertificateData.getKeyPair().getPrivate(), clientPassword.toCharArray(),
+                        new java.security.cert.Certificate[]{clientCertificateData.getCertificate()});
+                clientKeyStore.store(new FileOutputStream(clientKeyStoreFileName), clientPassword.toCharArray());
+                keystores.put(Constants.CLIENT_KEYSTORE_ID, new KeyStoreData(clientKeyStore, clientKeyStoreFileName, Constants.CLIENT_KEYSTORE_ID, clientPassword, clientCertificateData));
 
-            LOGGER.info("[TLS] Creating Client truststore");
-            KeyStore clientTrustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
-            clientTrustStore.load(null, clientPassword.toCharArray());
-            clientTrustStore.setCertificateEntry(brokerAlias, brokerCertificateData.getCertificate());
-            clientTrustStore.setKeyEntry(brokerAlias, brokerCertificateData.getKeyPair().getPrivate(), brokerPassword.toCharArray(), new java.security.cert.Certificate[]{brokerCertificateData.getCertificate()});
-            clientTrustStore.store(new FileOutputStream(clientTrustStoreFileName), clientPassword.toCharArray());
-            keystores.put(Constants.CLIENT_TRUSTSTORE_ID, new KeyStoreData(clientTrustStore, clientTrustStoreFileName, Constants.CLIENT_TRUSTSTORE_ID, clientPassword, clientCertificateData));
+                LOGGER.info("[TLS] Creating Client truststore");
+                KeyStore clientTrustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
+                clientTrustStore.load(null, clientPassword.toCharArray());
+                clientTrustStore.setCertificateEntry(brokerAlias, brokerCertificateData.getCertificate());
+                clientTrustStore.setKeyEntry(brokerAlias, brokerCertificateData.getKeyPair().getPrivate(), brokerPassword.toCharArray(), new java.security.cert.Certificate[]{brokerCertificateData.getCertificate()});
+                clientTrustStore.store(new FileOutputStream(clientTrustStoreFileName), clientPassword.toCharArray());
+                keystores.put(Constants.CLIENT_TRUSTSTORE_ID, new KeyStoreData(clientTrustStore, clientTrustStoreFileName, Constants.CLIENT_TRUSTSTORE_ID, clientPassword, clientCertificateData));
 
-            LOGGER.info("Created {}, {} with password {}", clientKeyStoreFileName, clientTrustStoreFileName, clientPassword);
+                LOGGER.info("Created {}, {} with password {}", clientKeyStoreFileName, clientTrustStoreFileName, clientPassword);
+            }
             return keystores;
         } catch (CertificateException | KeyStoreException | NoSuchAlgorithmException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static KeyStoreData createEmptyKeyStore(String keyStoreType, String keystorePassword, String keystoreFilename) {
+        KeyStoreData keystore;
+        try {
+            LOGGER.info("[TLS] Creating empty keystore/truststore");
+            KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
+            keyStore.load(null, keystorePassword.toCharArray());
+            keyStore.store(new FileOutputStream(keystoreFilename), keystorePassword.toCharArray());
+//            keystores.put(keyStoreDataName, new KeyStoreData(clientKeyStore, keyStoreFileName, keyStoreDataName, keystorePassword, certificateData));
+            keystore = new KeyStoreData(keyStore, keystoreFilename, keyStoreType, keystorePassword);
+
+            LOGGER.info("Created keystore {} with password {}", keystoreFilename, keystorePassword);
+        } catch (CertificateException | KeyStoreException | NoSuchAlgorithmException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        return keystore;
     }
 
     public static Extension generateSanDnsNames(KubeClient kubeClient, ActiveMQArtemis broker, List<String> serviceNames) {
@@ -445,6 +464,20 @@ public class CertificateManager {
         }
     }
 
+    public static X509Certificate getCertificateFromSecret(Secret secret, String dataKey) {
+        String caCert = secret.getData().get(dataKey);
+        byte[] decoded = Base64.getDecoder().decode(caCert);
+        X509Certificate cacert = null;
+        try {
+            cacert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(decoded));
+        } catch (CertificateException e) {
+            LOGGER.error("[{}] Unable to create certificate entry from provided secret {} and key {}",
+                    secret.getMetadata().getNamespace(), secret.getMetadata().getName(), dataKey);
+            e.printStackTrace();
+        }
+        return cacert;
+    }
+
     public static Secret createKeystoreSecret(KubeClient kubeClient, String secretName, Map<String, KeyStoreData> keystores, String alias) {
         Map<String, String> tlsSecret = new HashMap<>();
         KeyStoreData ksdKeystore = keystores.get(alias + ".ks");
@@ -515,6 +548,15 @@ public class CertificateManager {
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Secret createBrokerTruststoreSecretWithOpenshiftRouter(KubeClient kubeClient, String namespace,
+                                                                         String brokerTruststoreSecretName, String brokerTruststoreFileName) {
+        Secret routerSecret = kubeClient.getRouterDefaultSecret();
+        X509Certificate routerCert = CertificateManager.getCertificateFromSecret(routerSecret, "tls.crt");
+        KeyStoreData brokerTrustStore = CertificateManager.createEmptyKeyStore(Constants.BROKER_TRUSTSTORE_ID, CertificateManager.DEFAULT_BROKER_PASSWORD, brokerTruststoreFileName);
+        CertificateManager.addToTruststore(brokerTrustStore, routerCert, "openshift-router");
+        return kubeClient.createSecretEncodedData(namespace, brokerTruststoreSecretName, Map.of(Constants.BROKER_TRUSTSTORE_ID, brokerTrustStore.getEncodedKeystoreFileData()));
     }
 
     /**

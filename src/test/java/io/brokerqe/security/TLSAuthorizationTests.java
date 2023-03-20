@@ -19,8 +19,6 @@ import io.brokerqe.ResourceManager;
 import io.brokerqe.clients.AmqpQpidClient;
 import io.brokerqe.clients.MessagingClient;
 import io.brokerqe.clients.MessagingClientException;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import org.junit.jupiter.api.AfterAll;
@@ -125,21 +123,17 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
         // create automagically mounted secret certlogin-jaas-config
         getClient().createSecretStringData(testNamespace, secretName, jaasData, true);
 
-        ConfigMap debugLoggingConfigMap = new ConfigMapBuilder()
-            .editOrNewMetadata()
-            .withName("debug-logging-config")
-            .endMetadata()
-            .withData(Map.of(Constants.LOGGING_PROPERTIES_CONFIG_KEY, """
-                appender.stdout.name = STDOUT
-                appender.stdout.type = Console
-                rootLogger = info, STDOUT
-                logger.activemq.name=org.apache.activemq.artemis.spi.core.security.jaas
-                logger.activemq.level=debug
-                logger.activemq.netty.name=activemq-netty
-                logger.activemq.netty.level=info
-                """))
-            .build();
-        getKubernetesClient().configMaps().inNamespace(testNamespace).resource(debugLoggingConfigMap).createOrReplace();
+        getClient().createConfigMap(testNamespace, "debug-logging-config",
+                Map.of(Constants.LOGGING_PROPERTIES_CONFIG_KEY, """
+                    appender.stdout.name = STDOUT
+                    appender.stdout.type = Console
+                    rootLogger = info, STDOUT
+                    logger.activemq.name=org.apache.activemq.artemis.spi.core.security.jaas
+                    logger.activemq.level=debug
+                    logger.activemq.netty.name=activemq-netty
+                    logger.activemq.netty.level=info
+                """)
+        );
 
         amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, true);
         // reference secret in the broker CR spec.extraMounts.secrets

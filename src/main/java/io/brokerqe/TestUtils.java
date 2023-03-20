@@ -262,6 +262,13 @@ public final class TestUtils {
         }
     }
 
+    public static Path createTestTemporaryDir(String name) {
+        String baseDirName = Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()).toString();
+        String dirName = baseDirName + Constants.FILE_SEPARATOR + name;
+        TestUtils.createDirectory(dirName);
+        return Paths.get(dirName);
+    }
+
     public static void copyDirectoryFlat(String source, String target) {
         try {
             Path sourceDir = Paths.get(source);

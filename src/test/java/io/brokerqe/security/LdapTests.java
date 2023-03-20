@@ -16,8 +16,6 @@ import io.brokerqe.clients.MessagingClient;
 import io.brokerqe.clients.MessagingClientException;
 import io.brokerqe.junit.TestValidSince;
 import io.brokerqe.operator.ArtemisFileProvider;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,7 +40,7 @@ public class LdapTests extends AbstractSystemTests {
     String secretName = "ldaplogin-jaas-config";
     String brokerName = "artemis";
     ActiveMQArtemis broker;
-    ActiveMQArtemisAddress myAddress;
+    ActiveMQArtemisAddress ldapAddress;
     Pod brokerPod;
     String allDefaultPort;
 
@@ -56,6 +54,8 @@ public class LdapTests extends AbstractSystemTests {
 
     @AfterAll
     void teardownClusterOperator() {
+        ResourceManager.deleteArtemis(testNamespace, broker);
+        ResourceManager.deleteArtemisAddress(testNamespace, ldapAddress);
         openldap.undeployLdap();
         teardownDefaultClusterOperator(testNamespace);
     }
@@ -92,21 +92,17 @@ public class LdapTests extends AbstractSystemTests {
         // create automagically mounted secret ldaplogin-jaas-config
         getClient().createSecretStringData(testNamespace, secretName, jaasData, true);
 
-        ConfigMap debugLoggingConfigMap = new ConfigMapBuilder()
-            .editOrNewMetadata()
-            .withName("debug-logging-config")
-            .endMetadata()
-            .withData(Map.of(Constants.LOGGING_PROPERTIES_CONFIG_KEY, """
-                appender.stdout.name = STDOUT
-                appender.stdout.type = Console
-                rootLogger = info, STDOUT
-                logger.activemq.name=org.apache.activemq.artemis.spi.core.security.jaas
-                logger.activemq.level=debug
-                logger.activemq.netty.name=activemq-netty
-                logger.activemq.netty.level=info
-                """))
-            .build();
-        getKubernetesClient().configMaps().inNamespace(testNamespace).resource(debugLoggingConfigMap).createOrReplace();
+        getClient().createConfigMap(testNamespace, "debug-logging-config",
+                Map.of(Constants.LOGGING_PROPERTIES_CONFIG_KEY, """
+                    appender.stdout.name = STDOUT
+                    appender.stdout.type = Console
+                    rootLogger = info, STDOUT
+                    logger.activemq.name=org.apache.activemq.artemis.spi.core.security.jaas
+                    logger.activemq.level=debug
+                    logger.activemq.netty.name=activemq-netty
+                    logger.activemq.netty.level=info
+                """)
+        );
 
         // reference secret in the broker CR spec.extraMounts.secrets
         broker = new ActiveMQArtemisBuilder()
@@ -132,7 +128,7 @@ public class LdapTests extends AbstractSystemTests {
             .endSpec()
             .build();
         broker = ResourceManager.createArtemis(testNamespace, broker);
-        myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        ldapAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
         allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
     }
@@ -142,7 +138,7 @@ public class LdapTests extends AbstractSystemTests {
         int messages = 5;
         LOGGER.info("[{}] Trying to send messages as {} with {}", testNamespace, "alice", "alice");
         MessagingClient producerAlice = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
-                allDefaultPort, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(),
+                allDefaultPort, ldapAddress.getSpec().getAddressName(), ldapAddress.getSpec().getQueueName(),
                 messages, "alice", "alice");
         int sentAlice = producerAlice.sendMessages();
 
@@ -152,7 +148,7 @@ public class LdapTests extends AbstractSystemTests {
 
         LOGGER.info("[{}] Trying to receive messages as {} with {}", testNamespace, "bob", "bob");
         MessagingClient consumerBob = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
-                allDefaultPort, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(),
+                allDefaultPort, ldapAddress.getSpec().getAddressName(), ldapAddress.getSpec().getQueueName(),
                 messages, "bob", "bob");
         int consumedBob = consumerBob.receiveMessages();
         assertThat(sentAlice, equalTo(messages));
@@ -168,7 +164,7 @@ public class LdapTests extends AbstractSystemTests {
         int messages = 5;
         LOGGER.info("[{}] Send & receive messages as {} with {}", testNamespace, "charlie", "charlie");
         MessagingClient clientCharlie = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
-                allDefaultPort, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(),
+                allDefaultPort, ldapAddress.getSpec().getAddressName(), ldapAddress.getSpec().getQueueName(),
                 messages, "charlie", "charlie");
         int sent = clientCharlie.sendMessages();
         int received = clientCharlie.receiveMessages();
@@ -182,7 +178,7 @@ public class LdapTests extends AbstractSystemTests {
         // invalid user
         LOGGER.info("[{}] Trying to connect as invalid user {} with {}", testNamespace, "lala", "lala");
         MessagingClient wrongUser = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
-                allDefaultPort, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(),
+                allDefaultPort, ldapAddress.getSpec().getAddressName(), ldapAddress.getSpec().getQueueName(),
                 messages, "lala", "lala");
         Throwable t = assertThrows(MessagingClientException.class, wrongUser::sendMessages);
         assertThat(t.getMessage(), containsString("Unable to validate user from"));
@@ -190,7 +186,7 @@ public class LdapTests extends AbstractSystemTests {
         // incorrect pass
         LOGGER.info("[{}] Trying to connect as {} with invalid password {}", testNamespace, "charlie", "lala");
         wrongUser = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
-                allDefaultPort, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(),
+                allDefaultPort, ldapAddress.getSpec().getAddressName(), ldapAddress.getSpec().getQueueName(),
                 messages, "charlie", "lala");
         t = assertThrows(MessagingClientException.class, wrongUser::sendMessages);
         assertThat(t.getMessage(), containsString("Unable to validate user from"));

@@ -14,6 +14,7 @@ import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.manage
 import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.management.authorisation.roleaccess.AccessListBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.clients.AmqpQpidClient;
+import io.brokerqe.clients.BundledCoreMessagingClient;
 import io.brokerqe.clients.MessagingClient;
 import io.brokerqe.junit.TestSeparator;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
@@ -29,8 +30,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -216,7 +215,36 @@ public class AbstractSystemTests implements TestSeparator {
         });
     }
 
-    public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress myAddress,
+    public void testMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages) {
+        testMessaging(namespace, brokerPod, address, messages, "default", null, null);
+    }
+
+    public void testMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages, String protocol, String username, String password) {
+        Deployment clients = null;
+        MessagingClient messagingClient = null;
+        if (protocol.equals("amqp")) {
+            clients = ResourceManager.deployClientsContainer(namespace);
+            Pod clientsPod = getClient().getFirstPodByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
+            messagingClient = new AmqpQpidClient(clientsPod, brokerPod.getStatus().getPodIP(), "5672", address, messages, username, password);
+        } else {
+            messagingClient = new BundledCoreMessagingClient(brokerPod, brokerPod.getStatus().getPodIP(),
+                    "61616", address.getSpec().getAddressName(), address.getSpec().getQueueName(),
+                    messages, username, password);
+        }
+
+        messagingClient.subscribe();
+        int sent = messagingClient.sendMessages();
+        int received = messagingClient.receiveMessages();
+
+        assertThat(sent, equalTo(messages));
+        assertThat(sent, equalTo(received));
+        assertThat(messagingClient.compareMessages(), is(true));
+        if (clients != null) {
+            ResourceManager.undeployClientsContainer(namespace, clients);
+        }
+    }
+
+    public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address,
                                  String externalBrokerUri, String saslMechanism, String secretName,
                                  String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
         Deployment clients = ResourceManager.deploySecuredClientsContainer(namespace, List.of(secretName));
@@ -226,7 +254,7 @@ public class AbstractSystemTests implements TestSeparator {
         int received = 0;
 
         // Publisher - Receiver
-        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, externalBrokerUri, myAddress, msgsExpected, saslMechanism,
+        MessagingClient messagingClient = new AmqpQpidClient(clientsPod, externalBrokerUri, address, msgsExpected, saslMechanism,
                 "/etc/" + secretName + "/" + clientKeyStore, clientKeyStorePassword,
                 "/etc/" + secretName + "/" + clientTrustStore, clientTrustStorePassword);
         sent = messagingClient.sendMessages();
@@ -237,10 +265,4 @@ public class AbstractSystemTests implements TestSeparator {
         ResourceManager.undeployClientsContainer(namespace, clients);
     }
 
-    public Path createTestTemporaryDir(String name) {
-        String baseDirName = Paths.get(testEnvironment.getTmpDirLocation()).toString();
-        String dirName = baseDirName + Constants.FILE_SEPARATOR + name;
-        TestUtils.createDirectory(dirName);
-        return Paths.get(dirName);
-    }
 }

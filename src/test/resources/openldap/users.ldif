@@ -20,7 +20,6 @@ ou: users
 
 # user01, users, example.org
 dn: cn=user01,ou=users,dc=example,dc=org
-cn: User1
 cn: user01
 sn: Bar1
 objectClass: inetOrgPerson
@@ -34,7 +33,6 @@ homeDirectory: /home/user01
 
 # user02, users, example.org
 dn: cn=user02,ou=users,dc=example,dc=org
-cn: User2
 cn: user02
 sn: Bar2
 objectClass: inetOrgPerson
@@ -48,7 +46,6 @@ homeDirectory: /home/user02
 
 # alice, users, example.org
 dn: cn=alice,ou=users,dc=example,dc=org
-cn: User3
 cn: alice
 sn: Bar3
 objectClass: inetOrgPerson
@@ -62,7 +59,6 @@ homeDirectory: /home/alice
 
 # bob, users, example.org
 dn: cn=bob,ou=users,dc=example,dc=org
-cn: User4
 cn: bob
 sn: Bar4
 objectClass: inetOrgPerson
@@ -76,7 +72,6 @@ homeDirectory: /home/bob
 
 # charlie, users, example.org
 dn: cn=charlie,ou=users,dc=example,dc=org
-cn: User5
 cn: charlie
 sn: Bar5
 objectClass: inetOrgPerson
@@ -109,4 +104,10 @@ dn: cn=consumers,ou=users,dc=example,dc=org
 cn: consumers
 objectClass: groupOfNames
 member: cn=bob,ou=users,dc=example,dc=org
+member: cn=charlie,ou=users,dc=example,dc=org
+
+# Messaging Groups
+dn: cn=admin,ou=users,dc=example,dc=org
+cn: admin
+objectClass: groupOfNames
 member: cn=charlie,ou=users,dc=example,dc=org

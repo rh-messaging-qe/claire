@@ -16,7 +16,6 @@ import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
 import io.brokerqe.junit.TestValidSince;
 import io.brokerqe.operator.ArtemisFileProvider;
-
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -27,7 +26,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

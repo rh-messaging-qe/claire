@@ -182,22 +182,22 @@ public class ResourceManager {
 
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor) {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
-                .editOrNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                .endMetadata()
-                .editOrNewSpec()
-                    .withNewDeploymentPlan()
-                        .withSize(size)
-                        .withPersistenceEnabled()
-                        .withMessageMigration()
-                    .endDeploymentPlan()
-                    .editOrNewUpgrades()
-                        .withEnabled(upgradeEnabled)
-                        .withMinor(upgradeMinor)
-                    .endUpgrades()
-                .endSpec()
-                .build();
+            .editOrNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+            .endMetadata()
+            .editOrNewSpec()
+                .withNewDeploymentPlan()
+                    .withSize(size)
+                    .withPersistenceEnabled()
+                    .withMessageMigration()
+                .endDeploymentPlan()
+                .editOrNewUpgrades()
+                    .withEnabled(upgradeEnabled)
+                    .withMinor(upgradeMinor)
+                .endUpgrades()
+            .endSpec()
+            .build();
 
         long waitTime = Constants.DURATION_1_MINUTE + Constants.DURATION_30_SECONDS;
         if (size > 1) {

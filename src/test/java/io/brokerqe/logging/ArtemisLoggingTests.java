@@ -12,8 +12,6 @@ import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
 import io.brokerqe.junit.TestValidSince;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -109,7 +107,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     
     @Test
     void providedLoggingUsingConfigMapTest() throws IOException {
-        createLoggerConfigMap(TestUtils.getFileContentAsBase64(ArtemisLoggingTests.LOGGER_FILE));
+        getClient().createConfigMapBinaryData(testNamespace, LOGGER_CONFIG_MAP_NAME,
+                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)));
 
         String artemisName = "artemis-cm-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -140,7 +139,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
 
     @Test
     void providedLoggingUsingEmptyConfigMapTest() {
-        createLoggerConfigMap("");
+        getClient().createConfigMapBinaryData(testNamespace, LOGGER_CONFIG_MAP_NAME, Map.of(LOGGING_PROPERTIES_KEY, ""));
 
         String artemisName = "artemis-empty-cm-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -173,7 +172,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     void providedLoggingUsingConfigMapAndSecretTest() throws IOException {
         getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(LOGGING_PROPERTIES_KEY,
                 TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
-        createLoggerConfigMap(TestUtils.getFileContentAsBase64(ArtemisLoggingTests.LOGGER_FILE));
+        getClient().createConfigMapBinaryData(testNamespace, LOGGER_CONFIG_MAP_NAME,
+                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)));
 
         String artemisName = "artemis-cm-secret-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -207,8 +207,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         LOGGER.info("[{}] Ensure artemis pod is not logging into filesystem", testNamespace);
         String testDirName = testInfo.getTestClass().orElseThrow().getName() + Constants.FILE_SEPARATOR
                 + testInfo.getTestMethod().orElseThrow().getName();
-        Path tmpDirName = createTestTemporaryDir(testDirName);
-        Path logDestDir = getClient().getPodDir(artemisPod, Constants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
+        Path tmpDirName = TestUtils.createTestTemporaryDir(testDirName);
+        Path logDestDir = getClient().copyPodDir(artemisPod, Constants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
         assertThat(Files.isDirectory(logDestDir), is(Boolean.TRUE));
         try (Stream<Path> entries = Files.list(logDestDir)) {
             entries.forEach(e -> assertThat(e.toFile().length(), equalTo(0L)));
@@ -227,8 +227,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     private void assertLoggingIsInFilesystem(Pod artemisPod) throws IOException {
         String testDirName = testInfo.getTestClass().orElseThrow().getName() + Constants.FILE_SEPARATOR
                 + testInfo.getTestMethod().orElseThrow().getName();
-        Path tmpDirName = createTestTemporaryDir(testDirName);
-        Path logDestDir = getClient().getPodDir(artemisPod, Constants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
+        Path tmpDirName = TestUtils.createTestTemporaryDir(testDirName);
+        Path logDestDir = getClient().copyPodDir(artemisPod, Constants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
         assertThat(Files.isDirectory(logDestDir), is(Boolean.TRUE));
 
         LOGGER.info("[{}] Ensure artemis pod is logging into " + ARTEMIS_LOG_FILE + " into filesystem", testNamespace);
@@ -244,15 +244,5 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         assertThat(auditLogs, hasItem(containsString(" [AUDIT]")));
 
         TestUtils.deleteDirectoryRecursively(tmpDirName);
-    }
-
-    private void createLoggerConfigMap(String data) {
-        ConfigMap cm = new ConfigMapBuilder()
-                .editOrNewMetadata()
-                    .withName(ArtemisLoggingTests.LOGGER_CONFIG_MAP_NAME)
-                .endMetadata()
-                .withBinaryData(Map.of(LOGGING_PROPERTIES_KEY, data))
-                .build();
-        getKubernetesClient().configMaps().inNamespace(testNamespace).resource(cm).createOrReplace();
     }
 }

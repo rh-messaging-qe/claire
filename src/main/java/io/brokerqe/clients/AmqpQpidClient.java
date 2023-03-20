@@ -41,8 +41,13 @@ public class AmqpQpidClient extends MessagingAmqpClient {
     private Executor backgroundExecutor;
     private List<JSONObject> sentMessages;
     private List<JSONObject> receivedMessages;
+    private String username;
+    private String password;
 
     public AmqpQpidClient(Pod clientsPod, String destinationUrl, String destinationPort, ActiveMQArtemisAddress address, int messageCount) {
+        this(clientsPod, destinationUrl, destinationPort, address, messageCount, null, null);
+    }
+    public AmqpQpidClient(Pod clientsPod, String destinationUrl, String destinationPort, ActiveMQArtemisAddress address, int messageCount, String username, String password) {
         this.secured = false;
         this.clientsPod = clientsPod;
         this.destinationUrl = destinationUrl;
@@ -50,6 +55,8 @@ public class AmqpQpidClient extends MessagingAmqpClient {
         this.destinationAddress = address.getSpec().getAddressName();
         this.destinationQueue = address.getSpec().getQueueName();
         this.messageCount = messageCount;
+        this.username = username;
+        this.password = password;
     }
 
     public AmqpQpidClient(Pod clientsPod, String brokerUri, ActiveMQArtemisAddress address, int messageCount, String saslMechanism,
@@ -220,6 +227,14 @@ public class AmqpQpidClient extends MessagingAmqpClient {
 
         if (timeout != -2) {
             command += " --timeout " + timeout;
+        }
+
+        if (username != null) {
+            command += " --conn-username " + username;
+        }
+
+        if (password != null) {
+            command += " --conn-password " + password;
         }
 
 
