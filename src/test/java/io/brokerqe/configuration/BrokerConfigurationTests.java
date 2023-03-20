@@ -5,6 +5,7 @@
 package io.brokerqe.configuration;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisSpecBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Env;
 import io.brokerqe.AbstractSystemTests;
@@ -34,14 +35,18 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 
 
 public class BrokerConfigurationTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(BrokerConfigurationTests.class);
     private final String testNamespace = getRandomNamespaceName("brkconfig-tests", 6);
+
+    private final static String CONFIG_BROKER_NAME = "cfg-broker";
     private final String name = "JAVA_ARGS_APPEND";
     private final String val = "-XshowSettings:system";
 
@@ -95,13 +100,13 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 break;
             }
         }
+        assertThat("EnvVar is null", envItem, is(notNullValue()));
         LOGGER.info("[{}] Checking for expected variables {}:{}", testNamespace, envItem.getName(), envItem.getValue());
         String processes = getClient().executeCommandInPod(testNamespace, brokerPod, "ps ax | grep java", 10);
-        assertThat(processes, containsString(val));
-        assertThat(envItem, is(notNullValue()));
-        assertThat(envItem.getValue(), is(val));
+        assertThat("List of processes inside container didn't have expected arguments", processes, containsString(val));
+        assertThat("Found env item with matching name, but its value is not what was expected", envItem.getValue(), is(val));
         // should be pre-populated
-        assertThat(envVars.size(), greaterThan(1));
+        assertThat("EnvVars in the statefulset only had single value", envVars.size(), greaterThan(1));
     }
 
 
@@ -121,13 +126,25 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     void verifyServiceContainerPort() {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, ArtemisFileProvider.getArtemisSingleExampleFile(), true);
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+            .editOrNewMetadata()
+                .withName(CONFIG_BROKER_NAME)
+                .withNamespace(testNamespace)
+            .endMetadata()
+            .editOrNewSpec()
+                .editOrNewConsole()
+                    .withExpose(true)
+                .endConsole()
+            .endSpec()
+            .build();
+        broker = ResourceManager.createArtemis(testNamespace, broker, true);
         KubeClient kube = getClient();
         Service svc = kube.getService(testNamespace, broker.getMetadata().getName() + "-wconsj-0-svc");
         List<ServicePort> amqPorts = svc.getSpec().getPorts();
-        Assertions.assertThat(amqPorts)
-                .extracting(ServicePort::getName)
-                .containsExactly(Constants.WEBCONSOLE_URI_PREFIX);
+        assertThat(String.format("List of AMQ Ports did not consist of the expected items: %s", amqPorts),
+            amqPorts, contains(
+                hasProperty("name", is(Constants.WEBCONSOLE_URI_PREFIX)),
+                hasProperty("name", is(Constants.WEBCONSOLE_URI_PREFIX + "-0"))));
         Assertions.assertThat(amqPorts)
                 .filteredOn("name", Constants.WEBCONSOLE_URI_PREFIX)
                 .extracting(ServicePort::getPort)
