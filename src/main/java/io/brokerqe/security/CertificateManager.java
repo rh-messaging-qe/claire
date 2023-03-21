@@ -539,12 +539,12 @@ public class CertificateManager {
             } else {
                 trustedCertificate = certificate;
             }
-            LOGGER.info("[TLS] Add trusted certificate {} to Broker truststore", alias);
             KeyStore brokerTrustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
             brokerTrustStore.load(new FileInputStream(keyStoreData.getKeyStorePath()), keyStoreData.getPassword().toCharArray());
             brokerTrustStore.setCertificateEntry(alias, trustedCertificate);
             brokerTrustStore.store(new FileOutputStream(keyStoreData.getKeyStorePath()), keyStoreData.getPassword().toCharArray());
             keyStoreData.setKeyStore(brokerTrustStore);
+            LOGGER.info("[TLS] Add trusted certificate {} to {} truststore", alias, keyStoreData.getIdentifier());
         } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
             throw new RuntimeException(e);
         }

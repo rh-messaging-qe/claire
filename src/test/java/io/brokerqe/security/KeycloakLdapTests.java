@@ -46,6 +46,7 @@ public class KeycloakLdapTests extends LdapTests {
 
     @AfterAll
     void teardownClusterOperator() {
+        ResourceManager.deleteArtemisAddress(testNamespace, ldapAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
         getClient().deleteConfigMap(testNamespace, secretConfigName);
         keycloak.undeployOperator();

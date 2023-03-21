@@ -117,17 +117,17 @@ public class TLSSelfSignedCertsTests extends TLSAuthorizationTests {
     }
 
     @Test
-    @Disabled("ENTMQBR-7725")
+    @Disabled("SelfSigned certificates are not checked for expiration validity ENTMQBR-7725")
     public void testExpiredCertificateBefore() {
     }
 
     @Test
-    @Disabled("ENTMQBR-7725")
+    @Disabled("SelfSigned certificates are not checked for expiration validity ENTMQBR-7725")
     public void testExpiredCertificateAfter() {
     }
 
     @Test
-    @Disabled("ENTMQBR-7725")
+    @Disabled("SelfSigned certificates are not checked for expiration validity ENTMQBR-7725")
     public void testExpiredCertificate() {
     }
 

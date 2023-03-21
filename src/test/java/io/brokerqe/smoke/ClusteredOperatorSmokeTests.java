@@ -85,5 +85,6 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         ActiveMQArtemis brokerB = ResourceManager.createArtemis(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile(), false);
         assertThrows(WaitException.class, () -> ResourceManager.waitForBrokerDeployment(testNamespaceB, brokerB, false, Constants.DURATION_30_SECONDS));
         assertNull(getClient().getStatefulSet(testNamespaceB, brokerName + "-ss"));
+        ResourceManager.deleteArtemis(testNamespaceB, brokerB);
     }
 }

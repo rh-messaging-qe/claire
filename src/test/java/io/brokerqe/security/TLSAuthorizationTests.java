@@ -79,9 +79,9 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
 
     @AfterAll
     void teardownDeployment() {
-        teardownDefaultClusterOperator(testNamespace);
         ResourceManager.undeployClientsContainer(testNamespace, clients);
         ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress);
+        ResourceManager.deleteArtemisAddress(testNamespace, forbiddenAddress);
         ResourceManager.deleteArtemisSecurity(testNamespace, artemisSecurity);
         ResourceManager.deleteArtemis(testNamespace, broker);
         getClient().deleteSecret(testNamespace, brokerSecretName);
@@ -89,6 +89,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
         getClient().deleteSecret(testNamespace, producerSecretName);
         getClient().deleteSecret(testNamespace, consumerSecretName);
         getClient().deleteSecret(testNamespace, brokerSecretName);
+        teardownDefaultClusterOperator(testNamespace);
     }
 
     protected void createArtemisDeployment() {
@@ -194,6 +195,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
         artemisSecurity = new ActiveMQArtemisSecurityBuilder()
                 .editOrNewMetadata()
                     .withName("rbac-textcert-security")
+                    .withNamespace(testNamespace)
                 .endMetadata()
                 .editOrNewSpec()
                     .editOrNewSecuritySettings()

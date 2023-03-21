@@ -18,6 +18,7 @@ import io.brokerqe.operator.ArtemisCloudClusterOperatorOlm;
 import io.brokerqe.security.Keycloak;
 import io.brokerqe.security.Openldap;
 import io.brokerqe.security.Rhsso;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -177,10 +178,13 @@ public class ResourceManager {
         return createArtemis(namespace, name, 1);
     }
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size) {
-        return createArtemis(namespace, name, size, false, false);
+        return createArtemis(namespace, name, size, false, false, false);
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor) {
+        return createArtemis(namespace, name, size, upgradeEnabled, upgradeMinor, false);
+    }
+    public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor, boolean exposeConsole) {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
                 .withName(name)
@@ -196,6 +200,9 @@ public class ResourceManager {
                     .withEnabled(upgradeEnabled)
                     .withMinor(upgradeMinor)
                 .endUpgrades()
+                .editOrNewConsole()
+                    .withExpose(exposeConsole)
+                .endConsole()
             .endSpec()
             .build();
 
@@ -329,17 +336,26 @@ public class ResourceManager {
     public static void deleteArtemisSecurity(String namespace, ActiveMQArtemisSecurity artemisSecurity) {
         ResourceManager.getArtemisSecurityClient().inNamespace(namespace).resource(artemisSecurity).delete();
         LOGGER.info("[{}] Deleted ActiveMQArtemisSecurity {}", namespace, artemisSecurity.getMetadata().getName());
+        waitForArtemisSecurityDeletion(namespace, artemisSecurity, Constants.DURATION_1_MINUTE);
         ResourceManager.removeArtemisSecurity(artemisSecurity);
+    }
+
+    public static void waitForArtemisSecurityDeletion(String namespace, ActiveMQArtemisSecurity artemisSecurity, long maxTimeout) {
+        LOGGER.info("[{}] Waiting {}s for deletion of security CR {}", namespace, Duration.ofMillis(maxTimeout).toSeconds(), artemisSecurity);
+        TestUtils.waitFor("deletion of ActiveMQArtemisSecurity CR", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+            ActiveMQArtemisSecurity security = ResourceManager.getArtemisSecurityClient().resource(artemisSecurity).get();
+            return security == null;
+        });
     }
 
     public static void waitForArtemisResourceStatusUpdate(ActiveMQArtemis initialArtemis, String namespace, String updateType, long timeoutMillis) {
         LOGGER.info("[{}] Waiting for 5 minutes for broker {} custom resource status update", namespace, initialArtemis.getMetadata().getName());
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         getArtemisClient().inNamespace(namespace).resource(initialArtemis).waitUntilCondition(updatedBroker -> {
-            for (Conditions cond : updatedBroker.getStatus().getConditions()) {
-                if (cond.getType().equals(updateType)) {
-                    if (cond.getReason().equals(Constants.CONDITION_REASON_APPLIED)) {
-                        LocalDateTime updateDate = LocalDateTime.parse(cond.getLastTransitionTime(), dtf);
+            for (Conditions condition : updatedBroker.getStatus().getConditions()) {
+                if (condition.getType().equals(updateType)) {
+                    if (condition.getReason().equals(Constants.CONDITION_REASON_APPLIED)) {
+                        LocalDateTime updateDate = LocalDateTime.parse(condition.getLastTransitionTime(), dtf);
                         LocalDateTime initialDate = LocalDateTime.parse(initialArtemis.getMetadata().getManagedFields().get(0).getTime(), dtf);
                         if (updateDate.isAfter(initialDate)) {
                             return true;
@@ -410,36 +426,48 @@ public class ResourceManager {
     }
 
     // Deployed Artemis Broker CRs
-    public static void addArtemisBroker(ActiveMQArtemis broker) {
+    protected static void addArtemisBroker(ActiveMQArtemis broker) {
         deployedBrokers.add(broker);
     }
 
-    public static void removeArtemisBroker(ActiveMQArtemis broker) {
-        deployedBrokers.remove(broker);
+    protected static void removeArtemisBroker(ActiveMQArtemis broker) {
+        boolean result = deployedBrokers.remove(broker);
+        if (!result && getArtemisClient().resource(broker).get() == null) {
+            removeUpdatedCrObject(deployedBrokers, broker);
+            LOGGER.debug("[{}] Removed updated ActiveMQArtemis object {}", broker.getMetadata().getNamespace(), broker.getMetadata().getName());
+        }
     }
 
-    public static void addArtemisAddress(ActiveMQArtemisAddress address) {
+    protected static void addArtemisAddress(ActiveMQArtemisAddress address) {
         deployedAddresses.add(address);
     }
 
-    public static void removeArtemisAddress(ActiveMQArtemisAddress address) {
-        deployedAddresses.remove(address);
+    protected static void removeArtemisAddress(ActiveMQArtemisAddress address) {
+        boolean result = deployedAddresses.remove(address);
+        if (!result && getArtemisAddressClient().resource(address).get() == null) {
+            removeUpdatedCrObject(deployedAddresses, address);
+            LOGGER.debug("[{}] Removed updated ActiveMQArtemisAddress object {}", address.getMetadata().getNamespace(), address.getMetadata().getName());
+        }
     }
 
-    public static void addArtemisSecurity(ActiveMQArtemisSecurity security) {
+    protected static void addArtemisSecurity(ActiveMQArtemisSecurity security) {
         deployedSecurity.add(security);
     }
 
-    public static void removeArtemisSecurity(ActiveMQArtemisSecurity security) {
-        deployedSecurity.remove(security);
+    protected static void removeArtemisSecurity(ActiveMQArtemisSecurity security) {
+        boolean result = deployedSecurity.remove(security);
+        if (!result && getArtemisSecurityClient().resource(security).get() == null) {
+            removeUpdatedCrObject(deployedSecurity, security);
+            LOGGER.debug("[{}] Removed updated ActiveMQArtemisSecurity object {}", security.getMetadata().getNamespace(), security.getMetadata().getName());
+        }
     }
 
     // Kubernetes Resources - Namespace
-    public static void addNamespace(String namespaceName) {
+    protected static void addNamespace(String namespaceName) {
         deployedNamespaces.add(namespaceName);
     }
 
-    public static void removeNamespace(String namespaceName) {
+    protected static void removeNamespace(String namespaceName) {
         deployedNamespaces.remove(namespaceName);
     }
 
@@ -512,6 +540,22 @@ public class ResourceManager {
         for (Deployment deployment : deployedContainers.keySet()) {
             LOGGER.info("[{}] Undeploying orphaned MessagingClient {}!", deployedContainers.get(deployment), deployment.getMetadata().getName());
             kubeClient.getKubernetesClient().apps().deployments().inNamespace(deployedContainers.get(deployment)).resource(deployment).delete();
+        }
+    }
+
+    private static <T extends HasMetadata> void removeUpdatedCrObject(List<T> deployedCrObjects, T updatedCr) {
+        List<T> removeTs = deployedCrObjects.stream().filter(item -> {
+            String itemName = item.getMetadata().getName();
+            String itemNamespace = item.getMetadata().getNamespace();
+            return updatedCr.getMetadata().getName().equals(itemName) && updatedCr.getMetadata().getNamespace().equals(itemNamespace);
+        }).toList();
+
+        if (removeTs.size() == 1) {
+            deployedCrObjects.remove(removeTs.get(0));
+        } else if (removeTs.size() == 0) {
+            LOGGER.error("[{}] Not found any CR! {} ", updatedCr.getMetadata().getNamespace(), updatedCr.getMetadata().getName());
+        } else {
+            LOGGER.error("[{}] Found too many CRs! {} ", updatedCr.getMetadata().getNamespace(), updatedCr.getMetadata().getName());
         }
     }
 

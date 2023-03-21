@@ -89,10 +89,10 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     protected void teardownDefaultClusterOperator(String testNamespace) {
-        ResourceManager.undeployArtemisClusterOperator(operator);
-        if (!ResourceManager.isClusterOperatorManaged()) {
-            getClient().deleteNamespace(testNamespace);
+        if (ResourceManager.isClusterOperatorManaged()) {
+            ResourceManager.undeployArtemisClusterOperator(operator);
         }
+        getClient().deleteNamespace(testNamespace);
     }
 
     /******************************************************************************************************************
