@@ -157,9 +157,14 @@ public interface Constants {
     String CONDITION_TYPE_DELPOYED = "Deployed";
     String CONDITION_TYPE_VALIDATION = "Validation";
     String CONDITION_TYPE_READY = "Ready";
+    String CONDITION_TYPE_VALID = "Valid";
+
     String CONDITION_STATUS_READY = "AllPodsReady";
+
     String CONDITION_REASON_VALIDATION = "ValidationSucceded";
     String CONDITION_REASON_ALL_PODS_VALID = "AllPodsReady";
     String CONDITION_REASON_APPLIED = "Applied";
     String CONDITION_REASON_OUT_OF_SYNC = "OutOfSync";
+    String CONDITION_REASON_INVALID_EXTRA_MOUNT = "InvalidExtraMount";
+
 }

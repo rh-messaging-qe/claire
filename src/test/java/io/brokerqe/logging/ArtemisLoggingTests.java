@@ -11,6 +11,7 @@ import io.brokerqe.ArtemisVersion;
 import io.brokerqe.Constants;
 import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
+import io.brokerqe.WaitException;
 import io.brokerqe.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -33,6 +34,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
 public class ArtemisLoggingTests extends AbstractSystemTests {
@@ -43,6 +45,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     private static final String LOGGING_PROPERTIES_KEY = "logging.properties";
     private static final String AUDIT_LOG_FILE = "audit.log";
     private static final String ARTEMIS_LOG_FILE = "artemis.log";
+    private static final String LOGGING_MOUNT_ONLY_ONCE = "Spec.DeploymentPlan.ExtraMounts, entry with suffix -logging-config can only be supplied once";
 
     private final String testNamespace = getRandomNamespaceName("artemis-log-tests", 6);
 
@@ -107,8 +110,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     
     @Test
     void providedLoggingUsingConfigMapTest() throws IOException {
-        getClient().createConfigMapBinaryData(testNamespace, LOGGER_CONFIG_MAP_NAME,
-                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)));
+        getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME,
+                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.readFileContent(Paths.get(LOGGER_FILE).toFile())));
 
         String artemisName = "artemis-cm-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -139,7 +142,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
 
     @Test
     void providedLoggingUsingEmptyConfigMapTest() {
-        getClient().createConfigMapBinaryData(testNamespace, LOGGER_CONFIG_MAP_NAME, Map.of(LOGGING_PROPERTIES_KEY, ""));
+        getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME, Map.of(LOGGING_PROPERTIES_KEY, ""));
 
         String artemisName = "artemis-empty-cm-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -169,11 +172,11 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     }
 
     @Test
-    void providedLoggingUsingConfigMapAndSecretTest() throws IOException {
+    void providedLoggingUsingConfigMapAndSecretTest() {
         getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(LOGGING_PROPERTIES_KEY,
                 TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
-        getClient().createConfigMapBinaryData(testNamespace, LOGGER_CONFIG_MAP_NAME,
-                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)));
+        getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME,
+                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.readFileContent(Paths.get(LOGGER_FILE).toFile())));
 
         String artemisName = "artemis-cm-secret-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -192,11 +195,11 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
                     .endDeploymentPlan()
                 .endSpec()
                 .build();
-        artemis = ResourceManager.createArtemis(testNamespace, artemis);
-        Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
-        assertCustomLogMsg(artemisPod);
-        assertLoggingIsInFilesystem(artemisPod);
+        assertThrows(WaitException.class, () -> ResourceManager.createArtemis(testNamespace, artemis, true, Constants.DURATION_30_SECONDS));
+        boolean logStatus = ResourceManager.getArtemisStatus(testNamespace, artemis, Constants.CONDITION_TYPE_VALID,
+                Constants.CONDITION_REASON_INVALID_EXTRA_MOUNT, LOGGING_MOUNT_ONLY_ONCE);
+        assertThat("Artemis condition does not match", Boolean.TRUE, is(logStatus));
 
         ResourceManager.deleteArtemis(testNamespace, artemis);
         getClient().deleteConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME);

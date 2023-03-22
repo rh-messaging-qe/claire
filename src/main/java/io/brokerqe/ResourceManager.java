@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class ResourceManager {
@@ -245,7 +246,7 @@ public class ResourceManager {
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, ActiveMQArtemis artemisBroker, boolean waitForDeployment) {
-        return createArtemis(namespace, artemisBroker, true, Constants.DURATION_1_MINUTE);
+        return createArtemis(namespace, artemisBroker, waitForDeployment, Constants.DURATION_1_MINUTE);
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, ActiveMQArtemis artemisBroker, boolean waitForDeployment, long maxTimeout) {
@@ -346,6 +347,41 @@ public class ResourceManager {
             ActiveMQArtemisSecurity security = ResourceManager.getArtemisSecurityClient().resource(artemisSecurity).get();
             return security == null;
         });
+    }
+    
+    public static void waitForArtemisStatusUpdate(String namespaceName, ActiveMQArtemis artemis) {
+        LOGGER.info("Waiting for Artemis status to be updated");
+        Long originalGeneration = artemis.getMetadata().getGeneration() == null ? 0L : artemis.getMetadata().getGeneration();
+        TestUtils.waitFor("ArtemisStatus update", Constants.DURATION_2_SECONDS, Constants.DURATION_30_SECONDS, () -> {
+            ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespaceName).resource(artemis).get();
+            if (updatedArtemis.getStatus() != null) {
+                Optional<Conditions> condition = updatedArtemis.getStatus().getConditions().stream().filter(e -> e.getObservedGeneration() != null).findFirst();
+                Long currentGeneration = -1L;
+                if (condition.isPresent() && condition.get().getObservedGeneration() != null) {
+                    currentGeneration = condition.get().getObservedGeneration();
+                }
+                return currentGeneration >= originalGeneration && updatedArtemis.getMetadata().getGeneration().equals(currentGeneration);
+            } else {
+                return false;
+            }
+        });
+    }
+    public static void getArtemisStatus(String namespace, ActiveMQArtemis artemis, String expectedType, String expectedReason) {
+        getArtemisStatus(namespace, artemis, expectedType, expectedReason, null);
+    }
+
+    public static boolean getArtemisStatus(String namespace, ActiveMQArtemis artemis, String expectedType, String expectedReason,
+                                                  String message) {
+        waitForArtemisStatusUpdate(namespace, artemis);
+        ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespace).resource(artemis).get();
+        List<Conditions> conditions = updatedArtemis.getStatus().getConditions();
+        for (Conditions condition : conditions) {
+            if (condition.getType().equals(expectedType) && condition.getReason().equals(expectedReason)) {
+                return message != null && condition.getMessage().matches(message);
+            }
+            return false;
+        }
+        return false;
     }
 
     public static void waitForArtemisResourceStatusUpdate(ActiveMQArtemis initialArtemis, String namespace, String updateType, long timeoutMillis) {
