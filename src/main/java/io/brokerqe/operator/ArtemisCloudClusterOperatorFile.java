@@ -15,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -111,8 +112,7 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
 
     @Override
     public void undeployOperator(boolean waitForUndeployment) {
-//        getUsedOperatorInstallFiles().forEach(fileName -> {
-        filesToDeploy.forEach(fileName -> {
+        getUsedOperatorInstallFilesReversed().forEach(fileName -> {
             try {
                 LOGGER.debug("[{}] Undeploying file {}", deploymentNamespace, fileName);
                 List<StatusDetails> result = kubeClient.getKubernetesClient().load(new FileInputStream(fileName.toFile())).inNamespace(this.deploymentNamespace).delete();
@@ -186,6 +186,13 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
 
     protected List<Path> getUsedOperatorInstallFiles() {
         return operatorInstallFiles;
+    }
+
+    protected List<Path> getUsedOperatorInstallFilesReversed() {
+        List<Path> reversedFilesToDeploy = new ArrayList<>(filesToDeploy);
+        Collections.copy(reversedFilesToDeploy, filesToDeploy);
+        Collections.reverse(reversedFilesToDeploy);
+        return reversedFilesToDeploy;
     }
 
     public Path getArtemisOperatorFile() {
