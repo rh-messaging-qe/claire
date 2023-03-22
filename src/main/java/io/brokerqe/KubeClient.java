@@ -239,11 +239,11 @@ public class KubeClient {
         client.pods().inNamespace(namespaceName).resource(pod).waitUntilCondition(tmpPod -> tmpPod.getStatus().getPhase().equals("Succeeded"), 3, TimeUnit.MINUTES);
     }
 
-    public void waitForPodReload(String namespace, Pod pod, String podName) {
-        waitForPodReload(namespace, pod, podName, Constants.DURATION_1_MINUTE);
+    public Pod waitForPodReload(String namespace, Pod pod, String podName) {
+        return waitForPodReload(namespace, pod, podName, Constants.DURATION_1_MINUTE);
     }
 
-    public void waitForPodReload(String namespace, Pod pod, String podName, long maxTimeout) {
+    public Pod waitForPodReload(String namespace, Pod pod, String podName, long maxTimeout) {
         String originalUid = pod.getMetadata().getUid();
 
         LOGGER.info("[{}] Waiting for pod {} reload", namespace, podName);
@@ -256,10 +256,12 @@ public class KubeClient {
         for (Pod podTmp : listPodsByPrefixName(namespace, podName)) {
             if (!podTmp.getMetadata().getUid().equals(originalUid)) {
                 this.waitUntilPodIsReady(namespace, podTmp);
-                break;
+                LOGGER.trace("[{}] Returning reloaded pod {}", namespace, podName);
+                return getPod(namespace, podTmp.getMetadata().getName());
             }
         }
-//        TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
+        LOGGER.error("[{}] Reloaded pod {} has not been found!", namespace, podName);
+        return null;
     }
 
     public String executeCommandInPod(String namespace, Pod pod, String cmd, long timeout) {

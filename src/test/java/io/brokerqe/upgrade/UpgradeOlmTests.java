@@ -32,9 +32,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 
-public class UpgradeClusterOperatorTests extends AbstractSystemTests {
+public class UpgradeOlmTests extends AbstractSystemTests {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UpgradeClusterOperatorTests.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UpgradeOlmTests.class);
     private final String testNamespace = getRandomNamespaceName("upgrade-tests", 6);
 
     private ArtemisCloudClusterOperatorOlm upgradeOlmOperator;
@@ -92,11 +92,12 @@ public class UpgradeClusterOperatorTests extends AbstractSystemTests {
             brokerUpgrade = ResourceManager.createArtemis(testNamespace, brokerUpgradableName, brokerUpgradableCount, true, true);
             brokerUpgradeStatefulSet = getClient().getStatefulSet(testNamespace, brokerUpgradableName);
             brokerUpgradePods = getClient().listPodsByPrefixName(testNamespace, brokerUpgradableName);
+            operatorPod = getClient().getFirstPodByPrefixName(testNamespace, upgradeOlmOperator.getOperatorName());
 
             ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         } else {
             LOGGER.info("[{}] Reloading ClusterOperator and Broker {} ", testNamespace, brokerUpgradableName);
-            getClient().waitForPodReload(testNamespace, operatorPod, upgradeOlmOperator.getOperatorName(), Constants.DURATION_3_MINUTES);
+            operatorPod = getClient().waitForPodReload(testNamespace, operatorPod, upgradeOlmOperator.getOperatorName(), Constants.DURATION_3_MINUTES);
             ResourceManager.waitForBrokerDeployment(testNamespace, brokerUpgrade, true, brokerReloadDuration, brokerUpgradeStatefulSet);
             brokerUpgradeStatefulSet = getClient().getStatefulSet(testNamespace, brokerUpgradableName);
 
@@ -105,6 +106,8 @@ public class UpgradeClusterOperatorTests extends AbstractSystemTests {
             }
         }
 
+        // There is a bug in older version of ArtemisOperator, where it spawned new Operator which failed to synchronize resources.
+        // After ~12 seconds it restarts itself. Whole upgrade procedure works fine.
         operatorPod = getClient().getFirstPodByPrefixName(testNamespace, upgradeOlmOperator.getOperatorName());
         brokerUpgradePods = getClient().listPodsByPrefixName(testNamespace, brokerUpgradableName);
 

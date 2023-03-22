@@ -68,8 +68,13 @@ public class TestDataCollector implements TestWatcher, TestExecutionExceptionHan
             LOGGER.debug("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirName);
             TestUtils.createDirectory(archiveDirName);
             collectTestData(testNamespace, archiveDirName);
+            String certificatesDirectory = archiveDirName + Constants.FILE_SEPARATOR + "certificates";
             if (TestUtils.directoryExists(Constants.CERTS_GENERATION_DIR)) {
-                TestUtils.copyDirectoryFlat(Constants.CERTS_GENERATION_DIR, archiveDirName + Constants.FILE_SEPARATOR + "certificates");
+                if (TestUtils.directoryExists(certificatesDirectory)) {
+                    LOGGER.info("[{}] Skipping duplicated copying of certificates into {}", testNamespace, certificatesDirectory);
+                } else {
+                    TestUtils.copyDirectoryFlat(Constants.CERTS_GENERATION_DIR, certificatesDirectory);
+                }
             }
         }
         throw throwable;
