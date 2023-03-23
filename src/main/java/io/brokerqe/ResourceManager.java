@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 public class ResourceManager {
 
@@ -348,7 +347,7 @@ public class ResourceManager {
             return security == null;
         });
     }
-    
+
     public static void waitForArtemisStatusUpdate(String namespaceName, ActiveMQArtemis artemis) {
         LOGGER.info("Waiting for Artemis status to be updated");
         Long originalGeneration = artemis.getMetadata().getGeneration() == null ? 0L : artemis.getMetadata().getGeneration();
@@ -384,23 +383,31 @@ public class ResourceManager {
         return false;
     }
 
-    public static void waitForArtemisResourceStatusUpdate(ActiveMQArtemis initialArtemis, String namespace, String updateType, long timeoutMillis) {
+    public static void waitForArtemisResourceStatusUpdate(ActiveMQArtemis initialArtemis, String namespace, String updateType, String expectedReason, long timeoutMillis) {
         LOGGER.info("[{}] Waiting for 5 minutes for broker {} custom resource status update", namespace, initialArtemis.getMetadata().getName());
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        getArtemisClient().inNamespace(namespace).resource(initialArtemis).waitUntilCondition(updatedBroker -> {
-            for (Conditions condition : updatedBroker.getStatus().getConditions()) {
-                if (condition.getType().equals(updateType)) {
-                    if (condition.getReason().equals(Constants.CONDITION_REASON_APPLIED)) {
-                        LocalDateTime updateDate = LocalDateTime.parse(condition.getLastTransitionTime(), dtf);
-                        LocalDateTime initialDate = LocalDateTime.parse(initialArtemis.getMetadata().getManagedFields().get(0).getTime(), dtf);
-                        if (updateDate.isAfter(initialDate)) {
-                            return true;
+        TestUtils.waitFor("Broker CR status to reach correct status", Constants.DURATION_5_SECONDS, timeoutMillis, () -> {
+            ActiveMQArtemis updatedBroker = getArtemisClient().inNamespace(namespace).resource(initialArtemis).get();
+            if (updatedBroker.getStatus() != null &&
+                updatedBroker.getStatus().getConditions() != null) {
+                // if either is null, no status or conditions are yet published
+                for (Conditions condition : updatedBroker.getStatus().getConditions()) {
+                    if (condition.getType().equals(updateType)) {
+                        if (condition.getReason().equals(expectedReason)) {
+                            LocalDateTime updateDate = LocalDateTime.parse(condition.getLastTransitionTime(), dtf);
+                            LocalDateTime initialDate = LocalDateTime.parse(initialArtemis.getMetadata().getCreationTimestamp(), dtf);
+                            LOGGER.debug("[{}] Comparing time of Broker creation ({}) to time of BrokerProperties application ({})", namespace, initialDate, updateDate);
+                            if (updateDate.isAfter(initialDate)) {
+                                return true;
+                            }
                         }
+                    } else {
+                        LOGGER.trace("[{}] Found condition: {}, it is not expected one (yet)", namespace, condition);
                     }
                 }
             }
             return false;
-        }, timeoutMillis, TimeUnit.MILLISECONDS);
+        });
     }
 
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker) {
