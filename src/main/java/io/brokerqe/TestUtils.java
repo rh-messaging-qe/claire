@@ -67,7 +67,7 @@ public final class TestUtils {
 
     public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready, Runnable onTimeout) {
         LOGGER.debug("Waiting for {}", description);
-        long deadline = System.currentTimeMillis() + timeoutMs;
+        long deadline = System.currentTimeMillis() + timeoutMs + ResourceManager.getEnvironment().getCustomExtraDelay();
 
         String exceptionMessage = null;
         String previousExceptionMessage = null;

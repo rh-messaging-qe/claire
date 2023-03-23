@@ -28,6 +28,7 @@ public interface Constants {
     String EV_TMP_LOCATION = "TMP_LOCATION";
     String EV_CLUSTER_OPERATOR_MANAGED = "CLUSTER_OPERATOR_MANAGED";
     String EV_COLLECT_TEST_DATA = "COLLECT_TEST_DATA";
+    String EV_CUSTOM_EXTRA_DELAY = "CUSTOM_EXTRA_DELAY";
     String EV_KEYCLOAK_VERSION = "KEYCLOAK_VERSION";
 
     // Artemis image related

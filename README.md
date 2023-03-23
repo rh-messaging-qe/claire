@@ -5,7 +5,7 @@
 This repository contains code for testing AMQ Broker/Artemis operator and it's operands.
 
 It uses fabric8 for communication with Kubernetes API.
-For details of usage fabric8 client see perfect [Cheatsheet](https://github.com/fabric8io/kubernetes-client/blob/v6.3.0/doc/CHEATSHEET.md), which contains all resources with examples.
+For details of usage fabric8 client see perfect [Cheatsheet](https://github.com/fabric8io/kubernetes-client/blob/v6.4.0/doc/CHEATSHEET.md), which contains all resources with examples.
 
 [CRDs](crds) contains Either upstream or downstream CRDs for AMQ Broker 7.10.x. Currently we only support downstream, as upstream versions are different (imports are different) and 
 we need to solve this problem nicely. If you're using upstream, please update all imports manually (find all and replace) accordingly.
@@ -40,13 +40,14 @@ To override default file based Artemis Cloud Cluster Operator installation by Op
 | BROKER_IMAGE              | Broker image url                                 | not set                     | \<image registry url\>                           |
 | BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | \<image registry url\>                           |
 | BUNDLE_IMAGE              | Bundle image url                                 | not set                     | \<image registry url\>                           |
-| OLM_IIB                   | OLM Index Image Bundle to use                    | not set                     | \<iib image registry url\>                                      |
+| OLM_IIB                   | OLM Index Image Bundle to use                    | not set                     | \<iib image registry url\>                       |
 | OLM_CHANNEL               | OLM channel to use with Subscription             | not set                     | \<channel\>                                      |
 | DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices            | not set (`false`)           | `true`, `false`                                  |
 | LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | \<directory\>                                    |
 | TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
 | CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)  | `true`                      | `false`                                          |
 | COLLECT_TEST_DATA         | Whether to gather test data on error or not      | `true`                      | `true`, `false`                                  |
+| CUSTOM_EXTRA_DELAY        | Prolonged all internal waitFor calls (seconds)   | `0`                         | \<number of seconds\>                            |
 | OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile) | 7.10.2 url                  | \<url\>                                          |
 | OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)          | main                        | \<branch\>                                       |
 
@@ -61,7 +62,6 @@ Example `test-namespace-2a6c` will be always `test-namespace`.
 ## TODO
 - [ ] Implement management client (amqx)
 - [ ] (?) Use Velocity project to manage usage of ArtemisCloud CRD versions
-- [ ] Add option to build dockerfile with the tests inside
 
 ## Hints
 - keep code clean

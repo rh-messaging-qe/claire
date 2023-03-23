@@ -38,6 +38,7 @@ public class Environment {
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     private final KubeClient kubeClient;
     private final boolean collectTestData;
+    private final int customExtraDelay;
 
     public Environment() {
         kubeClient = new KubeClient("default");
@@ -46,6 +47,7 @@ public class Environment {
         logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
         tmpDirLocation = System.getProperty(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
+        customExtraDelay = Integer.parseInt(System.getenv().getOrDefault(Constants.EV_CUSTOM_EXTRA_DELAY, "0"));
 
         projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
 
@@ -80,6 +82,7 @@ public class Environment {
         checkSetProvidedImages();
     }
 
+    @SuppressWarnings("checkstyle:NPathComplexity")
     private void printAllUsedTestVariables() {
         StringBuilder envVarsSB = new StringBuilder("List of all used Claire related variables:").append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_DISABLE_RANDOM_NAMESPACES).append("=").append(disabledRandomNs).append(Constants.LINE_SEPARATOR);
@@ -121,6 +124,10 @@ public class Environment {
         }
         if (tmpDirLocation != null) {
             envVarsSB.append(Constants.EV_TMP_LOCATION).append("=").append(tmpDirLocation).append(Constants.LINE_SEPARATOR);
+        }
+        if (customExtraDelay != 0) {
+            envVarsSB.append(Constants.EV_CUSTOM_EXTRA_DELAY).append("=").append(customExtraDelay).append(Constants.LINE_SEPARATOR);
+            LOGGER.warn("Detected {}. All non-kubernetes default waits will be prolonged by {}s", Constants.EV_CUSTOM_EXTRA_DELAY, customExtraDelay);
         }
 
         LOGGER.info(envVarsSB.toString());
@@ -213,6 +220,11 @@ public class Environment {
         } else {
             return Constants.DEFAULT_KEYCLOAK_VERSION;
         }
+    }
+
+    public int getCustomExtraDelay() {
+        // convert seconds to ms
+        return customExtraDelay * 1000;
     }
 
     public KubeClient getKubeClient() {
