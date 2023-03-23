@@ -71,11 +71,11 @@ public interface Constants {
     String LOGS_DEFAULT_DIR = PROJECT_USER_DIR + "/test-logs";
     String TMP_DEFAULT_DIR = PROJECT_USER_DIR + "/test-tmp";
     String CERTS_GENERATION_DIR = PROJECT_USER_DIR + "/certificates/";
-    // not used anymore ?
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";
     String EXAMPLES_DIR_PATH = PROJECT_USER_DIR + "/artemis/examples/";
+    String VERSION_MAPPER_PATH = PROJECT_USER_DIR + "/artemis/versions.yaml";
 
     // New naming style
     String INSTALL_ARTEMIS_CO_010_CRD_ARTEMIS_PATH = Constants.OPERATOR_CRDS_DIR_PATH + "crd_artemis.yaml";

@@ -7,15 +7,15 @@ package io.brokerqe;
 import java.util.Arrays;
 
 public enum ArtemisVersion {
-    VERSION_2_20(220),
-    VERSION_2_21(221),
-    VERSION_2_22(222),
-    VERSION_2_23(223),
-    VERSION_2_24(224),
-    VERSION_2_25(225),
-    VERSION_2_26(226),
-    VERSION_2_27(227),
-    VERSION_2_28(228);
+    VERSION_2_20(2200),
+    VERSION_2_21(2210),
+    VERSION_2_22(2220),
+    VERSION_2_23(2230),
+    VERSION_2_24(2240),
+    VERSION_2_25(2250),
+    VERSION_2_26(2260),
+    VERSION_2_27(2270),
+    VERSION_2_28(2280);
 
     private final int versionNumber;
 
@@ -28,7 +28,7 @@ public enum ArtemisVersion {
     }
 
     private int getOrdinalCustomPosition() {
-        return this.ordinal() + 220;
+        return this.ordinal() * 10 + 2200;
     }
 
     public static ArtemisVersion getByOrdinal(int versionNumber) {

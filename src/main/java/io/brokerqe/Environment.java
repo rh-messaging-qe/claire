@@ -5,8 +5,10 @@
 package io.brokerqe;
 
 import io.brokerqe.operator.ArtemisFileProvider;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Properties;
 
 public class Environment {
@@ -24,6 +27,7 @@ public class Environment {
     private final String olmChannel;
     private final boolean olmInstallation;
     private final String artemisOperatorName;
+    private final String artemisOperatorType;
     private String artemisVersion;
     private final ArtemisVersion artemisTestVersion;
     private final String brokerImage;
@@ -70,6 +74,7 @@ public class Environment {
             projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
             projectSettings.load(projectSettingsFile);
             artemisOperatorName = String.valueOf(projectSettings.get("artemis.name"));
+            artemisOperatorType = String.valueOf(projectSettings.get("artemis.type"));
             artemisVersion = artemisVersion == null ? String.valueOf(projectSettings.get("artemis.version")) : artemisVersion;
             // Use ENV Var, project property or default to artemisVersion
             String artemisTestVersionStr = System.getenv().getOrDefault(Constants.EV_ARTEMIS_TEST_VERSION, String.valueOf(projectSettings.get("artemis.test.version")));
@@ -159,6 +164,11 @@ public class Environment {
     public String getArtemisOperatorName() {
         return artemisOperatorName;
     }
+
+    public boolean isUpstreamArtemisOperator() {
+        return artemisOperatorType.equals("upstream");
+    }
+
     public String getArtemisVersion() {
         return artemisVersion;
     }
@@ -252,15 +262,16 @@ public class Environment {
 
     public ArtemisVersion convertArtemisVersion(String version) {
         ArtemisVersion versionRet = null;
-        if (version.equals("main") || version.equals("upstream")) {
+        if (isUpstreamArtemisOperator()) {
             return ArtemisVersion.values()[ArtemisVersion.values().length - 1];
-        }
-        // TODO: temporary downstream workaround
-        if (version.startsWith("7.11")) {
-            return ArtemisVersion.VERSION_2_28;
-        }
-        if (version.startsWith("7.10")) {
-            return ArtemisVersion.VERSION_2_21;
+        } else {
+            try {
+                HashMap<String, String> versions = new Yaml().load(FileUtils.readFileToString(new File(Constants.VERSION_MAPPER_PATH)));
+                LOGGER.info("[ENV] Found mapping of provided {} into {}", versions.get(version), version);
+                version = versions.get(version);
+            } catch (IOException e) {
+                LOGGER.error("[ENV] Expecting to find version file {}", Constants.VERSION_MAPPER_PATH);
+            }
         }
 
         String versionSplitted = version.replace(".", "");

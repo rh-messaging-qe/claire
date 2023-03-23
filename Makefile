@@ -2,7 +2,7 @@ ROOT_DIR 				= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ARTEMIS_PROPERTIES_FILE 		= ${ROOT_DIR}/artemis/project-settings.properties
 
 ARTEMIS_VERSION 			?= 7.10.2
-LATEST_ARTEMIS_VERSION			= 7.11
+LATEST_ARTEMIS_VERSION			= 7.11.0
 OPERATOR_INSTALL_ZIP			?= https://download.eng.bos.redhat.com/released/jboss/amq/broker/${ARTEMIS_VERSION}/amq-broker-operator-${ARTEMIS_VERSION}-ocp-install-examples-rhel8.zip
 OPERATOR_VERSION_UPSTREAM 		?= main
 
@@ -39,6 +39,7 @@ downstream_files:
 	unzip -o ${ROOT_DIR}/artemis/ocp_install_examples.zip -d ${ROOT_DIR}/artemis/tmp/
 	echo "artemis.zip=${OPERATOR_INSTALL_ZIP}" >> ${ARTEMIS_PROPERTIES_FILE}
 	echo "artemis.name=amq-broker" >> ${ARTEMIS_PROPERTIES_FILE}
+	wget "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/versions.yaml" -P ${ROOT_DIR}/artemis/
 
 copy_ocp_zip_files:
 	# Copy CRDs, examples and install files
