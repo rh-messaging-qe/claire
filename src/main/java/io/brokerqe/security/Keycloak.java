@@ -8,9 +8,12 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.Constants;
 import io.brokerqe.Environment;
 import io.brokerqe.KubeClient;
+import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
+import io.brokerqe.db.Postgres;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import org.slf4j.Logger;
@@ -31,19 +34,21 @@ public class Keycloak {
     protected final Environment testEnvironment;
     protected final KubeClient kubeClient;
     protected final String namespace;
+    private Postgres postgres;
     protected final String keycloakVersion;
     protected List<HasMetadata> keycloakResources = new ArrayList<>();
     protected Map<String, String> admin = new HashMap<>();
     protected Pod keycloakSqlPod;
     protected Pod keycloakPod;
-    protected final String kcadmCmd = "/opt/eap/bin/kcadm.sh";
+    protected final String kcadmCmd = "/opt/keycloak/bin/kcadm.sh";
     protected final String realmArtemisLdap = Constants.PROJECT_TEST_DIR + "/resources/keycloak/ldap_realm.json";
     protected final String adminUsernameKey = "ADMIN_USERNAME";
     protected final String adminPasswordKey = "ADMIN_PASSWORD";
     protected String deployRealmFilePath;
-    private String realmsUrl = "http://localhost:8080/auth/admin/realms";
-    private String kcadmCreateLdap = """
-            %s create http://localhost:8080/auth/admin/realms/%s/components -r API \
+    protected String realmsUrl = "http://localhost:8080/auth/admin/realms";
+    protected String tmpConfig = "--config /tmp/kcadm.config";
+    protected String kcadmCreateLdap = """
+            %s create %s -r API \
             -s name="ldap-amq-broker" \
             -s parentId=%s \
             -s providerId=ldap \
@@ -71,10 +76,11 @@ public class Keycloak {
             -s 'config.pagination=["true"]' \
             -s 'config.allowKerberosAuthentication=["false"]' \
             -s 'config.debug=["true"]' \
-            -s 'config.useKerberosForPasswordAuthentication=["false"]'
+            -s 'config.useKerberosForPasswordAuthentication=["false"]' \
+            %s
             """;
-    String kcAdmCreateLdapRoleMapper = """
-                %s create http://localhost:8080/auth/admin/realms/%s/components -r API \
+    protected String kcAdmCreateLdapRoleMapper = """
+                %s create realms/%s/components -r API \
                 -s parentId=%s \
                 -s name="ldap-roles" \
                 -s providerId=role-ldap-mapper \
@@ -88,7 +94,8 @@ public class Keycloak {
                 -s 'config."role.name.ldap.attribute"=[ "cn" ]' \
                 -s 'config."memberof.ldap.attribute"=[ "member" ]' \
                 -s 'config."use.realm.roles.mapping"=[ "true" ]' \
-                -s 'config."role.object.classes"=[ "groupOfNames" ]'
+                -s 'config."role.object.classes"=[ "groupOfNames" ]' \
+                %s
                 """;
 
     public Keycloak(Environment testEnvironment, KubeClient kubeClient, String namespace) {
@@ -100,19 +107,10 @@ public class Keycloak {
 
     public void deployOperator() {
         setupKeycloakOperator();
-//            applyKeycloakResources(); // TODO
+        postgres = ResourceManager.getPostgresInstance(namespace);
+        postgres.deployPostgres("keycloak");
+        applyKeycloakResources();
         setupAdminLogin();
-    }
-
-    protected void setupAdminLogin() {
-        Map<String, String> adminPassword = kubeClient.getSecret(namespace, "credential-example-keycloak").getData();
-        admin.put(adminUsernameKey, TestUtils.getDecodedBase64String(adminPassword.get(adminUsernameKey)));
-        admin.put(adminPasswordKey, TestUtils.getDecodedBase64String(adminPassword.get(adminPasswordKey)));
-
-        LOGGER.info("[{}] [KC] Using login credentials {}/{}", namespace, admin.get(adminUsernameKey), admin.get(adminPasswordKey));
-        String loginCommand = String.format("%s config credentials --server http://localhost:8080/auth --realm master --user %s --password %s",
-                kcadmCmd, admin.get(adminUsernameKey), admin.get(adminPasswordKey));
-        kubeClient.executeCommandInPod(namespace, keycloakPod, loginCommand, Constants.DURATION_10_SECONDS);
     }
 
     public void undeployOperator() {
@@ -121,29 +119,79 @@ public class Keycloak {
             TestUtils.deleteFile(Paths.get(deployRealmFilePath));
         }
         LOGGER.info("[{}] [KC] Successfully undeployed Keycloak.", namespace);
+        postgres.undeployPostgres();
+    }
+
+    private void applyKeycloakResources() {
+        // Create self-signed certificate
+        Secret routerSecret = kubeClient.getRouterDefaultSecret(); // or generate self-signed cert when on nonOCP
+        kubeClient.createSecretEncodedData(namespace, routerSecret.getMetadata().getName(),
+                Map.of(
+                        "tls.crt", routerSecret.getData().get("tls.crt"),
+                        "tls.key", routerSecret.getData().get("tls.key")
+                ),
+                true
+        );
+
+        String keycloakCr = String.format("""
+            apiVersion: k8s.keycloak.org/v2alpha1
+            kind: Keycloak
+            metadata:
+              name: keycloak
+            spec:
+              instances: 1
+              additionalOptions:
+                - name: log-level
+                  value: info
+                - name: http-enabled
+                  value: "true"
+              db:
+                vendor: postgres
+                host: %s
+                usernameSecret:
+                  name: %s
+                  key: username
+                passwordSecret:
+                  name: %s
+                  key: password
+              http:
+                tlsSecret: %s
+              hostname:
+                strict: false
+            """, postgres.getName(), postgres.getSecretName(), postgres.getSecretName(), routerSecret.getMetadata().getName());
+
+        HasMetadata keycloak = kubeClient.getKubernetesClient().resource(keycloakCr).inNamespace(namespace).createOrReplace();
+        keycloakResources.add(keycloak);
+        waitForKeycloakDeployment("keycloak-0", "postgresdb-0");
+        if (kubeClient.isOpenshiftPlatform()) {
+            kubeClient.createRoute(namespace, "keycloak", "8443", kubeClient.getServiceByName(namespace, "keycloak-service"));
+        }
     }
 
     private void setupKeycloakOperator() {
+        String mainKeycloakUrl = "https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/" + keycloakVersion;
         try {
             kubeClient.listPods(namespace);
             String kcVersion = testEnvironment.getKeycloakVersion();
             LOGGER.info("[{}] [KC] Deploying Keycloak {}", namespace, kcVersion);
 
             // Load and create Keycloak resources
-            URL keycloakCrdUrl = new URL(String.format("https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/%s/kubernetes/keycloaks.k8s.keycloak.org-v1.yml", keycloakVersion));
-            URL keycloakRealmImportsCrdUrl = new URL(String.format("https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/%s/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml", keycloakVersion));
-            URL kcDeploymentFileUrl = new URL(String.format("https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/%s/kubernetes/kubernetes.yml", keycloakVersion));
-
-            // Load Yaml into Kubernetes resources
-            LOGGER.debug("[{}] [KC] Loading and creating keycloak resources", namespace);
-            keycloakResources.add(kubeClient.getKubernetesClient().apiextensions().v1().customResourceDefinitions().load(keycloakCrdUrl).get());
-            keycloakResources.add(kubeClient.getKubernetesClient().apiextensions().v1().customResourceDefinitions().load(keycloakRealmImportsCrdUrl).get());
-            keycloakResources.addAll(kubeClient.getKubernetesClient().load(kcDeploymentFileUrl.openStream()).get());
+//            String platform = kubeClient.isOpenshiftPlatform() ? "openshift" : "kubernetes";
+            String platform = "kubernetes";
+            URL keycloakCrdUrl = new URL(String.format("%s/kubernetes/keycloaks.k8s.keycloak.org-v1.yml", mainKeycloakUrl));
+            URL keycloakRealmImportsCrdUrl = new URL(String.format("%s/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml", mainKeycloakUrl));
+            URL kcDeploymentFileUrl = new URL(String.format("%s/kubernetes/%s.yml", mainKeycloakUrl, platform));
+            List<URL> urls = List.of(keycloakCrdUrl, keycloakRealmImportsCrdUrl, kcDeploymentFileUrl);
+            for (URL url : urls) {
+                // Load Yaml into Kubernetes resources
+                LOGGER.debug("[{}] [KC] Loading and creating keycloak resource/s from \n{}", namespace, url);
+                keycloakResources.addAll(kubeClient.getKubernetesClient().load(url.openStream()).items());
+            }
             // Apply Kubernetes Resources
             kubeClient.getKubernetesClient().resourceList(keycloakResources).inNamespace(namespace).createOrReplace();
 
-            // Wait for replicaSet ready
-            TestUtils.waitFor("Keycloak replicaset to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_5_MINUTES, () -> {
+            // Wait for ReplicaSet readiness
+            TestUtils.waitFor("Keycloak Operator ReplicaSet to be ready", Constants.DURATION_5_SECONDS, Constants.DURATION_5_MINUTES, () -> {
                 List<ReplicaSet> rSets = kubeClient.getReplicaSetsWithPrefix(namespace, "keycloak-operator");
                 return rSets != null && rSets.size() > 0 &&
                         rSets.get(0).getStatus().getReadyReplicas().equals(rSets.get(0).getSpec().getReplicas());
@@ -154,6 +202,24 @@ public class Keycloak {
         }
     }
 
+    protected void waitForKeycloakDeployment(String keycloakPodName, String keycloakDbPodName) {
+        TestUtils.waitFor("[KC] Keycloak pods to show up", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () ->
+                kubeClient.getFirstPodByPrefixName(namespace, keycloakPodName) != null &&
+                        kubeClient.getFirstPodByPrefixName(namespace, keycloakDbPodName) != null);
+
+        keycloakPod = kubeClient.getFirstPodByPrefixName(namespace, keycloakPodName);
+        keycloakSqlPod = kubeClient.getFirstPodByPrefixName(namespace, keycloakDbPodName);
+        LOGGER.info("[{}] Waiting for pods {} and {} to be ready", namespace, keycloakPod.getMetadata().getName(), keycloakSqlPod.getMetadata().getName());
+
+        kubeClient.getKubernetesClient().pods().inNamespace(namespace).resource(keycloakSqlPod).waitUntilReady(5, TimeUnit.MINUTES);
+        try {
+            kubeClient.getKubernetesClient().pods().inNamespace(namespace).resource(keycloakPod).waitUntilReady(3, TimeUnit.MINUTES);
+        } catch (KubernetesClientTimeoutException e) {
+            LOGGER.debug("[{}] [KC] keycloak {} failed to start due to internal DB issue. Restarting.", namespace, keycloakPodName);
+            restartStuckKeycloakPod(e);
+        }
+        LOGGER.info("[{}] Keycloak pods are ready", namespace);
+    }
     void restartStuckKeycloakPod(KubernetesClientTimeoutException exception) {
         String kcLog = kubeClient.getKubernetesClient().pods().resource(keycloakPod).getLog();
         if (kcLog.contains("failed to match pool. Check JndiName:")) {
@@ -168,30 +234,44 @@ public class Keycloak {
         }
     }
 
+    protected void setupAdminLogin() {
+        String kcSecretName = "keycloak-initial-admin";
+        String adminUsernameKey = "username";
+        String adminPasswordKey = "password";
+        Map<String, String> adminPassword = kubeClient.getSecretByPrefixName(namespace, kcSecretName).get(0).getData();
+        admin.put(adminUsernameKey, TestUtils.getDecodedBase64String(adminPassword.get(adminUsernameKey)));
+        admin.put(adminPasswordKey, TestUtils.getDecodedBase64String(adminPassword.get(adminPasswordKey)));
+
+        LOGGER.info("[{}] [KC] Using login credentials {}/{}", namespace, admin.get(adminUsernameKey), admin.get(adminPasswordKey));
+        String loginCommand = String.format("%s config credentials --server http://localhost:8080 --realm master --user %s --password %s %s",
+                getKcadmCmd(), admin.get(adminUsernameKey), admin.get(adminPasswordKey), tmpConfig);
+        keycloakPod = kubeClient.getFirstPodByPrefixName(namespace, "keycloak-0");
+        executeKeycloakCmd(loginCommand);
+    }
     public void importRealm(String realmName, String realmFilePath) {
         LOGGER.debug("[{}] [KC] Importing realm {} from file {}", namespace, realmName, realmFilePath);
         String realmPodFilePath = "/tmp/" + realmName + "_realm.json";
         kubeClient.getKubernetesClient().pods().inNamespace(namespace).withName(keycloakPod.getMetadata().getName()).file(realmPodFilePath).upload(Paths.get(realmFilePath));
 
-        String createImportRealm = String.format("%s create realms -s realm=%s -s enabled=true &&" +
-                " %s create partialImport -r %s -s ifResourceExists=SKIP -o -f %s", kcadmCmd, realmName, kcadmCmd, realmName, realmPodFilePath);
-        kubeClient.executeCommandInPod(namespace, keycloakPod, createImportRealm, Constants.DURATION_1_MINUTE);
+        String createImportRealm = String.format("%s create realms -s realm=%s -s enabled=true %s && " +
+                "%s create partialImport -r %s -s ifResourceExists=SKIP -o -f %s %s", getKcadmCmd(), realmName, tmpConfig, getKcadmCmd(), realmName, realmPodFilePath, tmpConfig);
+        executeKeycloakCmd(createImportRealm);
     }
 
     public void setupLdapModule(String realmName) {
         LOGGER.info("[{}] [KC] Setup LDAP Modules in realm {}", namespace, realmName);
-        String kcAdmParentId = String.format("%s get %s/%s --fields id --format csv --noquotes", kcadmCmd, realmsUrl, realmName);
-        String parentId = kubeClient.executeCommandInPod(namespace, keycloakPod, kcAdmParentId, Constants.DURATION_1_MINUTE).replace("\n", "");
+        String kcAdmParentId = String.format("%s get realms/%s --fields id --format csv --noquotes %s", getKcadmCmd(), realmName, tmpConfig);
+        String parentId = executeKeycloakCmd(kcAdmParentId).replace("\n", "");
 
-        String result = kubeClient.executeCommandInPod(namespace, keycloakPod, String.format(kcadmCreateLdap, kcadmCmd, realmName, parentId), Constants.DURATION_1_MINUTE);
+        String result = executeKeycloakCmd(String.format(kcadmCreateLdap, getKcadmCmd(), "realms/" + realmName + "/components", parentId, tmpConfig));
         String ldapId = result.substring(result.indexOf("'") + 1, result.lastIndexOf("'"));
 
         LOGGER.info("[{}] [KC] Create LDAP role mapper into realm {}", namespace, realmName);
-        kubeClient.executeCommandInPod(namespace, keycloakPod, String.format(kcAdmCreateLdapRoleMapper, kcadmCmd, realmName, ldapId), Constants.DURATION_1_MINUTE);
+        executeKeycloakCmd(String.format(kcAdmCreateLdapRoleMapper, getKcadmCmd(), realmName, ldapId, tmpConfig));
 
         LOGGER.info("[{}] [KC] Import LDAP users into realm {}", namespace, realmName);
-        String syncUsersCmd = String.format("%s create %s/%s/user-storage/%s/sync?action=triggerFullSync", kcadmCmd, realmsUrl, realmName, ldapId);
-        kubeClient.executeCommandInPod(namespace, keycloakPod, syncUsersCmd, Constants.DURATION_1_MINUTE);
+        String syncUsersCmd = String.format("%s create realms/%s/user-storage/%s/sync?action=triggerFullSync %s", getKcadmCmd(), realmName, ldapId, tmpConfig);
+        executeKeycloakCmd(syncUsersCmd);
     }
 
     public void setupRedirectUris(String realm, String clientName, ActiveMQArtemis broker) {
@@ -209,35 +289,53 @@ public class Keycloak {
         constructRoutes.deleteCharAt(constructRoutes.lastIndexOf(","));
 
         LOGGER.info("[{}] [KC] Constructed routes\n{}", namespace, constructRoutes);
-        String updateRedirectUris = String.format("%s update %s/%s/clients/%s/ -s 'redirectUris=[%s]'", kcadmCmd, realmsUrl, realm, clientId, constructRoutes);
-        kubeClient.executeCommandInPod(namespace, keycloakPod, updateRedirectUris, Constants.DURATION_10_SECONDS);
+        String updateRedirectUris = String.format("%s update realms/%s/clients/%s/ -s 'redirectUris=[%s]' %s ", getKcadmCmd(),  realm, clientId, constructRoutes, tmpConfig);
+        executeKeycloakCmd(updateRedirectUris);
     }
 
     public String getClientSecretId(String realm, String clientName) {
         // https://www.keycloak.org/docs/16.1/securing_apps/#client-id-and-client-secret
         String clientId = getClientId(realm, clientName);
-        String clientSecretCmd = String.format("%s get %s/%s/clients/%s/client-secret | grep value | tr -d ' \",' | cut -d ':' -f 2",
-                kcadmCmd, realmsUrl, realm, clientId);
-        String clientSecretId = kubeClient.executeCommandInPod(namespace, keycloakPod, clientSecretCmd, Constants.DURATION_10_SECONDS).strip();
+        String clientSecretCmd = String.format("%s get realms/%s/clients/%s/client-secret %s | grep value | tr -d ' \",' | cut -d ':' -f 2",
+                getKcadmCmd(), realm, clientId, tmpConfig);
+        String clientSecretId = executeKeycloakCmd(clientSecretCmd);
         if (clientSecretId.equals("**********")) {
             LOGGER.debug("[{}] [KC] Generate new {} client-secret as it is empty", namespace, clientName);
-            String clientGenerateSecretCmd = String.format("%s create %s/%s/clients/%s/client-secret", kcadmCmd, realmsUrl, realm, clientId);
-            kubeClient.executeCommandInPod(namespace, keycloakPod, clientGenerateSecretCmd, Constants.DURATION_10_SECONDS);
-            clientSecretId = kubeClient.executeCommandInPod(namespace, keycloakPod, clientSecretCmd, Constants.DURATION_10_SECONDS).strip();
+            String clientGenerateSecretCmd = String.format("%s create realms/%s/clients/%s/client-secret %s", getKcadmCmd(), realm, clientId, tmpConfig);
+            executeKeycloakCmd(clientGenerateSecretCmd);
+            clientSecretId = executeKeycloakCmd(clientSecretCmd);
         }
         LOGGER.debug("[{}] [KC] Using {} client-secret {}", namespace, realm, clientSecretId);
         return clientSecretId;
     }
 
+    protected String getKcadmCmd() {
+        return kcadmCmd;
+    }
+
     private String getClientId(String realm, String clientName) {
-        String keycloakClientIdCmd = String.format("%s get %s/%s/clients?clientId=%s | grep '\"id\"' | tr -d ' \",' | cut -d ':' -f 2",
-                kcadmCmd, realmsUrl, realm, clientName);
-        String clientId = kubeClient.executeCommandInPod(namespace, keycloakPod, keycloakClientIdCmd, Constants.DURATION_10_SECONDS).strip();
+        String keycloakClientIdCmd = String.format("%s get realms/%s/clients?clientId=%s %s | grep '\"id\"' | tr -d ' \",' | cut -d ':' -f 2",
+                getKcadmCmd(), realm, clientName, tmpConfig);
+        String clientId = executeKeycloakCmd(keycloakClientIdCmd);
         LOGGER.debug("[{}] [KC] Found clientId {} for realm {} ", namespace, clientId, realm);
         return clientId;
     }
 
     public String getAuthUri() {
-        return "https://" + kubeClient.getExternalAccessServiceUrl(namespace, "keycloak") + "/auth";
+        return "https://" + kubeClient.getExternalAccessServiceUrl(namespace, "keycloak");
     }
+
+    String executeKeycloakCmd(String keycloakCommand) {
+        String output = kubeClient.executeCommandInPod(namespace, keycloakPod, keycloakCommand, Constants.DURATION_10_SECONDS).strip();
+        LOGGER.debug("[KC] {}", output);
+        // if error execute login() again, due to workaround using config in tmp - possible tmp-cleanup removal
+        return output;
+    }
+
+//    protected void login() {
+//        String loginCommand = String.format("%s config credentials --server http://localhost:8080 --realm master --user %s --password %s %s",
+//                getKcadmCmd(), admin.get(adminUsernameKey), admin.get(adminPasswordKey), tmpConfig);
+//        executeKeycloakCmd(loginCommand);
+//    }
+
 }

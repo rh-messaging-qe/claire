@@ -10,16 +10,17 @@ import io.brokerqe.KubeClient;
 import io.brokerqe.TestUtils;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
+import java.nio.file.Paths;
+import java.util.Map;
 
 public class Rhsso extends Keycloak {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Rhsso.class);
+    protected final String kcadmCmd = "/opt/eap/bin/kcadm.sh";
 
     public Rhsso(Environment testEnvironment, KubeClient kubeClient, String namespace) {
         super(testEnvironment, kubeClient, namespace);
@@ -31,6 +32,14 @@ public class Rhsso extends Keycloak {
         applySubscription();
         applyKeycloakResources();
         setupAdminLogin();
+    }
+
+    public void undeployOperator() {
+        kubeClient.getKubernetesClient().resourceList(keycloakResources).inNamespace(namespace).delete();
+        if (deployRealmFilePath != null) {
+            TestUtils.deleteFile(Paths.get(deployRealmFilePath));
+        }
+        LOGGER.info("[{}] [KC] Successfully undeployed Keycloak.", namespace);
     }
 
     private void applyOperatorGroup() {
@@ -97,22 +106,26 @@ public class Rhsso extends Keycloak {
         HasMetadata keycloak = kubeClient.getKubernetesClient().resource(keycloakString).inNamespace(namespace).createOrReplace();
         keycloakResources.add(keycloak);
 
-        TestUtils.waitFor("[KC] Keycloak pods to show up", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () ->
-                kubeClient.getFirstPodByPrefixName(namespace, "keycloak-0") != null &&
-                        kubeClient.getFirstPodByPrefixName(namespace, "keycloak-postgresql") != null);
+        waitForKeycloakDeployment("keycloak-0", "keycloak-postgresql");
+    }
 
-        keycloakPod = kubeClient.getFirstPodByPrefixName(namespace, "keycloak-0");
-        keycloakSqlPod = kubeClient.getFirstPodByPrefixName(namespace, "keycloak-postgresql");
-        LOGGER.info("[{}] Waiting for pods {} and {} to be ready", namespace, keycloakPod.getMetadata().getName(), keycloakSqlPod.getMetadata().getName());
-        // TODO: Sometimes keycloak fails to start -> removing pod helped
-        kubeClient.getKubernetesClient().pods().inNamespace(namespace).resource(keycloakSqlPod).waitUntilReady(5, TimeUnit.MINUTES);
-        try {
-            kubeClient.getKubernetesClient().pods().inNamespace(namespace).resource(keycloakPod).waitUntilReady(3, TimeUnit.MINUTES);
-        } catch (KubernetesClientTimeoutException e) {
-//            keycloakPod sometimes fails to start on some weird exception. Restart it if such log is present
-            restartStuckKeycloakPod(e);
-        }
-        LOGGER.info("[{}] Keycloak pods are ready", namespace);
+    protected void setupAdminLogin() {
+        Map<String, String> adminPassword = kubeClient.getSecret(namespace, "credential-example-keycloak").getData();
+        admin.put(adminUsernameKey, TestUtils.getDecodedBase64String(adminPassword.get(adminUsernameKey)));
+        admin.put(adminPasswordKey, TestUtils.getDecodedBase64String(adminPassword.get(adminPasswordKey)));
+
+        LOGGER.info("[{}] [KC] Using login credentials {}/{}", namespace, admin.get(adminUsernameKey), admin.get(adminPasswordKey));
+        String loginCommand = String.format("%s config credentials --server http://localhost:8080/auth --realm master --user %s --password %s %s",
+                getKcadmCmd(), admin.get(adminUsernameKey), admin.get(adminPasswordKey), tmpConfig);
+        kubeClient.executeCommandInPod(namespace, keycloakPod, loginCommand, Constants.DURATION_10_SECONDS);
+    }
+
+    protected String getKcadmCmd() {
+        return kcadmCmd;
+    }
+
+    public String getAuthUri() {
+        return "https://" + kubeClient.getExternalAccessServiceUrl(namespace, "keycloak") + "/auth";
     }
 
 }

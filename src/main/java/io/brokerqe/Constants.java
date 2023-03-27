@@ -62,7 +62,7 @@ public interface Constants {
     String WEBCONSOLE_URI_PREFIX = "wconsj";
 
     // Test related strings
-    String DEFAULT_KEYCLOAK_VERSION = "20.0.3";
+    String DEFAULT_KEYCLOAK_VERSION = "21.0.1";
     String DEFAULT_RHSSO_VERSION = "rhsso-operator.7.6.2-opr-001";
 
     // Files
@@ -126,6 +126,7 @@ public interface Constants {
     String IMAGE_SYSTEMTEST_CLIENTS = "quay.io/messaging/cli-java:latest";
 //    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
     String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:2.6.3";
+    String IMAGE_POSTGRES = "docker.io/bitnami/postgresql:latest";
 
     // Container folder paths
     String CONTAINER_BROKER_HOME_DIR = "/home/jboss/amq-broker/";

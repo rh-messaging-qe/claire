@@ -11,7 +11,6 @@ import io.brokerqe.ResourceManager;
 import io.brokerqe.TestUtils;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.openshift.api.model.monitoring.v1.EndpointBuilder;
@@ -77,9 +76,6 @@ public class Prometheus {
     }
 
     public void createServiceMonitor(String applicationName) {
-        HashMap<String, String> labels = new HashMap<>();
-        labels.put("application", applicationName + "-app");
-        LabelSelector ls = new LabelSelectorBuilder().withMatchLabels(labels).build();
         ServiceMonitor serviceMonitor = new ServiceMonitorBuilder()
             .editOrNewMetadata()
                 .withName(SERVICE_MONITOR)
@@ -89,7 +85,11 @@ public class Prometheus {
                 .withEndpoints(new EndpointBuilder()
                     .withPort(Constants.WEBCONSOLE_URI_PREFIX)
                     .withScheme(Constants.SCHEME_HTTP).build())
-                    .withSelector(ls)
+                    .withSelector(
+                        new LabelSelectorBuilder()
+                            .withMatchLabels(Map.of("application", applicationName + "-app"))
+                        .build()
+                    )
             .endSpec()
             .build();
         kubeClient.getKubernetesClient().resource(serviceMonitor).inNamespace(namespace).createOrReplace();

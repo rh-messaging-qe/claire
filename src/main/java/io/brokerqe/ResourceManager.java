@@ -12,6 +12,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.amq.broker.v1beta1.activemqartemisstatus.Conditions;
 import io.brokerqe.clients.MessagingAmqpClient;
+import io.brokerqe.db.Postgres;
 import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.operator.ArtemisCloudClusterOperatorFile;
 import io.brokerqe.operator.ArtemisCloudClusterOperatorOlm;
@@ -529,17 +530,22 @@ public class ResourceManager {
 
     // Keycloak/Rhsso Resources
     public static Keycloak getKeycloakInstance(String namespace) {
-        // Keycloak resources manage
-        if (kubeClient.getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
-            return new Rhsso(environment, kubeClient, namespace);
-        } else {
+        // Keycloak resources managed
+        if (environment.isUpstreamArtemisOperator()) {
             return new Keycloak(environment, kubeClient, namespace);
+        } else {
+            return new Rhsso(environment, kubeClient, namespace);
         }
     }
 
     public static Openldap getOpenldapInstance(String namespace) {
-        // Keycloak resources manage
-        return new Openldap(environment, kubeClient, namespace);
+        // Keycloak resources managed
+        return new Openldap(kubeClient, namespace);
+    }
+
+    public static Postgres getPostgresInstance(String namespace) {
+        // Keycloak resources managed
+        return new Postgres(kubeClient, namespace);
     }
 
     public static void undeployAllResources() {

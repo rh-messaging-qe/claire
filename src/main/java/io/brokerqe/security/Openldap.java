@@ -5,7 +5,6 @@
 package io.brokerqe.security;
 
 import io.brokerqe.Constants;
-import io.brokerqe.Environment;
 import io.brokerqe.KubeClient;
 import io.brokerqe.TestUtils;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
@@ -29,7 +28,6 @@ import java.util.Map;
 public class Openldap {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Openldap.class);
-    protected final Environment testEnvironment;
     protected final KubeClient kubeClient;
     protected final String namespace;
     protected final String podNameLabel = "openldap";
@@ -132,8 +130,7 @@ public class Openldap {
         .endSpec()
         .build();
 
-    public Openldap(Environment testEnvironment, KubeClient kubeClient, String namespace) {
-        this.testEnvironment = testEnvironment;
+    public Openldap(KubeClient kubeClient, String namespace) {
         this.kubeClient = kubeClient;
         this.namespace = namespace;
     }

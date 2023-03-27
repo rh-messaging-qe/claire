@@ -66,8 +66,6 @@ public class Environment {
         operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE);
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
 
-        keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
-
         Properties projectSettings = new Properties();
         FileInputStream projectSettingsFile;
         try {
@@ -83,6 +81,9 @@ public class Environment {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
+
         printAllUsedTestVariables();
         checkSetProvidedImages();
     }
@@ -225,10 +226,10 @@ public class Environment {
     }
 
     private String getDefaultKeycloakVersion() {
-        if (kubeClient.getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
-            return Constants.DEFAULT_RHSSO_VERSION;
-        } else {
+        if (isUpstreamArtemisOperator()) {
             return Constants.DEFAULT_KEYCLOAK_VERSION;
+        } else {
+            return Constants.DEFAULT_RHSSO_VERSION;
         }
     }
 

@@ -9,6 +9,7 @@ import io.brokerqe.operator.ArtemisCloudClusterOperator;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -30,6 +31,10 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.RouteBuilder;
+import io.fabric8.openshift.api.model.RoutePortBuilder;
+import io.fabric8.openshift.api.model.RouteTargetReferenceBuilder;
+import io.fabric8.openshift.api.model.TLSConfigBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -403,6 +408,48 @@ public class KubeClient {
         }
     }
 
+    public Route createRoute(String namespaceName, String name, String port, Service service) {
+        Route route = new RouteBuilder()
+                .editOrNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespaceName)
+                .endMetadata()
+                .editOrNewSpec()
+                    .withHost(name + "-" + getPlatformIngressDomainUrl(namespace))
+                    .withPort(new RoutePortBuilder()
+                            .withTargetPort(new IntOrString(port))
+                        .build())
+                    .withTls(new TLSConfigBuilder()
+                            .withTermination("passthrough")
+                            .withInsecureEdgeTerminationPolicy("Redirect")
+                        .build())
+                    .withTo(new RouteTargetReferenceBuilder()
+                            .withName(service.getMetadata().getName())
+                            .withKind("Service")
+                        .build())
+                .endSpec()
+                .build();
+        route = ((OpenShiftClient) client).routes().inNamespace(namespaceName).resource(route).create();
+        TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
+        LOGGER.debug("[{}] Created route {}", namespaceName, route.getMetadata().getName());
+        return route;
+    }
+
+    public String getPlatformIngressDomainUrl(String namespace) {
+        String svc;
+        String domain;
+        if (isKubernetesPlatform()) {
+            svc = "svc-ing";
+            // https://github.com/artemiscloud/activemq-artemis-operator/blob/d04ed9609b1f8fe399fe9ea12b4f5488c6c9d9d9/pkg/resources/ingresses/ingress.go#L70
+            // hardcoded
+            domain = "apps.artemiscloud.io";
+        } else {
+            svc = "svc-rte";
+            domain = namespace + "." + getKubernetesClient().getMasterUrl().getHost().replace("api", "apps");
+        }
+        return svc + "-" + domain;
+    }
+
     public List<String> getExternalAccessServiceUrlPrefixName(String namespaceName, String externalAccessPrefixName) {
         List<String> externalUrls = new ArrayList<>();
         if (this.isKubernetesPlatform()) {
@@ -624,6 +671,11 @@ public class KubeClient {
 
     public Secret getSecret(String namespaceName, String secretName) {
         return client.secrets().inNamespace(namespaceName).withName(secretName).get();
+    }
+
+    public List<Secret> getSecretByPrefixName(String namespaceName, String secretNamePrefix) {
+        return client.secrets().inNamespace(namespaceName).list().getItems().stream().filter(
+                secret -> secret.getMetadata().getName().startsWith(secretNamePrefix)).collect(Collectors.toList());
     }
 
     public void waitForSecretCreation(String namespaceName, String secretName) {

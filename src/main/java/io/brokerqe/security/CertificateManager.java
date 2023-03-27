@@ -7,7 +7,6 @@ package io.brokerqe.security;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.Constants;
 import io.brokerqe.KubeClient;
-import io.brokerqe.KubernetesPlatform;
 import io.brokerqe.TestUtils;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -396,23 +395,13 @@ public class CertificateManager {
         String namespace = broker.getMetadata().getNamespace();
 
         // platform specific
-        String svc;
-        String domain;
-        if (kubeClient.getKubernetesPlatform().equals(KubernetesPlatform.KUBERNETES)) {
-            svc = "svc-ing";
-            // https://github.com/artemiscloud/activemq-artemis-operator/blob/d04ed9609b1f8fe399fe9ea12b4f5488c6c9d9d9/pkg/resources/ingresses/ingress.go#L70
-            // hardcoded
-            domain = "apps.artemiscloud.io";
-        } else {
-            svc = "svc-rte";
-            domain = namespace + "." + kubeClient.getKubernetesClient().getMasterUrl().getHost().replace("api", "apps");
-        }
+        String domain = kubeClient.getPlatformIngressDomainUrl(namespace);
 
         ASN1EncodableVector sanNames = new ASN1EncodableVector();
         int size = broker.getSpec().getDeploymentPlan().getSize();
         for (int i = 0; i < size; i++) {
             for (String acceptorName : serviceNames) {
-                sanNames.add(new GeneralName(GeneralName.dNSName, appName + "-" + acceptorName + "-" + i + "-" + svc + "-" + domain));
+                sanNames.add(new GeneralName(GeneralName.dNSName, appName + "-" + acceptorName + "-" + i + "-" + domain));
 //                sanNames.add(new GeneralName(GeneralName.dNSName, "*.app-services-dev.net"));
             }
         }
