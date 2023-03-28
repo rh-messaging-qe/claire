@@ -82,6 +82,10 @@ public class CertificateManager {
     final static String DEFAULT_CLIENT_ALIAS = "clientUser";
     final static String DEFAULT_CLIENT_PASSWORD = "clientPass";
 
+    static {
+        TestUtils.createDirectory(Constants.CERTS_GENERATION_DIR);
+    }
+
     public static TrustManager[] trustAllCertificates = new TrustManager[]{
         new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() {
@@ -284,7 +288,6 @@ public class CertificateManager {
         String trustStoreFileName = Constants.CERTS_GENERATION_DIR + certificateData.getAlias() + "_truststore.jks";
         String keyStoreDataName = certificateData.getAlias() + ".ks";
         String trustStoreDataName = certificateData.getAlias() + ".ts";
-        TestUtils.createDirectory(Constants.CERTS_GENERATION_DIR);
 
         try {
             LOGGER.info("[TLS] Creating {} keystore", certificateData.getAlias());
@@ -318,7 +321,6 @@ public class CertificateManager {
         String brokerTrustStoreFileName = Constants.CERTS_GENERATION_DIR + brokerAlias + "_truststore.jks";
         String clientKeyStoreFileName = Constants.CERTS_GENERATION_DIR + clientAlias + "_keystore.jks";
         String clientTrustStoreFileName = Constants.CERTS_GENERATION_DIR + clientAlias + "_truststore.jks";
-        TestUtils.createDirectory(Constants.CERTS_GENERATION_DIR);
 
         try {
             LOGGER.info("[TLS] Creating Broker keystore");
@@ -426,7 +428,6 @@ public class CertificateManager {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        TestUtils.createDirectory(Constants.CERTS_GENERATION_DIR);
         TestUtils.createFile(fileName, sw.toString());
     }
 
