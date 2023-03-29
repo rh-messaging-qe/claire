@@ -385,7 +385,10 @@ public class ResourceManager {
     }
 
     public static void waitForArtemisResourceStatusUpdate(ActiveMQArtemis initialArtemis, String namespace, String updateType, String expectedReason, long timeoutMillis) {
-        LOGGER.info("[{}] Waiting for 5 minutes for broker {} custom resource status update", namespace, initialArtemis.getMetadata().getName());
+        waitForArtemisResourceStatusUpdate(initialArtemis, namespace, updateType, expectedReason, timeoutMillis, true);
+    }
+    public static void waitForArtemisResourceStatusUpdate(ActiveMQArtemis initialArtemis, String namespace, String updateType, String expectedReason, long timeoutMillis, boolean checkDate) {
+        LOGGER.info("[{}] Waiting for broker {} custom resource status update, limit: {} seconds, period: 5 seconds", namespace, initialArtemis.getMetadata().getName(), timeoutMillis / 1000);
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         TestUtils.waitFor("Broker CR status to reach correct status", Constants.DURATION_5_SECONDS, timeoutMillis, () -> {
             ActiveMQArtemis updatedBroker = getArtemisClient().inNamespace(namespace).resource(initialArtemis).get();
@@ -395,10 +398,15 @@ public class ResourceManager {
                 for (Conditions condition : updatedBroker.getStatus().getConditions()) {
                     if (condition.getType().equals(updateType)) {
                         if (condition.getReason().equals(expectedReason)) {
-                            LocalDateTime updateDate = LocalDateTime.parse(condition.getLastTransitionTime(), dtf);
-                            LocalDateTime initialDate = LocalDateTime.parse(initialArtemis.getMetadata().getCreationTimestamp(), dtf);
-                            LOGGER.debug("[{}] Comparing time of Broker creation ({}) to time of BrokerProperties application ({})", namespace, initialDate, updateDate);
-                            if (updateDate.isAfter(initialDate)) {
+                            if (checkDate) {
+                                LocalDateTime updateDate = LocalDateTime.parse(condition.getLastTransitionTime(), dtf);
+                                LocalDateTime initialDate = LocalDateTime.parse(initialArtemis.getMetadata().getCreationTimestamp(), dtf);
+                                LOGGER.debug("[{}] Comparing time of Broker creation ({}) to time of BrokerProperties application ({})", namespace, initialDate, updateDate);
+                                if (updateDate.isAfter(initialDate)) {
+                                    return true;
+                                }
+                            } else {
+                                LOGGER.debug("[{}] Time/date of the condition update doesn't matter due to call options", namespace);
                                 return true;
                             }
                         }

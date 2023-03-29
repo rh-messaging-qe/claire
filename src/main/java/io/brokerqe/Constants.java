@@ -156,7 +156,6 @@ public interface Constants {
     String SCHEME_HTTP = "http";
     String CONDITION_TYPE_BROKER_PROPERTIES_APPLIED = "BrokerPropertiesApplied";
     String CONDITION_TYPE_DEPLOYED = "Deployed";
-    String CONDITION_TYPE_VALIDATION = "Validation";
     String CONDITION_TYPE_READY = "Ready";
     String CONDITION_TYPE_VALID = "Valid";
 
