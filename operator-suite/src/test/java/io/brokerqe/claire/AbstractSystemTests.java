@@ -157,7 +157,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
         acceptors.setPort(port);
         acceptors.setExpose(expose);
         if (sslEnabled) {
-            acceptors.setSslEnabled(sslEnabled);
+            acceptors.setSslEnabled(true);
             if (sslSecretName != null) {
                 acceptors.setSslSecret(sslSecretName);
             }
