@@ -23,9 +23,10 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Prometheus {
     private static final Logger LOGGER = LoggerFactory.getLogger(Prometheus.class);
@@ -134,5 +135,27 @@ public class Prometheus {
     public void disablePrometheusUserMonitoring() {
         kubeClient.getKubernetesClient().configMaps().inNamespace(Constants.MONITORING_NAMESPACE).withName(PROMETHEUS_CONFIGMAP).delete();
         waitForPrometheusPodsDeletion();
+    }
+
+    public boolean metricsContainKey(Map<String, String> metrics, String expectedKey) {
+        for (String key : metrics.keySet()) {
+            if (key.contains(expectedKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean metricsContainKeyValue(Map<String, String> metrics, String expectedRegexKey) {
+        Pattern pattern = Pattern.compile(expectedRegexKey);
+        for (String key : metrics.keySet()) {
+            Matcher matcher = pattern.matcher(key);
+            if (matcher.find()) {
+                LOGGER.debug("[metrics] Found pattern {} in key {}", expectedRegexKey, key);
+                LOGGER.debug("matcher group={}", matcher.group());
+                return true;
+            }
+        }
+        return false;
     }
 }

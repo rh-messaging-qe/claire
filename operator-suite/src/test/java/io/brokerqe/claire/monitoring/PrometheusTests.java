@@ -71,7 +71,7 @@ public class PrometheusTests extends AbstractSystemTests {
         prometheus.enablePrometheusUserMonitoring();
         String[] threadStates = {"runnable", "blocked", "terminated", "waiting", "timed-waiting", "new"};
         for (String item : threadStates) {
-            String key = "jvm_threads_states_threads{state=\"" + item + "\",}";
+            String key = "jvm_threads_states_threads\\{.*state=\"" + item + "\",.*\\}";
             keysThreads.add(key);
         }
     }
@@ -270,10 +270,10 @@ public class PrometheusTests extends AbstractSystemTests {
         HashMap<String, String> metrics = getPluginMetrics(broker.getMetadata().getName());
         LOGGER.trace("[{}] Got metrics: {}", testNamespace, metrics);
         for (String item : keysGc) {
-            assertThat(String.format("%s metric was not published in GC metrics", item), metrics.containsKey(item), is(true));
+            assertThat(String.format("%s metric was not published in GC metrics", item), prometheus.metricsContainKey(metrics, item), is(true));
         }
         for (String item : keysThreads) {
-            assertThat(String.format("%s metric was not published in JVM Thread metrics", item), metrics.containsKey(item), is(true));
+            assertThat(String.format("%s metric was not published in JVM Thread metrics", item), prometheus.metricsContainKeyValue(metrics, item), is(true));
         }
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
@@ -303,10 +303,12 @@ public class PrometheusTests extends AbstractSystemTests {
         broker = ResourceManager.createArtemis(testNamespace, broker);
         HashMap<String, String> metrics = getPluginMetrics(broker.getMetadata().getName());
         for (String item : keysGc) {
-            assertThat(String.format("%s was published by GC metrics when its not expected to be", item), metrics.containsKey(item), is(false));
+            assertThat(String.format("%s was published by GC metrics when its not expected to be", item),
+                    prometheus.metricsContainKey(metrics, item), is(false));
         }
         for (String item : keysThreads) {
-            assertThat(String.format("%s  was published by JVM Thread metrics when its not expected to be", item), metrics.containsKey(item), is(false));
+            assertThat(String.format("%s  was published by JVM Thread metrics when its not expected to be", item),
+                    prometheus.metricsContainKeyValue(metrics, item), is(false));
         }
 
         List<String> brokerProperties = new ArrayList<>();
@@ -320,10 +322,12 @@ public class PrometheusTests extends AbstractSystemTests {
         metrics = prometheus.getMetrics(0, broker.getMetadata().getName());
         LOGGER.trace("[{}] Got metrics: {}", testNamespace, metrics);
         for (String item : keysGc) {
-            assertThat(String.format("%s was published by GC metrics when its not expected to be", item), metrics.containsKey(item), is(false));
+            assertThat(String.format("%s was published by GC metrics when its not expected to be", item),
+                    prometheus.metricsContainKey(metrics, item), is(false));
         }
         for (String item : keysThreads) {
-            assertThat(String.format("%s was not published by JVM Thread metrics when its expected to be", item), metrics.containsKey(item), is(true));
+            assertThat(String.format("%s was not published by JVM Thread metrics when its expected to be", item),
+                    prometheus.metricsContainKeyValue(metrics, item), is(true));
         }
 
         brokerProperties.add("metricsConfiguration.jvmGc=true");
@@ -337,10 +341,12 @@ public class PrometheusTests extends AbstractSystemTests {
         metrics = prometheus.getMetrics(0, broker.getMetadata().getName());
         LOGGER.trace("[{}] Got metrics: {}", testNamespace, metrics);
         for (String item : keysGc) {
-            assertThat(String.format("%s was not published by GC metrics when its expected to be", item), metrics.containsKey(item), is(true));
+            assertThat(String.format("%s was not published by GC metrics when its expected to be", item),
+                    prometheus.metricsContainKey(metrics, item), is(true));
         }
         for (String item : keysThreads) {
-            assertThat(String.format("%s was not published by JVM Thread metrics when its expected to be", item), metrics.containsKey(item), is(true));
+            assertThat(String.format("%s was not published by JVM Thread metrics when its expected to be", item),
+                    prometheus.metricsContainKeyValue(metrics, item), is(true));
         }
         ResourceManager.deleteArtemis(testNamespace, broker);
     }

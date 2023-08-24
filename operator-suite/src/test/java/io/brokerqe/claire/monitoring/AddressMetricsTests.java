@@ -41,7 +41,7 @@ public class AddressMetricsTests extends PrometheusTests {
         prometheus.enablePrometheusUserMonitoring();
         String[] threadStates = {"runnable", "blocked", "terminated", "waiting", "timed-waiting", "new"};
         for (String item : threadStates) {
-            String key = "jvm_threads_states_threads{state=\"" + item + "\",}";
+            String key = "jvm_threads_states_threads\\{.*state=\"" + item + "\",.*\\}";
             keysThreads.add(key);
         }
     }
