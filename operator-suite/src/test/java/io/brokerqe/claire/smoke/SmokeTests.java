@@ -331,14 +331,7 @@ public class SmokeTests extends AbstractSystemTests {
         String expectedVersion = testEnvironmentOperator.getArtemisVersion();
         assumeFalse(expectedVersion.equals("main"), "version supplied is \"main\", skipping test.");
         String expectedOperatorVersionPattern = "Version of the operator: .*\n";
-        String podName;
-        if (testEnvironmentOperator.isUpstreamArtemis()) {
-            podName = "activemq-artemis-controller-manager";
-        } else {
-            podName = "amq-broker-controller-manager";
-        }
-
-        Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, podName);
+        Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
 
         LOGGER.info("[{}] Check expected version {} in {} pod logs", testNamespace, expectedVersion, operatorPod.getMetadata().getName());
         String operatorLogs = getClient().getLogsFromPod(operatorPod);

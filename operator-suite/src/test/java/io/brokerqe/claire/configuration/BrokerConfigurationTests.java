@@ -639,6 +639,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     void invalidRouteNameTest() {
         acceptor = createAcceptor(AMQ_ACCEPTOR_NAME,
                 "amqp",
