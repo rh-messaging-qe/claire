@@ -1,0 +1,27 @@
+[pulp-main]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/$releasever/$basearch/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for main
+
+[pulp-extras]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/$releasever/$basearch/extras/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for extras
+
+[pulp-supplementary]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/$releasever/$basearch/supplementary/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for supplementary
+
+[pulp-optional]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel/server/7/$releasever/$basearch/optional/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for optional

@@ -1,0 +1,62 @@
+ARG BASE_IMAGE=registry.access.redhat.com/ubi9:latest
+FROM ${BASE_IMAGE}
+
+ARG BASE_IMAGE
+ARG artemis_user=artemis
+ARG artemis_user_uid=1000
+ARG artemis_group=artemis
+ARG artemis_group_gid=1000
+ARG artemis_user_home=/home/${artemis_user}
+ARG artemis_install_home=/opt/artemis
+ARG artemis_instance_home=/var/lib/artemis-instance
+
+USER root
+
+ENV BASE_IMAGE=${BASE_IMAGE}
+ENV ARTEMIS_USER=${artemis_user}
+ENV ARTEMIS_USER_UID=${artemis_user_uid}
+ENV ARTEMIS_GROUP=${artemis_group}
+ENV ARTEMIS_GROUP_GID=${artemis_group_gid}
+ENV ARTEMIS_USER_HOME=${artemis_user_home}
+ENV ARTEMIS_INSTALL_HOME=${artemis_install_home}
+ENV ARTEMIS_INSTANCE_HOME=${artemis_instance_home}
+
+EXPOSE \
+  # JMX Exporter
+  1099  \
+  # Port for MQTT
+  1883  \
+  # Port for HORNETQ,STOMP
+  5445  \
+  # Port for AMQP
+  5672  \
+  # Web Server
+  8161  \
+  # Port for STOMP
+  61613 \
+  # Port for CORE,MQTT,AMQP,HORNETQ,STOMP,OPENWIRE
+  61616
+
+# Expose some outstanding folders
+VOLUME ["${artemis_instance_home}", "${artemis_install_home}"]
+
+COPY openjdk-java-17.tar.xz oracle-java-11.tar.gz oracle-java-17.tar.gz /tmp
+COPY install-java-versions.sh /usr/local/bin/
+RUN /usr/local/bin/install-java-versions.sh "${BASE_IMAGE}" \
+    && rm -rf /usr/local/bin/install-java-versions.sh \
+    && rm -rf /tmp/openjdk-java-17.tar.xz /tmp/oracle-java-11.tar.gz /tmp/oracle-java-17.tar.gz
+
+COPY pulp-repository-*.repo /tmp
+COPY install-pulp-repo.sh install-packages.sh /usr/local/bin
+RUN yum --assumeyes upgrade \
+ && /usr/local/bin/install-pulp-repo.sh "${BASE_IMAGE}" \
+ && /usr/local/bin/install-packages.sh "${BASE_IMAGE}" \
+ && yum --assumeyes clean all \
+ && rm -rf /usr/local/bin/install-pulp-repo.sh /usr/local/bin/install-packages.sh /tmp/pulp-repository-*.repo /etc/yum.repos.d/pulp-repository-*.repo
+
+RUN echo "${artemis_user} ALL=(ALL)       NOPASSWD: /usr/bin/mount, /usr/bin/umount" > /etc/sudoers.d/${artemis_user}
+
+COPY docker-entrypoint.sh artemis-controller.sh /usr/local/bin
+
+WORKDIR ${artemis_instance_home}
+ENTRYPOINT ["docker-entrypoint.sh"]

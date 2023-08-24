@@ -1,0 +1,27 @@
+[pulp-baseos]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel9/9/$basearch/baseos/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for baseos
+
+[pulp-appstream]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel9/9/$basearch/appstream/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for appstream
+
+[pulp-supplementary]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel9/9/$basearch/supplementary/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for supplementary
+
+[pulp-codeready-builder]
+baseurl = https://rhsm-pulp.corp.redhat.com/content/dist/rhel9/9/$basearch/codeready-builder/os/
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+name = Pulp repository for codeready-builder

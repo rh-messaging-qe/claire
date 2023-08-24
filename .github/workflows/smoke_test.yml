@@ -1,0 +1,28 @@
+name: Smoke tests
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Image"]
+    types:
+      - completed
+
+jobs:
+  testsuite-smoke-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install K0s and OLM
+        run: |
+          curl -sSLf https://get.k0s.sh | sh
+          k0s install controller --single
+          k0s start
+          k0s kubeconfig admin > ~/.kube/config
+          curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
+          curl -sSLf https://github.com/operator-framework/operator-lifecycle-manager/releases/latest/download/install.sh | sh
+
+      - name: Add secrets
+        run: |
+          kubectl create secret generic kube-config --from-file=~/.kube/config
+
+      - name: Run Claire Test Suite container in K8s
+        run: kubectl create -f manifest-smoke-tests-kubernetes.yaml

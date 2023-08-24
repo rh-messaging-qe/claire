@@ -1,0 +1,38 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <profiles>
+        <profile>
+            <id>downstream</id>
+            <repositories>
+                <repository>
+                    <id>staged_maven_repository</id>
+                    <url>http://messaging-qe-repo.usersys.redhat.com:8081/artifactory/amq-operator-crd/</url>
+                </repository>
+                <repository>
+                    <id>maven.repository.redhat.com_ga</id>
+                    <url>https://maven.repository.redhat.com/ga</url>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+    <mirrors>
+        <mirror>
+            <id>staged-maven-repository-maven-default-http-blocker</id>
+            <mirrorOf>external:http:*</mirrorOf>
+            <name>Pseudo repository to mirror external repositories initially using HTTP.</name>
+            <url>http://messaging-qe-repo.usersys.redhat.com:8081/artifactory/amq-operator-crd/</url>
+        </mirror>
+        <mirror>
+            <id>redhat-maven-central</id>
+            <name>Red Hat Maven Central mirror</name>
+            <url>https://repository.engineering.redhat.com/nexus/content/repositories/central/</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
+
+
+    <activeProfiles>
+        <activeProfile>downstream</activeProfile>
+    </activeProfiles>
+</settings>

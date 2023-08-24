@@ -1,0 +1,25 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{yyyy-MM-dd'T'HH:mm:ss.SSS'Z',GMT} %highlight(%-5level) [%logger{0}:%line] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>test-logs/standalone-suite.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%date{yyyy-MM-dd'T'HH:mm:ss.SSS'Z',GMT} %highlight(%-5level) [%logger{0}:%line] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </root>
+    <logger name="org" level="WARN"/>
+    <logger name="org.testcontainers" level="WARN"/>
+    <logger name="com" level="WARN"/>
+    <logger name="com.github.dockerjava" level="WARN"/>
+    <logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.wire" level="OFF"/>
+</configuration>

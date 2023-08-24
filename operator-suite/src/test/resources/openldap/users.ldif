@@ -1,0 +1,113 @@
+# extended LDIF
+#
+# LDAPv3
+# base <dc=example,dc=org> with scope subtree
+# filter: (objectclass=*)
+# requesting: ALL
+#
+
+# example.org
+dn: dc=example,dc=org
+objectClass: dcObject
+objectClass: organization
+dc: example
+o: example
+
+# users, example.org
+dn: ou=users,dc=example,dc=org
+objectClass: organizationalUnit
+ou: users
+
+# user01, users, example.org
+dn: cn=user01,ou=users,dc=example,dc=org
+cn: user01
+sn: Bar1
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword:: cGFzc3dvcmQwMQ==
+uid: user01
+uidNumber: 1000
+gidNumber: 1000
+homeDirectory: /home/user01
+
+# user02, users, example.org
+dn: cn=user02,ou=users,dc=example,dc=org
+cn: user02
+sn: Bar2
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword:: cGFzc3dvcmQwMg==
+uid: user02
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/user02
+
+# alice, users, example.org
+dn: cn=alice,ou=users,dc=example,dc=org
+cn: alice
+sn: Bar3
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword:: YWxpY2U=
+uid: alice
+uidNumber: 1002
+gidNumber: 1002
+homeDirectory: /home/alice
+
+# bob, users, example.org
+dn: cn=bob,ou=users,dc=example,dc=org
+cn: bob
+sn: Bar4
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword:: Ym9i
+uid: bob
+uidNumber: 1003
+gidNumber: 1003
+homeDirectory: /home/bob
+
+# charlie, users, example.org
+dn: cn=charlie,ou=users,dc=example,dc=org
+cn: charlie
+sn: Bar5
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword:: Y2hhcmxpZQ==
+uid: charlie
+uidNumber: 1004
+gidNumber: 1004
+homeDirectory: /home/charlie
+
+# readers, users, example.org
+dn: cn=readers,ou=users,dc=example,dc=org
+cn: readers
+objectClass: groupOfNames
+member: cn=user01,ou=users,dc=example,dc=org
+member: cn=user02,ou=users,dc=example,dc=org
+member: cn=alice,ou=users,dc=example,dc=org
+member: cn=bob,ou=users,dc=example,dc=org
+member: cn=charlie,ou=users,dc=example,dc=org
+
+# Messaging Groups
+dn: cn=producers,ou=users,dc=example,dc=org
+cn: producers
+objectClass: groupOfNames
+member: cn=alice,ou=users,dc=example,dc=org
+member: cn=charlie,ou=users,dc=example,dc=org
+
+dn: cn=consumers,ou=users,dc=example,dc=org
+cn: consumers
+objectClass: groupOfNames
+member: cn=bob,ou=users,dc=example,dc=org
+member: cn=charlie,ou=users,dc=example,dc=org
+
+# Messaging Groups
+dn: cn=admin,ou=users,dc=example,dc=org
+cn: admin
+objectClass: groupOfNames
+member: cn=charlie,ou=users,dc=example,dc=org

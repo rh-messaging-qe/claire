@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: claire-test-suite
+spec:
+  containers:
+    - name: claire-test-suite
+      image: quay.io/rhmessagingqe/claire:latest
+      command: ["mvn", "test", "-Dmaven.main.skip=true", "-Dtest=SmokeTests"]
+      volumeMounts:
+        - name: kube-config
+          mountPath: /app/.kube/config
+          readOnly: true
+      volumes:
+        - name: kube-config
+          secret:
+            secretName: kube-config
