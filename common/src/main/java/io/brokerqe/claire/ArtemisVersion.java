@@ -27,7 +27,10 @@ public enum ArtemisVersion {
     VERSION_2_27(2270),
     VERSION_2_28(2280),
     VERSION_2_29(2290),
-    VERSION_2_30(2300);
+    VERSION_2_30(2300),
+    VERSION_2_31(2310),
+    VERSION_2_32(2320),
+    VERSION_2_33(2330);
 
     private final int versionNumber;
 
