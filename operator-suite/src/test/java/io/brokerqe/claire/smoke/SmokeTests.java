@@ -136,7 +136,7 @@ public class SmokeTests extends AbstractSystemTests {
 
         int msgsExpected = 10;
         // Publisher - Receiver
-        LOGGER.info("[{}] Starting MQTT publisher - receiver test", testNamespace);
+        LOGGER.info("[{}] Starting AMQP publisher - receiver test", testNamespace);
         MessagingClient messagingClient = ResourceManager.createMessagingClient(ClientType.ST_AMQP_QPID_JMS, clientsPod,
                 brokerPod.getStatus().getPodIP(), "5672", myAddress, msgsExpected);
         int sent = messagingClient.sendMessages();
