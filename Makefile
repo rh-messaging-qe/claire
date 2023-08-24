@@ -11,7 +11,6 @@ ARTEMIS_VERSION                                  ?= 2.29.0
 OPERATOR_VERSION                                 ?= main
 
 OPERATOR_ROOT_DIR                                 = ${ROOT_DIR}/operator-suite
-OPERATOR_ARTEMIS_PROPERTIES_FILE                  = ${OPERATOR_ROOT_DIR}/artemis/project-settings.properties
 
 STANDALONE_ROOT_DIR                               = ${ROOT_DIR}/standalone-suite
 STANDALONE_ARTEMIS_DIR                            = ${STANDALONE_ROOT_DIR}/artemis

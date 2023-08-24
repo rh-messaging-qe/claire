@@ -71,6 +71,7 @@ public interface Constants {
     String CONDITION_FALSE = "False";
     String CONDITION_REASON_OUT_OF_SYNC = "OutOfSync";
     String CONDITION_REASON_INVALID_EXTRA_MOUNT = "InvalidExtraMount";
+    String CONDITION_REASON_RESOURCE_ERROR = "ResourceError";
 
     // Project related strings
     String ROUTING_TYPE_ANYCAST = "anycast";

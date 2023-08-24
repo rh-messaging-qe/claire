@@ -675,9 +675,10 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 containsString(brokerName),
                 containsString("must be no more than 63 characters, metadata.labels: Invalid value")
         ));
-        // TODO check ActiveMQArtemis CR status - currently shows nothing
-//        broker = ResourceManager.getArtemisClient().resource(broker).get();
-//        broker.getStatus().getConditions();
+        boolean logStatus = ResourceManager.getArtemisStatus(testNamespace, broker, Constants.CONDITION_TYPE_DEPLOYED,
+                Constants.CONDITION_REASON_RESOURCE_ERROR, "must be no more than 63 characters, metadata.labels: Invalid value: \\\"" + brokerName);
+        assertThat("Artemis condition does not match", Boolean.TRUE, is(logStatus));
+
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 

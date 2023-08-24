@@ -392,13 +392,14 @@ public class ResourceManager {
         waitForArtemisStatusUpdate(namespace, artemis);
         ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespace).resource(artemis).get();
         List<Conditions> conditions = updatedArtemis.getStatus().getConditions();
+        boolean foundCondition = false;
         for (Conditions condition : conditions) {
             if (condition.getType().equals(expectedType) && condition.getReason().equals(expectedReason)) {
-                return message != null && condition.getMessage().matches(message);
+                foundCondition = message != null && condition.getMessage().contains(message);
+                break;
             }
-            return false;
         }
-        return false;
+        return foundCondition;
     }
 
     public static void waitForArtemisStatusUpdate(String namespace, ActiveMQArtemis initialArtemis, String updateType, String expectedReason, long timeoutMillis) {
