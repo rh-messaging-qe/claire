@@ -82,8 +82,6 @@ public class TransactionTests extends AbstractSystemTests {
     public void checkQueueMessageCount(String queueName, int expMessagesAdded, int expMessageCount, int expConsumerCount) {
         LOGGER.info("[{}] Checking {} queue message stats.", artemis.getName(), queueName);
         Map<String, String> commandOptions = Map.of(
-                "user", "admin",
-                "password", "admin",
                 "maxColumnSize", "-1",
                 "maxRows", "1000"
         );

@@ -99,8 +99,6 @@ public class ClientsMessagingTests extends AbstractSystemTests {
 
         LOGGER.debug("Creating anycast queue for the client, otherwise multicast would be auto created");
         Map<String, String> commandOptions = Map.of(
-                "user", "admin",
-                "password", "admin",
                 "name", address,
                 "address", address,
                 "anycast", "",
@@ -130,8 +128,6 @@ public class ClientsMessagingTests extends AbstractSystemTests {
 
         LOGGER.debug("Creating anycast queue for the client, otherwise multicast would be autocreated");
         Map<String, String> commandOptions = Map.of(
-                "user", "admin",
-                "password", "admin",
                 "name", address,
                 "address", address,
                 "anycast", "",
@@ -161,8 +157,6 @@ public class ClientsMessagingTests extends AbstractSystemTests {
 
         LOGGER.debug("Creating anycast queue for the client, otherwise multicast would be autocreated");
         Map<String, String> commandOptions = Map.of(
-                "user", "admin",
-                "password", "admin",
                 "name", address,
                 "address", address,
                 "anycast", "",
@@ -191,8 +185,6 @@ public class ClientsMessagingTests extends AbstractSystemTests {
 
         LOGGER.debug("Creating anycast queue for the client, otherwise multicast would be autocreated");
         Map<String, String> commandOptions = Map.of(
-                "user", "admin",
-                "password", "admin",
                 "name", address,
                 "address", address,
                 "anycast", "",
