@@ -57,10 +57,6 @@ By default, we use `INFO` level. Supported values are `TRACE`, `DEBUG`, `INFO`, 
 Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.
 Example `test-namespace-2a6c` will be always `test-namespace`.
 
-## TODO
-- [ ] Implement management client (amqx)
-- [ ] (?) Use Velocity project to manage usage of ArtemisCloud CRD versions
-
 ## Hints
 - keep code clean
 
