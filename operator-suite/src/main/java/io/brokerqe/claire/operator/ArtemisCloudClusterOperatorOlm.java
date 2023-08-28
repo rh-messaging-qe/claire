@@ -5,11 +5,13 @@
 package io.brokerqe.claire.operator;
 
 import io.brokerqe.claire.Constants;
-import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.exception.WaitException;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
+import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
+import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -25,10 +27,15 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     private String indexImageBundle;
     private String brokerCatalogSourceName = "broker-source-" + TestUtils.getRandomString(2);
     private String subscriptionName = "amq-broker-rhel8-" + TestUtils.getRandomString(2);
+    private String sourceNamespace;
     private List<HasMetadata> olmResources = new ArrayList<>();
 
-    public ArtemisCloudClusterOperatorOlm(String deploymentNamespace, boolean isNamespaced, List<String> watchedNamespaces) {
-        this(deploymentNamespace, isNamespaced, watchedNamespaces, ResourceManager.getEnvironment().getOlmIndexImageBundle(), ResourceManager.getEnvironment().getOlmChannel());
+    public ArtemisCloudClusterOperatorOlm(String deploymentNamespace, boolean isNamespaced, List<String> watchedNamespaces, boolean isOlmLts) {
+        // use this as default released installation using OLM
+        super(deploymentNamespace, isNamespaced, watchedNamespaces);
+        this.brokerCatalogSourceName = "redhat-operators";
+        this.sourceNamespace = "openshift-marketplace";
+        getPackageManifestChannel(isOlmLts);
     }
 
     public ArtemisCloudClusterOperatorOlm(String deploymentNamespace, boolean isNamespaced, List<String> watchedNamespaces, String indexImageBundle, String olmChannel) {
@@ -43,6 +50,36 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
 
     public String getSubscriptionName() {
         return subscriptionName;
+    }
+
+    private void getPackageManifestChannel(boolean isLts) {
+        String olmCSV;
+        PackageChannel nonLtsChannel;
+        PackageChannel ltsChannel;
+
+        PackageManifest amqBrokerPM = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub()
+                .packageManifests().inNamespace(sourceNamespace).withName("amq-broker-rhel8").get();
+        if (!amqBrokerPM.getStatus().getCatalogSource().equals(brokerCatalogSourceName)) {
+            LOGGER.error("[{}] Found unexpected CatalogSource for `amq-broker-rhel8` {}!", deploymentNamespace, amqBrokerPM.getStatus().getCatalogSource());
+            throw new ClaireRuntimeException("Discovered unexpected CatalogSource " + amqBrokerPM.getStatus().getCatalogSource() + "!");
+        }
+
+        String defaultChannel = amqBrokerPM.getStatus().getDefaultChannel(); //non-lts
+        if (amqBrokerPM.getStatus().getChannels().get(0).getName().equals(defaultChannel)) {
+            nonLtsChannel = amqBrokerPM.getStatus().getChannels().get(0);
+            ltsChannel = amqBrokerPM.getStatus().getChannels().get(1);
+        } else {
+            nonLtsChannel = amqBrokerPM.getStatus().getChannels().get(1);
+            ltsChannel = amqBrokerPM.getStatus().getChannels().get(0);
+        }
+        if (isLts) {
+            olmCSV = ltsChannel.getCurrentCSV();
+            this.olmChannel = ltsChannel.getName();
+        } else {
+            olmCSV = nonLtsChannel.getCurrentCSV();
+            this.olmChannel = nonLtsChannel.getName();
+        }
+        LOGGER.info("[{}] Going to install {} from channel: {}", deploymentNamespace, olmCSV, olmChannel);
     }
 
 
@@ -63,6 +100,9 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     public void deploySubscription(String olmChannel) {
+        if (olmChannel == null) {
+            olmChannel = this.olmChannel;
+        }
         String subscriptionString = String.format("""
             apiVersion: operators.coreos.com/v1alpha1
             kind: Subscription
@@ -82,8 +122,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
 
         TestUtils.waitFor("subscription to be active", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
             List<Subscription> subs = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).list().getItems();
-            return subs != null && subs.size() > 0;
-            // TODO: check installplans here?
+            return subs != null && !subs.isEmpty();
         });
 
     }
@@ -100,9 +139,13 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     public void deployOlmInstallation() {
-        deployCatalogSource(indexImageBundle);
         deployOperatorGroup();
-        deploySubscription(olmChannel);
+        if (environmentOperator.isOlmReleased()) {
+            deploySubscription(null);
+        } else {
+            deployCatalogSource(indexImageBundle);
+            deploySubscription(olmChannel);
+        }
 
         try {
             TestUtils.waitFor("broker-operator ClusterServiceVersion to be 'Succeeded'", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {

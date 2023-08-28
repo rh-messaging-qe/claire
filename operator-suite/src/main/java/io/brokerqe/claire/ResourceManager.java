@@ -139,7 +139,12 @@ public class ResourceManager {
             LOGGER.info("Deploying Artemis CO");
             ArtemisCloudClusterOperator clusterOperator;
             if (environmentOperator.isOlmInstallation()) {
-                clusterOperator = new ArtemisCloudClusterOperatorOlm(namespace, isNamespaced, watchedNamespaces);
+                if (environmentOperator.isOlmReleased()) {
+                    clusterOperator = new ArtemisCloudClusterOperatorOlm(namespace, isNamespaced, watchedNamespaces, environmentOperator.isOlmLts());
+                } else {
+                    clusterOperator = new ArtemisCloudClusterOperatorOlm(namespace, isNamespaced, watchedNamespaces,
+                            environmentOperator.getOlmIndexImageBundle(), environmentOperator.getOlmChannel());
+                }
             } else {
                 clusterOperator = new ArtemisCloudClusterOperatorFile(namespace, isNamespaced, watchedNamespaces);
             }

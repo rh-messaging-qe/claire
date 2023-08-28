@@ -510,7 +510,7 @@ public class KubeClient {
     public ClusterServiceVersion getClusterServiceVersion(String namespaceName, String operatorNamePrefix) {
         List<ClusterServiceVersion> csvList = new ArrayList<>();
         getClusterServiceVersions(namespaceName).stream().filter(csv -> csv.getMetadata().getName().startsWith(operatorNamePrefix)).collect(Collectors.toCollection(() -> csvList));
-        if (csvList.size() == 0) {
+        if (csvList.isEmpty()) {
             return null;
         } else if (csvList.size() == 1) {
             return csvList.get(0);

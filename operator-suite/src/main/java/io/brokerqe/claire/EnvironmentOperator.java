@@ -23,6 +23,8 @@ public class EnvironmentOperator extends Environment {
     private final String testLogLevel;
     private final String olmIndexImageBundle;
     private final String olmChannel;
+    private final boolean olmReleased;
+    private final boolean olmLts;
     private final boolean olmInstallation;
     private final String artemisOperatorName;
     private final String artemisOperatorType;
@@ -59,7 +61,9 @@ public class EnvironmentOperator extends Environment {
         testUpgradePlan = System.getenv(Constants.EV_UPGRADE_PLAN);
         olmIndexImageBundle = System.getenv().getOrDefault(Constants.EV_OLM_IIB, null);
         olmChannel = System.getenv().getOrDefault(Constants.EV_OLM_CHANNEL, null);
-        olmInstallation = olmChannel != null && olmIndexImageBundle != null || testUpgradePlan != null;
+        olmReleased = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_OLM_RELEASED, "false"));
+        olmLts = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_OLM_LTS, "false"));
+        olmInstallation = olmReleased || olmChannel != null && olmIndexImageBundle != null || testUpgradePlan != null;
 
         brokerImage = System.getenv(Constants.EV_BROKER_IMAGE);
         brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
@@ -71,12 +75,12 @@ public class EnvironmentOperator extends Environment {
         try {
             projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
             projectSettings.load(projectSettingsFile);
-            artemisOperatorName = String.valueOf(projectSettings.get("artemis.name"));
+            artemisOperatorName = olmInstallation ? "amq-broker" : String.valueOf(projectSettings.get("artemis.name"));
             artemisOperatorType = String.valueOf(projectSettings.get("artemis.type"));
             artemisVersion = artemisVersion == null ? String.valueOf(projectSettings.get("artemis.version")) : artemisVersion;
             // Use ENV Var, project property or default to artemisVersion
             String artemisTestVersionStr = System.getenv().getOrDefault(Constants.EV_ARTEMIS_TEST_VERSION, String.valueOf(projectSettings.get("artemis.test.version")));
-            artemisTestVersionStr = artemisTestVersionStr == null || artemisTestVersionStr.equals("null") ? artemisVersion : artemisTestVersionStr;
+            artemisTestVersionStr = artemisTestVersionStr == null || artemisTestVersionStr.equals("null") || isOlmInstallation() ? artemisVersion : artemisTestVersionStr;
             artemisTestVersion = convertArtemisVersion(artemisTestVersionStr);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -94,7 +98,6 @@ public class EnvironmentOperator extends Environment {
         envVarsSB.append(Constants.EV_DISABLE_RANDOM_NAMESPACES).append("=").append(disabledRandomNs).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_CLUSTER_OPERATOR_MANAGED).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_COLLECT_TEST_DATA).append("=").append(collectTestData).append(Constants.LINE_SEPARATOR);
-
         if (testLogLevel != null) {
             envVarsSB.append(Constants.EV_TEST_LOG_LEVEL).append("=").append(testLogLevel).append(Constants.LINE_SEPARATOR);
         }
@@ -104,12 +107,18 @@ public class EnvironmentOperator extends Environment {
         if (artemisTestVersion != null) {
             envVarsSB.append(Constants.EV_ARTEMIS_TEST_VERSION).append("=").append(artemisTestVersion).append(Constants.LINE_SEPARATOR);
         }
+
+        envVarsSB.append("OLM").append("=").append(olmInstallation).append(Constants.LINE_SEPARATOR);
+        if (olmInstallation) {
+            envVarsSB.append(Constants.EV_OLM_RELEASED).append("=").append(olmReleased).append(Constants.LINE_SEPARATOR);
+        }
         if (olmIndexImageBundle != null) {
             envVarsSB.append(Constants.EV_OLM_IIB).append("=").append(olmIndexImageBundle).append(Constants.LINE_SEPARATOR);
         }
         if (olmChannel != null) {
             envVarsSB.append(Constants.EV_OLM_CHANNEL).append("=").append(olmChannel).append(Constants.LINE_SEPARATOR);
         }
+
         if (brokerImage != null) {
             envVarsSB.append(Constants.EV_BROKER_IMAGE).append("=").append(brokerImage).append(Constants.LINE_SEPARATOR);
         }
@@ -267,6 +276,12 @@ public class EnvironmentOperator extends Environment {
         return olmInstallation;
     }
 
+    public boolean isOlmReleased() {
+        return olmReleased;
+    }
+    public boolean isOlmLts() {
+        return olmLts;
+    }
     public void setupDatabase() {
         throw new ClaireNotImplementedException("Databases on Operator are not yet supported!");
     }

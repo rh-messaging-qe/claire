@@ -24,30 +24,36 @@ mvn test -Dmaven.main.skip=true -Dtest=<my-specific-test>
 By default, Claire executes tests with `file based` Artemis Cloud Cluster Operator deployment, which is downloaded from provided installation examples.
 
 ## How to run tests with OLM
-To override default file based Artemis Cloud Cluster Operator installation by Operator Lifecycle Management, you need to specify `OLM_IIB` Index Image Bundle and
-`OLM_CHANNEL` environment variables, which specifies Subscription channel to use for Operator installation.
+To override default file based Artemis Cloud Cluster Operator installation by Operator Lifecycle Management,
+you need to specify `OLM` to `true` to install latest available OLM (installed from Redhat Operators). If you wanted to use older LTS operator, specify `OLM_LTS` to `true`.
+
+If you would want to try your own OLM operator, you would need to specify only following two parameters:
+`OLM_IIB` Index Image Bundle and `OLM_CHANNEL` environment variables, which specifies Subscription channel to use for Operator installation.
+
 
 
 ## List of available Environment Variables
 
-| Name                      | Description                                      | Default                     | Possible values                                  |
-|---------------------------|--------------------------------------------------|-----------------------------|--------------------------------------------------|
-| ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)       | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
-| ARTEMIS_TEST_VERSION      | ArtemisCloud Version to be used by tests         | not set                     | \<major\>.\<minor\>                              |
-| OPERATOR_IMAGE            | ArtemisCloud Operator image url                  | not set                     | \<image registry url\>                           |
-| BROKER_IMAGE              | Broker image url                                 | not set                     | \<image registry url\>                           |
-| BROKER_INIT_IMAGE         | Broker init image url                            | not set                     | \<image registry url\>                           |
-| BUNDLE_IMAGE              | Bundle image url                                 | not set                     | \<image registry url\>                           |
-| OLM_IIB                   | OLM Index Image Bundle to use                    | not set                     | \<iib image registry url\>                       |
-| OLM_CHANNEL               | OLM channel to use with Subscription             | not set                     | \<channel\>                                      |
-| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices            | not set (`false`)           | `true`, `false`                                  |
-| LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | \<directory\>                                    |
-| TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
-| CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)  | `true`                      | `false`                                          |
-| COLLECT_TEST_DATA         | Whether to gather test data on error or not      | `true`                      | `true`, `false`                                  |
-| CUSTOM_EXTRA_DELAY        | Prolonged all internal waitFor calls (seconds)   | `0`                         | \<number of seconds\>                            |
-| OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile) | 7.10.2 url                  | \<url\>                                          |
-| OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)          | main                        | \<branch\>                                       |
+| Name                      | Description                                                         | Default                     | Possible values                                  |
+|---------------------------|---------------------------------------------------------------------|-----------------------------|--------------------------------------------------|
+| ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)                          | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
+| ARTEMIS_TEST_VERSION      | ArtemisCloud Version to be used by tests                            | not set                     | \<major\>.\<minor\>                              |
+| OPERATOR_IMAGE            | ArtemisCloud Operator image url                                     | not set                     | \<image registry url\>                           |
+| BROKER_IMAGE              | Broker image url                                                    | not set                     | \<image registry url\>                           |
+| BROKER_INIT_IMAGE         | Broker init image url                                               | not set                     | \<image registry url\>                           |
+| BUNDLE_IMAGE              | Bundle image url                                                    | not set                     | \<image registry url\>                           |
+| OLM                       | Whether to install latest available Operator                        | false                       | `true`, `false`                                  |
+| OLM_LTS                   | Whether to install lts or latest available operator (tied to `OLM`) | false                       | `true`, `false`                                  |
+| OLM_IIB                   | OLM Index Image Bundle to use                                       | not set                     | \<iib image registry url\>                       |
+| OLM_CHANNEL               | OLM channel to use with Subscription                                | not set                     | \<channel\>                                      |
+| DISABLE_RANDOM_NAMESPACES | Whether to use random string suffices                               | not set (`false`)           | `true`, `false`                                  |
+| LOGS_LOCATION             | Location where to generate collected logs                           | `test-logs`                 | \<directory\>                                    |
+| TEST_LOG_LEVEL            | Set logging level of test suite                                     | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+| CLUSTER_OPERATOR_MANAGED  | Whether test suite manages CO or not (Makefile)                     | `true`                      | `false`                                          |
+| COLLECT_TEST_DATA         | Whether to gather test data on error or not                         | `true`                      | `true`, `false`                                  |
+| CUSTOM_EXTRA_DELAY        | Prolonged all internal waitFor calls (seconds)                      | `0`                         | \<number of seconds\>                            |
+| OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile)                    | 7.10.2 url                  | \<url\>                                          |
+| OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)                             | main                        | \<branch\>                                       |
 
 ## Setting log level
 Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
