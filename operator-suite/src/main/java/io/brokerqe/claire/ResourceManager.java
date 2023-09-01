@@ -60,8 +60,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -412,7 +411,7 @@ public class ResourceManager {
     }
     public static void waitForArtemisStatusUpdate(String namespace, ActiveMQArtemis initialArtemis, String updateType, String expectedReason, long timeoutMillis, boolean checkDate) {
         LOGGER.info("[{}] Waiting for broker {} custom resource status update, limit: {} seconds, period: 5 seconds", namespace, initialArtemis.getMetadata().getName(), timeoutMillis / 1000);
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+//        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
         TestUtils.waitFor("Broker CR status to reach correct status", Constants.DURATION_5_SECONDS, timeoutMillis, () -> {
             ActiveMQArtemis updatedBroker = getArtemisClient().inNamespace(namespace).resource(initialArtemis).get();
             if (updatedBroker.getStatus() != null && updatedBroker.getStatus().getConditions() != null) {
@@ -421,8 +420,8 @@ public class ResourceManager {
                     if (condition.getType().equals(updateType)) {
                         if (condition.getReason().equals(expectedReason)) {
                             if (checkDate) {
-                                LocalDateTime updateDate = LocalDateTime.parse(condition.getLastTransitionTime(), dtf);
-                                LocalDateTime initialDate = LocalDateTime.parse(initialArtemis.getMetadata().getCreationTimestamp(), dtf);
+                                ZonedDateTime updateDate = condition.getLastTransitionTime();
+                                ZonedDateTime initialDate = ZonedDateTime.parse(initialArtemis.getMetadata().getCreationTimestamp());
                                 LOGGER.debug("[{}] Comparing time of Broker creation ({}) to time of BrokerProperties application ({})", namespace, initialDate, updateDate);
                                 if (updateDate.isAfter(initialDate)) {
                                     return true;

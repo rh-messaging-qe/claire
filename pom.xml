@@ -23,7 +23,7 @@
         <commons-compress.version>1.23.0</commons-compress.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
-        <fabric8.version>6.5.0</fabric8.version>
+        <fabric8.version>6.8.1</fabric8.version>
         <hamcrest.version>2.2</hamcrest.version>
         <jackson-databind.version>2.15.1</jackson-databind.version>
         <datafaker.version>1.8.1</datafaker.version>
@@ -32,7 +32,7 @@
         <junit-jupiter.version>5.9.2</junit-jupiter.version>
         <junit-platform.version>1.9.2</junit-platform.version>
         <logback.version>1.4.6</logback.version>
-        <lombok.version>1.18.26</lombok.version>
+        <lombok.version>1.18.28</lombok.version>
         <maven.checkstyle.version>3.1.2</maven.checkstyle.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -44,7 +44,7 @@
         <qpid.jms.version>1.6.0</qpid.jms.version>
         <selenium.version>4.10.0</selenium.version>
         <slf4j.version>2.0.7</slf4j.version>
-        <sundrio.version>0.94.0</sundrio.version>
+        <sundrio.version>0.100.3</sundrio.version>
         <testcontainers.version>1.18.3</testcontainers.version>
         <zip4j.version>2.6.1</zip4j.version>
     </properties>
