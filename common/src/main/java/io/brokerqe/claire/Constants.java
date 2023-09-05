@@ -275,4 +275,16 @@ public interface Constants {
     String MARIADB_DRIVER_URL = "https://dlm.mariadb.com/2912798/Connectors/java/connector-java-3.1.4/mariadb-java-client-3.1.4.jar";
     String MSSQL_DRIVER_URL = "https://download.microsoft.com/download/a/9/1/a91534b0-ed8c-4501-b491-e1dd0a20335a/sqljdbc_12.2.0.0_enu.zip";
     String ORACLE_DRIVER_URL = "https://download.oracle.com/otn-pub/otn_software/jdbc/2110/ojdbc11.jar";
+
+    String ADDRESSSETTINGS_POLICY_DROP = "DROP";
+    String ADDRESSSETTINGS_POLICY_FAIL = "FAIL";
+    String ADDRESSSETTINGS_POLICY_PAGE = "PAGE";
+    String ADDRESSSETTINGS_POLICY_BLOCK = "BLOCK";
+    String ADDRESSETTINGS_POLICY_KILL = "KILL";
+    String ADDRESSETTINGS_POLICY_NOTIFY = "NOTIFY";
+    String ADDRESSSETTING_FORCE = "FORCE";
+    String ADDRESSSETTING_OFF = "OFF";
+    String ADDRESSSETTINGS_ROUTING_ANYCAST = "ANYCAST";
+    String ADDRESSSETTINGS_ROUTING_MULTICAST = "MULTICAST";
+    String ADDRESSSETING_UNIT_MPS = "MESSAGES_PER_SECOND";
 }

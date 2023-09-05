@@ -364,5 +364,4 @@ public abstract class AbstractSystemTests implements TestSeparator {
             ResourceManager.undeployClientsContainer(namespace, clients);
         }
     }
-
 }
