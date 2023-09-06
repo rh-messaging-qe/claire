@@ -26,6 +26,21 @@ public abstract class ClaireExecutionListener implements TestExecutionListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClaireExecutionListener.class);
     protected static boolean setupPerformed = false;
+    private static int totalTestCount;
+    private static int currentTestCounter = 1;
+
+    public static int getTotalTestCount() {
+        return totalTestCount;
+    }
+
+    public static int getCurrentTestCounter() {
+        return currentTestCounter;
+    }
+
+    public static void incrementCurrentTestCounter() {
+        ClaireExecutionListener.currentTestCounter++;
+    }
+
 
     public void testPlanExecutionStarted(TestPlan testPlan) {
         createTestPlan(testPlan);
@@ -57,7 +72,12 @@ public abstract class ClaireExecutionListener implements TestExecutionListener {
             }).collect(Collectors.toCollection(() -> testsList));
         });
         String formattedTestPlan = String.join(",", testsList).replaceAll(",\\n,", "\n ").replaceFirst(",", " ");
+        totalTestCount = testsList.size();
+        LOGGER.warn("Initial test count={}", totalTestCount);
+        totalTestCount = testsList.size() - Collections.frequency(testsList, "\n");
+        LOGGER.warn("Initial test count after removal of frequency={}", totalTestCount);
         LOGGER.info("[TestPlan] Will execute following {} tests: {}", testsList.size() - Collections.frequency(testsList, "\n"), formattedTestPlan);
+
     }
 
     protected static void setupLoggingLevel() {

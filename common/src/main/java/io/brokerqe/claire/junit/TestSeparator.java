@@ -28,13 +28,16 @@ public interface TestSeparator {
     @BeforeEach
     default void beforeEachTest(ExtensionContext testContext) {
         LOGGER.info((char) 27 + "[34m" + String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + (char) 27 + "[0m");
-        LOGGER.info((char) 27 + "[33m" + String.format("Started: %s.%s", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()) + (char) 27 + "[0m");
+        LOGGER.info((char) 27 + "[33m" + String.format("[%s/%s] Started: %s.%s",
+                ClaireExecutionListener.getCurrentTestCounter(), ClaireExecutionListener.getTotalTestCount(),
+                testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()) + (char) 27 + "[0m");
     }
 
     @AfterEach
     default void afterEachTest(ExtensionContext testContext) {
         LOGGER.info((char) 27 + "[33m" + String.format("Finished: %s.%s", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()) + (char) 27 + "[0m");
         LOGGER.info((char) 27 + "[34m" + String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + (char) 27 + "[0m");
+        ClaireExecutionListener.incrementCurrentTestCounter();
     }
 
     @AfterAll
