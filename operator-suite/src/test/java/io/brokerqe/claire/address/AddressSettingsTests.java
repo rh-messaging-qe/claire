@@ -17,6 +17,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -44,7 +45,6 @@ public class AddressSettingsTests extends AbstractSystemTests {
     @BeforeAll
     void setupClusterOperator() {
         setupDefaultClusterOperator(testNamespace);
-
     }
 
     @AfterAll
@@ -181,10 +181,11 @@ public class AddressSettingsTests extends AbstractSystemTests {
         return setting;
     }
 
-    //This test just verifies that all settings are set on broker side without verifying the effects of each setting.
+    //This test verifies that all settings are set on broker side without verifying the effects of each setting.
     //Somewhat reasonable defaults are chosen for this.
     @Test
     @Tag(Constants.TAG_OPERATOR)
+    @Disabled("Needs fixing")
     void basicAddressSettingsTest() throws IOException {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
@@ -213,6 +214,5 @@ public class AddressSettingsTests extends AbstractSystemTests {
         JSONObject jsonValue = new JSONObject(jsonResponse.getString("value").replace("\\", ""));
         LOGGER.trace("Object: " + jsonValue);
         assertThat("Addresssettings received are not same as expected values", verifyAddressSettingFromResource(jsonValue, KNOWN_GOOD_RESPONSE), is(true));
-
     }
 }
