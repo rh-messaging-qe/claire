@@ -120,6 +120,7 @@ public class WebConsoleTests extends AbstractSystemTests {
             if (getClient().getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
                 Route route = (Route) service;
                 route.getSpec().setTls(new TLSConfigBuilder().withInsecureEdgeTerminationPolicy("Redirect").withTermination("edge").build());
+                route.getMetadata().setManagedFields(null);
                 ((OpenShiftClient) getKubernetesClient()).routes().withName(route.getMetadata().getName()).patch(PatchContext.of(PatchType.SERVER_SIDE_APPLY), route);
                 TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
             } else {
