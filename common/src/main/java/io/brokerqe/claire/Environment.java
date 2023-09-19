@@ -40,6 +40,8 @@ public abstract class Environment {
     private static Environment environment;
     private Properties appProperties;
 
+    protected HashMap<String, HashMap<String, HashMap<String, String>>> buildProperties;
+
 
     public <T extends Environment> void set(T env) {
         environment = env;
@@ -66,16 +68,9 @@ public abstract class Environment {
         if (isUpstreamArtemis()) {
             return ArtemisVersion.values()[ArtemisVersion.values().length - 1];
         } else {
-            try {
-                File versionsFile = new File(Constants.VERSION_MAPPER_PATH);
-                HashMap<String, HashMap<String, String>> versions = new Yaml().load(FileUtils.readFileToString(versionsFile, Charset.defaultCharset()));
-                LOGGER.info("[ENV] Found mapping of provided {} into {}", versions.get(version), version);
-                version = versions.get(version).get("upstream");
-            } catch (IOException e) {
-                String errMsg = String.format("[ENV] Expecting to find version file %s", Constants.VERSION_MAPPER_PATH);
-                LOGGER.error(errMsg);
-                throw new ClaireRuntimeException(errMsg, e);
-            }
+            String artemisContainerVersionUpstream = String.valueOf(buildProperties.get("operator").get("artemis_container_version_upstream"));
+            LOGGER.info("[ENV] Found mapping of provided {} into {}", version, artemisContainerVersionUpstream);
+            version = artemisContainerVersionUpstream;
         }
 
         String versionSplit = version.replace(".", "");
@@ -113,6 +108,19 @@ public abstract class Environment {
         } catch (IOException e) {
             String error = String.format("Error loading properties file %s: %s", propertiesFile, e.getMessage());
             throw new ClaireRuntimeException(error, e);
+        }
+    }
+
+    protected void loadBuildProperties() {
+        if (buildProperties == null) {
+            File propFile = new File(Constants.BUILD_PROPERTIES_FILE);
+            try {
+                buildProperties = new Yaml().load(FileUtils.readFileToString(propFile, Charset.defaultCharset()));
+            } catch (IOException e) {
+                String errMsg = String.format("[ENV] Expecting to find build properties file %s", Constants.BUILD_PROPERTIES_FILE);
+                LOGGER.error(errMsg);
+                throw new ClaireRuntimeException(errMsg, e);
+            }
         }
     }
 }

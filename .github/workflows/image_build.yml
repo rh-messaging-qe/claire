@@ -1,50 +1,87 @@
-name: Build and Push Image
+name: Build and Push Images
 
 on:
   workflow_dispatch:
 
-env:
-  IMAGE_NAME: claire
-  IMAGE_REGISTRY: quay.io
-  IMAGE_NAMESPACE: rhmessagingqe
-  ARCHS: amd64, arm64, ppc64le, s390x
-
 jobs:
   build_image:
     name: Build and push image
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Set up a cache for Maven
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
-      - name: Build Image
-        id: build-image
-        uses: redhat-actions/buildah-build@v2
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          image: ${{ env.IMAGE_NAME }}
-          tags: latest ${{ github.sha }} ${{ github.ref_name }}
-          archs: ${{ env.ARCHS }}
-          containerfiles: |
-            ./Containerfile
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
 
-      - name: Push To quay.io
-        id: push-to-quay
-        uses: redhat-actions/push-to-registry@v2
+      - name: Log in to Quay.io
+        uses: redhat-actions/podman-login@v1
         with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAMESPACE }}
           username: ${{ secrets.QUAY_USER }}
           password: ${{ secrets.QUAY_TOKEN }}
+          registry: quay.io
 
-      - name: Print images URL
-        run: echo "Images pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: testing-cluster
+
+      - name: Prepare kind kubeconfig files
+        run: |
+          kubectl config view --minify --raw > ./kubeconfig
+          kubectl --kubeconfig=./kubeconfig config set clusters.kind-kind.server https://kubernetes.default.svc
+
+      - name: Retrieve activemq-artemis latest version from properties file
+        id: activemq_artemis_version
+        run: echo "VERSION=$(yq '.operator.versions.latest.activemq-artemis' claire_properties.yaml)" >> "$GITHUB_OUTPUT"
+
+      - name: Build Claire for Artemis
+        run: make operator_build OPERATOR_VERSION=${{ steps.activemq_artemis_version.outputs.VERSION }}
+
+      - name: Build Claire for Artemis container image
+        run: |
+          make build_container OPERATOR_CONTAINER_NAMESPACE=${{ secrets.QUAY_NAMESPACE }} OPERATOR_VERSION=${{ steps.activemq_artemis_version.outputs.VERSION }}
+
+      - name: Load Claire for Artemis container image into KinD
+        run: |
+          podman save quay.io/${{ secrets.QUAY_NAMESPACE }}/claire:activemq-artemis-${{ steps.activemq_artemis_version.outputs.VERSION }}.amd64 | docker load
+          kind load docker-image --name testing-cluster quay.io/${{ secrets.QUAY_NAMESPACE }}/claire:activemq-artemis-${{ steps.activemq_artemis_version.outputs.VERSION }}.amd64
+
+      - name: Test Claire for Artemis container image
+        run: operator-suite/container/scripts/run-test.sh -r quay.io/${{ secrets.QUAY_NAMESPACE }}/claire --image-tag activemq-artemis-${{ steps.activemq_artemis_version.outputs.VERSION }}.amd64 --image-namespace ${{ secrets.QUAY_NAMESPACE }}
+
+      - name: Push Claire for Artemis container image to registry
+        run: make build_container OPERATOR_CONTAINER_DEPLOY=true OPERATOR_CONTAINER_SKIP_BUILD=true OPERATOR_CONTAINER_NAMESPACE=${{ secrets.QUAY_NAMESPACE }}
+
+      - name: Retrieve AMQ-Broker latest version from properties file
+        id: amq_broker_version
+        run: echo "VERSION=$(yq '.operator.versions.latest.amq-broker' claire_properties.yaml)" >> "$GITHUB_OUTPUT"
+
+      - name: Build Claire for AMQ-Broker
+        run: make clean_all operator_build OPERATOR_TYPE=amq-broker OPERATOR_VERSION=${{ steps.amq_broker_version.outputs.VERSION }}
+
+      - name: Build Claire for AMQ-Broker container image
+        run: |
+          make build_container OPERATOR_TYPE=amq-broker OPERATOR_VERSION=${{ steps.amq_broker_version.outputs.VERSION }} OPERATOR_CONTAINER_GENERATE_LPT_TAG=true OPERATOR_CONTAINER_NAMESPACE=${{ secrets.QUAY_NAMESPACE }}
+
+      - name: Load Claire for AMQ-Broker container image into KinD
+        run: |
+          podman save quay.io/${{ secrets.QUAY_NAMESPACE }}/claire:amq-broker-${{ steps.amq_broker_version.outputs.VERSION }}.amd64 | docker load
+          kind load docker-image --name testing-cluster quay.io/${{ secrets.QUAY_NAMESPACE }}/claire:amq-broker-${{ steps.amq_broker_version.outputs.VERSION }}.amd64
+
+      - name: Test Claire for AMQ-Broker container image
+        run: operator-suite/container/scripts/run-test.sh --image-tag amq-broker-${{ steps.amq_broker_version.outputs.VERSION }}.amd64 --image-namespace ${{ secrets.QUAY_NAMESPACE }}
+
+      - name: Push Claire for AMQ-Broker container image to registry
+        run: make build_container OPERATOR_TYPE=amq-broker OPERATOR_CONTAINER_DEPLOY=true OPERATOR_CONTAINER_SKIP_BUILD=true OPERATOR_CONTAINER_GENERATE_LPT_TAG=true OPERATOR_CONTAINER_NAMESPACE=${{ secrets.QUAY_NAMESPACE }}
+

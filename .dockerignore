@@ -1,13 +1,13 @@
+.dockerignore
+.git*
 .idea/
-.m2/
-*/artemis/
+operator-crd/artemis
+standalone-suite/artemis
 */test-logs/
 */test-tmp/
-build_properties.yaml
 container_build_*.log
 performance/
 pom.xml.versionsBackup
 standalone-suite/https_console_tune.yaml
-target/
 test-results/
 tmp/

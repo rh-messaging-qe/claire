@@ -38,6 +38,7 @@ public interface ArtemisConstants {
     int DEFAULT_MQTT_PORT = 1883;
     int DEFAULT_STOMP_PORT = 61613;
     int DEFAULT_WEB_CONSOLE_PORT = 8161;
+    String SNAPSHOT_VERSION = "snapshot";
 
     // Security
     String SASL_ANON = "ANONYMOUS";

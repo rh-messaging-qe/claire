@@ -90,11 +90,11 @@ public abstract class ArtemisCloudClusterOperator {
     }
 
     public String getOperatorOldName() {
-        return environmentOperator.getArtemisOperatorName() + operatorOldNameSuffix;
+        return environmentOperator.getOperatorType() + operatorOldNameSuffix;
     }
 
     public String getOperatorNewName() {
-        return environmentOperator.getArtemisOperatorName() + operatorNewNameSuffix;
+        return environmentOperator.getOperatorType() + operatorNewNameSuffix;
     }
 
     public static String getOperatorControllerManagerName(Path yamlFile) {

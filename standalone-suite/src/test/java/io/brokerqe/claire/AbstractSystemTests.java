@@ -29,9 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.TextMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.TextMessage;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;

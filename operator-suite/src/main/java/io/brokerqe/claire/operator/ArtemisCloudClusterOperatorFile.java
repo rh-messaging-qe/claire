@@ -25,9 +25,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator {
 
@@ -178,14 +180,24 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
     }
 
     protected List<Path> getClusteredOperatorInstallFiles() {
-        List<Path> temp = new ArrayList<>(DEFAULT_OPERATOR_INSTALL_FILES);
+        List<Path> temp = new ArrayList<>(getOperatorInstallFiles());
         temp.add(ArtemisFileProvider.getClusterRoleInstallFile());
         temp.add(ArtemisFileProvider.getClusterRoleBindingInstallFile());
         return temp;
     }
 
+    private List<Path> getOperatorInstallFiles() {
+        ArrayList<Path> files = new ArrayList<>();
+        files.add(ArtemisFileProvider.getServiceAccountInstallFile());
+        files.add(ArtemisFileProvider.getElectionRoleInstallFile());
+        files.add(ArtemisFileProvider.getElectionRoleInstallFile());
+        files.add(ArtemisFileProvider.getElectionRoleBindingInstallFile());
+        files.add(ArtemisFileProvider.getOperatorInstallFile());
+        return files;
+    }
+
     protected List<Path> getNamespacedOperatorInstallFiles() {
-        List<Path> temp = new ArrayList<>(DEFAULT_OPERATOR_INSTALL_FILES);
+        List<Path> temp = getOperatorInstallFiles();
         temp.add(ArtemisFileProvider.getNamespaceRoleInstallFile());
         temp.add(ArtemisFileProvider.getNamespaceRoleBindingInstallFile());
         return temp;
@@ -208,7 +220,7 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
 
     public void setArtemisOperatorFile(Path operatorFile) {
         if (operatorInstallFiles == null) {
-            operatorInstallFiles = new ArrayList<>(List.copyOf(DEFAULT_OPERATOR_INSTALL_FILES));
+            operatorInstallFiles = new ArrayList<>(List.copyOf(getOperatorInstallFiles()));
         }
         operatorInstallFiles.remove(ArtemisFileProvider.getOperatorInstallFile());
         operatorInstallFiles.add(operatorFile);
@@ -221,7 +233,7 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
 
     public void setArtemisClusterRoleBindingFile(Path clusterRoleBindingFile) {
         if (operatorInstallFiles == null) {
-            operatorInstallFiles = new ArrayList<>(List.copyOf(DEFAULT_OPERATOR_INSTALL_FILES));
+            operatorInstallFiles = new ArrayList<>(List.copyOf(getOperatorInstallFiles()));
         }
         operatorInstallFiles.remove(ArtemisFileProvider.getClusterRoleBindingInstallFile());
         operatorInstallFiles.add(clusterRoleBindingFile);
@@ -249,7 +261,17 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         if (imageType.equals(ArtemisConstants.BROKER_IMAGE_OPERATOR_PREFIX) || imageType.equals(ArtemisConstants.BROKER_INIT_IMAGE_OPERATOR_PREFIX)) {
             envVars = operator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
             String finalImageTypeVersion = imageTypeVersion;
-            EnvVar brokerImageEV = envVars.stream().filter(envVar -> envVar.getName().equals(finalImageTypeVersion)).findFirst().get();
+            Optional<EnvVar> optEnvVar = envVars.stream().filter(envVar -> envVar.getName().equals(finalImageTypeVersion)).findFirst();
+            EnvVar brokerImageEV;
+            if (optEnvVar.isPresent()) {
+                brokerImageEV = optEnvVar.get();
+            } else {
+                brokerImageEV = envVars.stream()
+                        .filter(envVar -> envVar.getName().contains(imageType))
+                        .sorted(Comparator.comparing(EnvVar::getName).reversed())
+                        .findFirst()
+                        .orElse(null);
+            }
             brokerImageEV.setValue(imageUrl);
             LOGGER.info("[Operator] Updating {} -> {}", finalImageTypeVersion, imageUrl);
         }

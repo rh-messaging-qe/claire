@@ -13,6 +13,7 @@ import io.brokerqe.claire.container.database.MssqlContainer;
 import io.brokerqe.claire.container.database.MysqlContainer;
 import io.brokerqe.claire.container.database.PostgresqlContainer;
 import io.brokerqe.claire.container.database.ProvidedDatabase;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,9 +89,7 @@ public class EnvironmentStandalone extends Environment {
         yacfgArtemisContainerImage = getConfigurationValue(Constants.EV_YACFG_ARTEMIS_CONTAINER_IMAGE,
                 Constants.PROP_YACFG_ARTEMIS_CONTAINER_IMAGE, getDefaultYacfgArtemisImage(artemisVersionStr));
 
-        yacfgArtemisProfile = getConfigurationValue(Constants.EV_YACFG_ARTEMIS_PROFILE,
-                Constants.PROP_YACFG_ARTEMIS_PROFILE,
-                Constants.DEFAULT_YACFG_ARTEMIS_PROFILE.replaceAll("%ARTEMIS_VERSION%", getArtemisMajorMinorMicroVersion(artemisVersionStr)));
+        yacfgArtemisProfile = getYacfgArtemisProfile(artemisVersionStr);
 
         yacfgArtemisProfilesOverrideDir =  getConfigurationValue(Constants.EV_YACFG_ARTEMIS_PROFILES_OVERRIDE_DIR,
                 Constants.PROP_YACFG_ARTEMIS_PROFILES_OVERRIDE_DIR, null);
@@ -101,8 +100,26 @@ public class EnvironmentStandalone extends Environment {
         printAllUsedTestVariables();
     }
 
+    private String getYacfgArtemisProfile(String artemisVersionStr) {
+        String yacfgProfileVersion;
+        if (isSnapshotVersion(artemisVersionStr)) {
+            yacfgProfileVersion = ArtemisConstants.SNAPSHOT_VERSION;
+        } else {
+            yacfgProfileVersion = getArtemisMajorMinorMicroVersion(artemisVersionStr);
+        }
+        return getConfigurationValue(Constants.EV_YACFG_ARTEMIS_PROFILE,
+                    Constants.PROP_YACFG_ARTEMIS_PROFILE,
+                    Constants.DEFAULT_YACFG_ARTEMIS_PROFILE.replaceAll("%ARTEMIS_VERSION%", yacfgProfileVersion));
+    }
+
     private String getDefaultYacfgArtemisImage(String artemisVersionStr) {
-        return Constants.DEFAULT_YACFG_ARTEMIS_CONTAINER_IMAGE_BASE + ":" + getArtemisMajorMinorMicroVersion(artemisVersionStr);
+        String yacfgImage = Constants.DEFAULT_YACFG_ARTEMIS_CONTAINER_IMAGE_BASE;
+        String yacfgImageTag = isSnapshotVersion(artemisVersionStr) ? Constants.YACFG_SNAPSHOT_VERSION : getArtemisMajorMinorMicroVersion(artemisVersionStr);
+        return yacfgImage + ":" + yacfgImageTag;
+    }
+
+    private boolean isSnapshotVersion(String artemisVersionStr) {
+        return StringUtils.containsIgnoreCase(artemisVersionStr, "-" + ArtemisConstants.SNAPSHOT_VERSION);
     }
 
     public String getYacfgArtemisProfilesOverrideDir() {
