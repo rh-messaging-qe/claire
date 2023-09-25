@@ -103,8 +103,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
         assertCustomLogMsg(artemisPod);
-
         assertLoggingIsInFilesystem(artemisPod);
+        assertLoggingDoesNotContainsException(artemisPod);
 
         ResourceManager.deleteArtemis(testNamespace, artemis);
         getClient().deleteSecret(testNamespace, LOGGER_SECRET_NAME);
@@ -135,11 +135,18 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
         assertCustomLogMsg(artemisPod);
-
         assertLoggingIsInFilesystem(artemisPod);
+        assertLoggingDoesNotContainsException(artemisPod);
 
         ResourceManager.deleteArtemis(testNamespace, artemis);
         getClient().deleteConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME);
+    }
+
+    private void assertLoggingDoesNotContainsException(Pod artemisPod) {
+        LOGGER.info("[{}] Ensure artemis pod logs does not contains java exceptions", testNamespace);
+        String artemisLogs = getClient().getLogsFromPod(artemisPod);
+        org.assertj.core.api.Assertions.assertThat(artemisLogs).doesNotContain(Constants.ARTEMIS_LOG_EXCEPTION);
+        org.assertj.core.api.Assertions.assertThat(artemisLogs).doesNotContain(Constants.ARTEMIS_LOG_EXCEPTION_CAUSE);
     }
 
     @Test

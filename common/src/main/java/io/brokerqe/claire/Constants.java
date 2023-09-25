@@ -49,6 +49,8 @@ public interface Constants {
     String ARTEMIS_IS_LIVE_LOG_MSG = " INFO  [org.apache.activemq.artemis.core.server] AMQ221007: Server is now live";
     String ARTEMIS_USING_CUSTOM_LOG_MSG = "There is a custom logger configuration defined in JAVA_ARGS_APPEND: -Dlog4j2.configurationFile=";
     String ARTEMIS_USING_DEFAULT_LOG_MSG = "Using default logging configuration(console only)";
+    String ARTEMIS_LOG_EXCEPTION = "java.lang.Exception";
+    String ARTEMIS_LOG_EXCEPTION_CAUSE = "Caused by: ";
 
     String BROKER_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Kubernetes_";
     String BROKER_INIT_IMAGE_OPERATOR_PREFIX = "RELATED_IMAGE_ActiveMQ_Artemis_Broker_Init_";
