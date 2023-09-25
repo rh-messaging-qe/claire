@@ -16,6 +16,7 @@ import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     }
 
     @Test
+    @Disabled("ENTMQBR-8403")
     void defaultLoggingTest() {
         String artemisName = "artemis-default-log";
         ActiveMQArtemis artemis = ResourceManager.createArtemis(testNamespace, artemisName);
