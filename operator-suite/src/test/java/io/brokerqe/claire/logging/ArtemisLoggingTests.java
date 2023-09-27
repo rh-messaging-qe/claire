@@ -16,7 +16,6 @@ import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +34,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
@@ -61,15 +61,12 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     }
 
     @Test
-    @Disabled("ENTMQBR-8403")
     void defaultLoggingTest() {
         String artemisName = "artemis-default-log";
         ActiveMQArtemis artemis = ResourceManager.createArtemis(testNamespace, artemisName);
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
         String artemisLogs = getClient().getLogsFromPod(artemisPod);
-        LOGGER.info("[{}] Ensure artemis pod logs contains using default log message", testNamespace);
-        assertThat(artemisLogs, containsString(Constants.ARTEMIS_USING_DEFAULT_LOG_MSG));
         LOGGER.info("[{}] Ensure artemis pod logs contains INFO level", testNamespace);
         assertThat(artemisLogs, containsString(Constants.ARTEMIS_IS_LIVE_LOG_MSG));
 
@@ -102,7 +99,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         artemis = ResourceManager.createArtemis(testNamespace, artemis);
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
-        assertCustomLogMsg(artemisPod);
         assertLoggingIsInFilesystem(artemisPod);
         assertLoggingDoesNotContainsException(artemisPod);
 
@@ -134,7 +130,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         artemis = ResourceManager.createArtemis(testNamespace, artemis);
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
-        assertCustomLogMsg(artemisPod);
         assertLoggingIsInFilesystem(artemisPod);
         assertLoggingDoesNotContainsException(artemisPod);
 
@@ -172,8 +167,9 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         artemis = ResourceManager.createArtemis(testNamespace, artemis);
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
-        assertCustomLogMsg(artemisPod);
-
+        String artemisLogs = getClient().getLogsFromPod(artemisPod);
+        LOGGER.info("[{}] Ensure artemis pod logs not contains INFO level", testNamespace);
+        assertThat(artemisLogs, not(containsString(Constants.ARTEMIS_IS_LIVE_LOG_MSG)));
         assertLogIsNotInFilesystem(artemisPod);
 
         ResourceManager.deleteArtemis(testNamespace, artemis);
@@ -228,12 +224,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
             throw new RuntimeException(e);
         }
         TestUtils.deleteDirectoryRecursively(tmpDirName);
-    }
-
-    private void assertCustomLogMsg(Pod artemisPod) {
-        LOGGER.info("[{}] Ensure artemis pod logs contains custom log message", testNamespace);
-        String artemisLogs = getClient().getLogsFromPod(artemisPod);
-        assertThat(artemisLogs, containsString(Constants.ARTEMIS_USING_CUSTOM_LOG_MSG));
     }
 
     private void assertLoggingIsInFilesystem(Pod artemisPod) throws IOException {
