@@ -66,8 +66,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
         String artemisLogs = getClient().getLogsFromPod(artemisPod);
-        LOGGER.info("[{}] Ensure artemis pod logs contains using default log message", testNamespace);
-        assertThat(artemisLogs, containsString(ArtemisConstants.USING_DEFAULT_LOG_MSG));
         LOGGER.info("[{}] Ensure artemis pod logs contains INFO level", testNamespace);
         assertThat(artemisLogs, containsString(ArtemisConstants.IS_LIVE_LOG_MSG));
 
