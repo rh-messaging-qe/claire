@@ -20,15 +20,24 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
 
       - name: Set up a cache for Maven
         uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+      - name: Configure GitHub Packages Maven repository
+        run: cat ~/.m2/settings.xml
+      - name: Configure GitHub Packages Maven repository
+        run: cp .github/workflows/settings.xml ~/.m2/
 
       - name: Build project with Maven
         run: make build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run standalone smoke tests
         run: make standalone_test_smoke
