@@ -12,8 +12,6 @@ jobs:
   build_and_test:
     name: Build Maven
     runs-on: ubuntu-latest
-    env:
-      MVN_DEFAULT_CMD: './mvnw -T 1.5C --no-transfer-progress'
     steps:
       - uses: actions/checkout@v3
 
@@ -29,13 +27,8 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
-      - name: Deploy Maven Wrapper
-        run: mvn --non-recursive wrapper:wrapper -Dmaven=3.9.1
-
       - name: Build standalone tests with Maven
-        run: make build
-        env:
-          MAVEN_ARGS: '-pl !:operator-suite'
+        run: make build MVN_DEFAULT_CMD='mvw -T 1.5C --no-transfer-progress -pl !:operator-suite'
 
       - name: Run standalone smoke tests
         run: make standalone_test_smoke
