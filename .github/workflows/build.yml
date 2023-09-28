@@ -28,7 +28,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
       - name: Build standalone tests with Maven
-        run: make build MVN_DEFAULT_CMD='mvw -T 1.5C --no-transfer-progress -pl !:operator-suite'
+        run: make build MVN_DEFAULT_CMD='mvn -T 1.5C --no-transfer-progress -pl !:operator-suite'
 
       - name: Run standalone smoke tests
         run: make standalone_test_smoke
