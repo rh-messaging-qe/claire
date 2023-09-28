@@ -2,6 +2,7 @@ name: Java Maven build
 
 on:
   push:
+  pull_request:
     branches:
       - main
 
