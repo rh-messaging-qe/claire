@@ -31,7 +31,6 @@ jobs:
         run: make build
         env:
           MAVEN_ARGS: '-pl !:operator-suite'
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run standalone smoke tests
         run: make standalone_test_smoke
