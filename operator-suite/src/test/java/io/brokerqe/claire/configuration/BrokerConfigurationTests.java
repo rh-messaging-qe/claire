@@ -678,8 +678,12 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         ));
         boolean logStatus = ResourceManager.getArtemisStatus(testNamespace, broker, Constants.CONDITION_TYPE_DEPLOYED,
                 Constants.CONDITION_REASON_RESOURCE_ERROR, "must be no more than 63 characters, metadata.labels: Invalid value: \\\"" + brokerName);
-        assertThat("Artemis condition does not match", Boolean.TRUE, is(logStatus));
+        assertThat("Artemis ready condition does not match", logStatus);
 
+        boolean readyCondition = ResourceManager.getArtemisStatus(testNamespace, broker, Constants.CONDITION_TYPE_READY,
+                Constants.CONDITION_REASON_WAITING_FOR_ALL_CONDITIONS, "Some conditions are not met");
+        assertThat("Artemis ready condition does not match", readyCondition);
+        
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 

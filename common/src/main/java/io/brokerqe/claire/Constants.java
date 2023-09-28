@@ -76,6 +76,7 @@ public interface Constants {
     String CONDITION_REASON_OUT_OF_SYNC = "OutOfSync";
     String CONDITION_REASON_INVALID_EXTRA_MOUNT = "InvalidExtraMount";
     String CONDITION_REASON_RESOURCE_ERROR = "ResourceError";
+    String CONDITION_REASON_WAITING_FOR_ALL_CONDITIONS = "WaitingForAllConditions";
 
     // Project related strings
     String ROUTING_TYPE_ANYCAST = "anycast";
@@ -289,4 +290,5 @@ public interface Constants {
     String ADDRESSSETTINGS_ROUTING_ANYCAST = "ANYCAST";
     String ADDRESSSETTINGS_ROUTING_MULTICAST = "MULTICAST";
     String ADDRESSSETING_UNIT_MPS = "MESSAGES_PER_SECOND";
+
 }
