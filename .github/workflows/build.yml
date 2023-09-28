@@ -25,4 +25,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
       - name: Build project with Maven
-        run: mvn -B package --file pom.xml
+        run: make build
+
+      - name: Run standalone smoke tests
+        run: make standalone_test_smoke
