@@ -7,6 +7,7 @@ package io.brokerqe.claire.security;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -65,7 +66,7 @@ public class KeycloakLdapTests extends LdapTests {
         String clientSecretId = keycloak.getClientSecretId(keycloakRealm, "amq-broker");
 
         Map<String, String> jaasData = Map.of(
-            Constants.LOGIN_CONFIG_CONFIG_KEY, """
+            ArtemisConstants.LOGIN_CONFIG_CONFIG_KEY, """
                     console {
                         // ensure the operator can connect to the broker by referencing the existing properties config
                         org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
@@ -134,7 +135,7 @@ public class KeycloakLdapTests extends LdapTests {
         createArtemisKeycloakSecurity();
 
         getClient().createConfigMap(testNamespace, "debug-logging-config",
-                Map.of(Constants.LOGGING_PROPERTIES_CONFIG_KEY, """
+                Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, """
                     appender.stdout.name = STDOUT
                     appender.stdout.type = Console
                     appender.stdout.layout.type=PatternLayout
@@ -202,7 +203,7 @@ public class KeycloakLdapTests extends LdapTests {
         Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
                 ResourceManager.generateDefaultBrokerDN(),
                 ResourceManager.generateDefaultClientDN(),
-                List.of(ResourceManager.generateSanDnsNames(broker, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX))),
+                List.of(ResourceManager.generateSanDnsNames(broker, List.of(amqpAcceptorName, ArtemisConstants.WEBCONSOLE_URI_PREFIX))),
                 null
         );
         getClient().createSecretEncodedData(testNamespace, consoleSecretName, CertificateManager.createConsoleKeystoreSecret(keystores));

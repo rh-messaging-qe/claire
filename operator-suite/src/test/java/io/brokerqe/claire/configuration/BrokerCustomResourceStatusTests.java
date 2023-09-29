@@ -9,6 +9,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisSpec;
 import io.amq.broker.v1beta1.activemqartemisstatus.Conditions;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -57,7 +58,7 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
             .build();
         // We don't wait for deployment since we wait for Status update instead in next call.
         broker = ResourceManager.createArtemis(testNamespace, broker, false);
-        ResourceManager.waitForArtemisStatusUpdate(testNamespace, broker, Constants.CONDITION_TYPE_DEPLOYED, Constants.CONDITION_REASON_ALL_PODS_READY, Constants.DURATION_5_MINUTES, false);
+        ResourceManager.waitForArtemisStatusUpdate(testNamespace, broker, ArtemisConstants.CONDITION_TYPE_DEPLOYED, ArtemisConstants.CONDITION_REASON_ALL_PODS_READY, Constants.DURATION_5_MINUTES, false);
         LOGGER.info("[{}] ActiveMQArtemis Status CR: {}", testNamespace, broker.getMetadata().getName());
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
         LOGGER.debug("[{}] ActiveMQArtemis CR status update received:\n{}", testNamespace, broker.getStatus());
@@ -66,7 +67,7 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
         for (Conditions condition : broker.getStatus().getConditions()) {
             // assert that all conditions have "True" status
             assertThat(String.format("Condition %s did not reach its expected status, reason: %s, message: %s", condition.getType(), condition.getReason(), condition.getMessage()),
-                condition.getStatus().getValue(), is(equalTo(Constants.CONDITION_TRUE)));
+                condition.getStatus().getValue(), is(equalTo(ArtemisConstants.CONDITION_TRUE)));
         }
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
@@ -101,8 +102,8 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     void testBrokerPropertiesWrongProperty() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, CONFIG_BROKER_NAME);
         testBrokerProperty(broker, "emptyProperty=emptyValue",
-            Constants.CONDITION_REASON_APPLIED_WITH_ERROR,
-            Constants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
+            ArtemisConstants.CONDITION_REASON_APPLIED_WITH_ERROR,
+            ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
             "Broker properties didn't error out as expected");
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
@@ -111,8 +112,8 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     void testBrokerPropertyInvalidValue() {
         ActiveMQArtemis broker =  ResourceManager.createArtemis(testNamespace, CONFIG_BROKER_NAME);
         testBrokerProperty(broker, "networkCheckPeriod=somestring",
-            Constants.CONDITION_REASON_APPLIED_WITH_ERROR,
-            Constants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
+            ArtemisConstants.CONDITION_REASON_APPLIED_WITH_ERROR,
+            ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
             "Broker properties didn't error out as expected");
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
@@ -121,8 +122,8 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     void testBrokerPropertiesValidProperty() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, CONFIG_BROKER_NAME);
         testBrokerProperty(broker, "networkCheckPeriod=20000",
-            Constants.CONDITION_REASON_APPLIED,
-            Constants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
+            ArtemisConstants.CONDITION_REASON_APPLIED,
+            ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
             "Broker property was not applied as expected");
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
@@ -131,16 +132,16 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     void testBrokerCRValidityTest() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, CONFIG_BROKER_NAME);
         ResourceManager.waitForArtemisStatusUpdate(testNamespace, broker,
-            Constants.CONDITION_TYPE_VALID,
-            Constants.CONDITION_REASON_VALIDATION,
+            ArtemisConstants.CONDITION_TYPE_VALID,
+            ArtemisConstants.CONDITION_REASON_VALIDATION,
             Constants.DURATION_5_MINUTES, false);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
         LOGGER.info("Checking for the expected conditions on Broker CR status");
         assertThat("Default status fields didn't contain what was expected", broker.getStatus().getConditions(), containsInAnyOrder(
-            hasProperty("type", is(Constants.CONDITION_TYPE_VALID)),
-            hasProperty("type", is(Constants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED)),
-            hasProperty("type", is(Constants.CONDITION_TYPE_READY)),
-            hasProperty("type", is(Constants.CONDITION_TYPE_DEPLOYED))
+            hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_VALID)),
+            hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED)),
+            hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_READY)),
+            hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_DEPLOYED))
         ));
         ResourceManager.deleteArtemis(testNamespace, broker);
     }

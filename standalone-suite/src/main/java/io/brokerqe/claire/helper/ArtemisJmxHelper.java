@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.helper;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.EnvironmentStandalone;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
@@ -186,7 +187,7 @@ public final class ArtemisJmxHelper {
 
     private static JMXServiceURL getJmxUrl(ArtemisContainer artemisContainer) {
         JMXServiceURL url;
-        String hostAndPort = artemisContainer.getHostAndPort(ArtemisContainer.DEFAULT_JMX_PORT);
+        String hostAndPort = artemisContainer.getHostAndPort(ArtemisConstants.DEFAULT_JMX_PORT);
         try {
             url = new JMXServiceURL(JMX_URL_BASE + hostAndPort + JMX_URL_SUFFIX);
         } catch (MalformedURLException e) {

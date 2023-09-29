@@ -89,9 +89,9 @@ public class OperatorTestDataCollector extends TestDataCollector {
     private void collectBrokerPodFiles(List<Pod> pods, String archiveLocation) {
         List<String> fileList = List.of("artemis-roles.properties", "artemis.profile", "broker.xml", "jolokia-access.xml",
                 "login.config", "artemis-users.properties", "bootstrap.xml", "jgroups-ping.xml", "logging.properties", "management.xml");
-        final String amqBrokerEtcHome = Constants.CONTAINER_BROKER_HOME_ETC_DIR;
+        final String amqBrokerEtcHome = ArtemisConstants.CONTAINER_BROKER_HOME_ETC_DIR;
         for (Pod pod : pods) {
-            if (pod.getMetadata().getLabels().containsKey(Constants.LABEL_ACTIVEMQARTEMIS)) {
+            if (pod.getMetadata().getLabels().containsKey(ArtemisConstants.LABEL_ACTIVEMQARTEMIS)) {
                 String dirName = archiveLocation + Constants.FILE_SEPARATOR + "broker_etc" + Constants.FILE_SEPARATOR + pod.getMetadata().getName();
                 TestUtils.createDirectory(dirName);
 

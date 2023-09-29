@@ -12,6 +12,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisSecurityBuilder;
 import io.amq.broker.v1beta1.activemqartemissecurityspec.loginmodules.PropertiesLoginModulesBuilder;
 import io.amq.broker.v1beta1.activemqartemissecurityspec.loginmodules.propertiesloginmodules.UsersBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -103,7 +104,7 @@ public class SimpleSecurityTests extends AbstractSystemTests {
             .endSpec()
             .build();
 
-        String cmd = "cat " + Constants.CONTAINER_BROKER_HOME_ETC_DIR + "artemis-users.properties";
+        String cmd = "cat " + ArtemisConstants.CONTAINER_BROKER_HOME_ETC_DIR + "artemis-users.properties";
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         String usersPropertiesFile = getClient().executeCommandInPod(brokerPod, cmd, Constants.DURATION_10_SECONDS);
         assertThat(usersPropertiesFile, not(containsString("alice")));

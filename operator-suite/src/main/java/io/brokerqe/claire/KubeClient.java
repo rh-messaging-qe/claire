@@ -206,7 +206,7 @@ public class KubeClient {
         for (Pod pod : pods) {
             Map<String, String> labels = pod.getMetadata().getLabels();
             for (String key : labels.keySet()) {
-                if (key.equals(Constants.LABEL_ACTIVEMQARTEMIS)) {
+                if (key.equals(ArtemisConstants.LABEL_ACTIVEMQARTEMIS)) {
                     StatefulSet ss = getDefaultArtemisStatefulSet(labels.get(key));
                     if (ss != null) {
                         foundPod = pod;

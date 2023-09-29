@@ -4,7 +4,7 @@
  */
 package io.brokerqe.claire.client.deployment;
 
-import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
@@ -56,7 +56,7 @@ public class BundledClientDeployment implements DeployableClient<GenericContaine
 
     @Override
     public String getExecutableHome() {
-        return Constants.ARTEMIS_INSTANCE_BIN_DIR;
+        return ArtemisConstants.INSTANCE_BIN_DIR;
     }
 
     @Override

@@ -9,8 +9,8 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
-import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
@@ -48,10 +48,10 @@ public class LdapTests extends AbstractSystemTests {
     final boolean jwtTokenSupported = false;
 
     Map<String, String> users = Map.of(
-            "alice", "alice",
-            "bob", "bob",
-            "charlie", "charlie",
-            "lala", "lala");
+            ArtemisConstants.ALICE_NAME, ArtemisConstants.ALICE_PASS,
+            ArtemisConstants.BOB_NAME, ArtemisConstants.BOB_PASS,
+            ArtemisConstants.CHARLIE_NAME, ArtemisConstants.CHARLIE_PASS,
+            ArtemisConstants.LALA_NAME, ArtemisConstants.LALA_PASS);
 
     @BeforeAll
     void setupClusterOperator() {
@@ -71,7 +71,7 @@ public class LdapTests extends AbstractSystemTests {
 
     private void setupEnvironment() {
         Map<String, String> jaasData = Map.of(
-            Constants.LOGIN_CONFIG_CONFIG_KEY, """
+            ArtemisConstants.LOGIN_CONFIG_CONFIG_KEY, """
                 activemq {
                     org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
                         reload=false
@@ -102,7 +102,7 @@ public class LdapTests extends AbstractSystemTests {
         getClient().createSecretStringData(testNamespace, secretName, jaasData, true);
 
         getClient().createConfigMap(testNamespace, "debug-logging-config",
-                Map.of(Constants.LOGGING_PROPERTIES_CONFIG_KEY, """
+                Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, """
                     appender.stdout.name = STDOUT
                     appender.stdout.type = Console
                     rootLogger = info, STDOUT
@@ -169,26 +169,26 @@ public class LdapTests extends AbstractSystemTests {
     @Test
     public void testSenderReceiverLdapUsers() {
         int messages = 5;
-        String alicePass = getPassword("alice");
-        String bobPass = getPassword("bob");
+        String alicePass = getPassword(ArtemisConstants.ALICE_NAME);
+        String bobPass = getPassword(ArtemisConstants.BOB_NAME);
 
-        LOGGER.info("[{}] Trying to send messages as {} with {}", getTestNamespace(), "alice", alicePass);
+        LOGGER.info("[{}] Trying to send messages as {} with {}", getTestNamespace(), ArtemisConstants.ALICE_NAME, alicePass);
         MessagingClient producerAlice = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod,
-                allDefaultPort, ldapAddress, messages, "alice", alicePass);
+                allDefaultPort, ldapAddress, messages, ArtemisConstants.ALICE_NAME, alicePass);
         int sentAlice = producerAlice.sendMessages();
 
-        LOGGER.info("[{}] Trying to receive messages as {} with {}", getTestNamespace(), "alice", alicePass);
+        LOGGER.info("[{}] Trying to receive messages as {} with {}", getTestNamespace(), ArtemisConstants.ALICE_NAME, alicePass);
         Throwable t = assertThrows(MessagingClientException.class, producerAlice::receiveMessages);
         assertThat(t.getMessage(), containsString("does not have permission='CONSUME' for queue"));
 
-        LOGGER.info("[{}] Trying to receive messages as {} with {}", getTestNamespace(), "bob", bobPass);
+        LOGGER.info("[{}] Trying to receive messages as {} with {}", getTestNamespace(), ArtemisConstants.BOB_NAME, bobPass);
         MessagingClient consumerBob = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod,
-                allDefaultPort, ldapAddress, messages, "bob", bobPass);
+                allDefaultPort, ldapAddress, messages, ArtemisConstants.BOB_NAME, bobPass);
         int consumedBob = consumerBob.receiveMessages();
         assertThat(sentAlice, equalTo(messages));
         assertThat(sentAlice, equalTo(consumedBob));
 
-        LOGGER.info("[{}] Trying to send messages as {} with {}", getTestNamespace(), "bob", bobPass);
+        LOGGER.info("[{}] Trying to send messages as {} with {}", getTestNamespace(), ArtemisConstants.BOB_NAME, bobPass);
         t = assertThrows(MessagingClientException.class, consumerBob::sendMessages);
         assertThat(t.getMessage(), containsString("does not have permission='SEND' on address"));
     }
@@ -196,10 +196,10 @@ public class LdapTests extends AbstractSystemTests {
     @Test
     public void testSingleUserWithPermissions() {
         int messages = 5;
-        String charliePass = getPassword("charlie");
-        LOGGER.info("[{}] Send & receive messages as {} with {}", getTestNamespace(), "charlie", charliePass);
+        String charliePass = getPassword(ArtemisConstants.CHARLIE_NAME);
+        LOGGER.info("[{}] Send & receive messages as {} with {}", getTestNamespace(), ArtemisConstants.CHARLIE_NAME, charliePass);
         MessagingClient clientCharlie = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod,
-                allDefaultPort, ldapAddress, messages, "charlie", charliePass);
+                allDefaultPort, ldapAddress, messages, ArtemisConstants.CHARLIE_NAME, charliePass);
         int sent = clientCharlie.sendMessages();
         int received = clientCharlie.receiveMessages();
         assertThat(sent, equalTo(messages));
@@ -209,25 +209,25 @@ public class LdapTests extends AbstractSystemTests {
     @Test
     public void testSingleUserWithPermissionsAmqp() {
         int messages = 5;
-        String charliePass = getPassword("charlie");
-        LOGGER.info("[{}] Send & receive amqp messages as {} with {}", getTestNamespace(), "charlie", charliePass);
-        testMessaging(ClientType.BUNDLED_AMQP, getTestNamespace(), brokerPod, ldapAddress, messages, "charlie", charliePass);
+        String charliePass = getPassword(ArtemisConstants.CHARLIE_NAME);
+        LOGGER.info("[{}] Send & receive amqp messages as {} with {}", getTestNamespace(), ArtemisConstants.CHARLIE_NAME, charliePass);
+        testMessaging(ClientType.BUNDLED_AMQP, getTestNamespace(), brokerPod, ldapAddress, messages, ArtemisConstants.CHARLIE_NAME, charliePass);
     }
 
     @Test
     public void testWrongUser() {
         int messages = 2;
         // invalid user
-        LOGGER.info("[{}] Trying to connect as invalid user {} with {}", getTestNamespace(), "lala", "lala");
+        LOGGER.info("[{}] Trying to connect as invalid user {} with {}", getTestNamespace(), ArtemisConstants.LALA_NAME, ArtemisConstants.LALA_PASS);
         MessagingClient wrongUser = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod,
-                allDefaultPort, ldapAddress, messages, "lala", "lala");
+                allDefaultPort, ldapAddress, messages, ArtemisConstants.LALA_NAME, ArtemisConstants.LALA_PASS);
         Throwable t = assertThrows(MessagingClientException.class, wrongUser::sendMessages);
         assertThat(t.getMessage(), containsString("Unable to validate user from"));
 
         // incorrect pass
-        LOGGER.info("[{}] Trying to connect as {} with invalid password {}", getTestNamespace(), "charlie", "lala");
+        LOGGER.info("[{}] Trying to connect as {} with invalid password {}", getTestNamespace(), ArtemisConstants.CHARLIE_NAME, ArtemisConstants.LALA_PASS);
         wrongUser = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod,
-                allDefaultPort, ldapAddress, messages, "charlie", "lala");
+                allDefaultPort, ldapAddress, messages, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.LALA_PASS);
         t = assertThrows(MessagingClientException.class, wrongUser::sendMessages);
         assertThat(t.getMessage(), containsString("Unable to validate user from"));
     }

@@ -5,6 +5,7 @@
 package io.brokerqe.claire.security;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.EnvironmentOperator;
 import io.brokerqe.claire.KubeClient;
@@ -289,7 +290,7 @@ public class Keycloak {
         String clientId = getClientId(realm, clientName);
         LOGGER.debug("[{}] [KC] Update redirectUris in realm {} {}", namespace, realm, clientName);
         List<String> uris = kubeClient.getExternalAccessServiceUrlPrefixName(
-                namespace, broker.getMetadata().getName() + "-" + Constants.WEBCONSOLE_URI_PREFIX + "-");
+                namespace, broker.getMetadata().getName() + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX + "-");
         String format = broker.getSpec().getConsole().getSslEnabled() ? "https://ROUTE/console/*" : "http://ROUTE/console/*";
 
         StringBuilder constructRoutes = new StringBuilder();

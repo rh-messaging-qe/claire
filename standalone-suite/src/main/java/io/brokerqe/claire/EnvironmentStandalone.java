@@ -53,7 +53,7 @@ public class EnvironmentStandalone extends Environment {
         databaseFile = getConfigurationValue(Constants.EV_JDBC_DATA, Constants.PROP_JDBC_DATA, null);
         osInfo = getOSInfo();
         // Default value is in logback settings file
-        logLevel = getConfigurationValue(Constants.EV_TEST_LOG_LEVEL, Constants.PROP_LOG_LEVEL, Constants.DEFAULT_LOG_LEVEL);
+        logLevel = getConfigurationValue(Constants.EV_TEST_LOG_LEVEL, Constants.PROP_LOG_LEVEL, ArtemisConstants.DEFAULT_LOG_LEVEL);
 
         logsDirLocation = getConfigurationValue(Constants.EV_LOGS_LOCATION, Constants.PROP_LOG_DIR, Constants.LOGS_DEFAULT_DIR)
                 + Constants.FILE_SEPARATOR + generateTimestamp();
@@ -138,8 +138,8 @@ public class EnvironmentStandalone extends Environment {
 
     private String getArtemisVersionFromInstallDir() {
         String version;
-        Path installBinDir = TestUtils.getProjectRelativeFilePath(Constants.ARTEMIS_INSTALL_DIR
-                + Constants.FILE_SEPARATOR + Constants.BIN_DIR);
+        Path installBinDir = TestUtils.getProjectRelativeFilePath(ArtemisConstants.INSTALL_DIR
+                + Constants.FILE_SEPARATOR + ArtemisConstants.BIN_DIR);
         try {
             String[] versionCmd = {"/bin/sh", "-c", installBinDir.toAbsolutePath() + Constants.FILE_SEPARATOR
                     + "artemis version | grep \"Apache ActiveMQ Artemis \" | cut -d \" \" -f4"};

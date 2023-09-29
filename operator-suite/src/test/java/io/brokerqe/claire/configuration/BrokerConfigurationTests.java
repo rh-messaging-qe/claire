@@ -11,6 +11,7 @@ import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.amq.broker.v1beta1.activemqartemisspec.Env;
 import io.amq.broker.v1beta1.activemqartemisspec.deploymentplan.Resources;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
@@ -148,11 +149,11 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         List<ContainerPort> amqPorts = amqss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         Assertions.assertThat(amqPorts)
                 .extracting(ContainerPort::getName)
-                .containsExactly(Constants.WEBCONSOLE_URI_PREFIX);
+                .containsExactly(ArtemisConstants.WEBCONSOLE_URI_PREFIX);
         Assertions.assertThat(amqPorts)
-                .filteredOn("name", Constants.WEBCONSOLE_URI_PREFIX)
+                .filteredOn("name", ArtemisConstants.WEBCONSOLE_URI_PREFIX)
                 .extracting(ContainerPort::getContainerPort)
-                .containsOnly(Constants.CONSOLE_PORT);
+                .containsOnly(ArtemisConstants.CONSOLE_PORT);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -176,12 +177,12 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         List<ServicePort> amqPorts = svc.getSpec().getPorts();
         assertThat(String.format("List of AMQ Ports did not consist of the expected items: %s", amqPorts),
             amqPorts, contains(
-                hasProperty("name", Matchers.is(Constants.WEBCONSOLE_URI_PREFIX)),
-                hasProperty("name", is(Constants.WEBCONSOLE_URI_PREFIX + "-0"))));
+                hasProperty("name", Matchers.is(ArtemisConstants.WEBCONSOLE_URI_PREFIX)),
+                hasProperty("name", is(ArtemisConstants.WEBCONSOLE_URI_PREFIX + "-0"))));
         Assertions.assertThat(amqPorts)
-                .filteredOn("name", Constants.WEBCONSOLE_URI_PREFIX)
+                .filteredOn("name", ArtemisConstants.WEBCONSOLE_URI_PREFIX)
                 .extracting(ServicePort::getPort)
-                .containsOnly(Constants.CONSOLE_PORT);
+                .containsOnly(ArtemisConstants.CONSOLE_PORT);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -676,12 +677,12 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 containsString(brokerName),
                 containsString("must be no more than 63 characters, metadata.labels: Invalid value")
         ));
-        boolean logStatus = ResourceManager.getArtemisStatus(testNamespace, broker, Constants.CONDITION_TYPE_DEPLOYED,
-                Constants.CONDITION_REASON_RESOURCE_ERROR, "must be no more than 63 characters, metadata.labels: Invalid value: \\\"" + brokerName);
+        boolean logStatus = ResourceManager.getArtemisStatus(testNamespace, broker, ArtemisConstants.CONDITION_TYPE_DEPLOYED,
+                ArtemisConstants.CONDITION_REASON_RESOURCE_ERROR, "must be no more than 63 characters, metadata.labels: Invalid value: \\\"" + brokerName);
         assertThat("Artemis ready condition does not match", logStatus);
 
-        boolean readyCondition = ResourceManager.getArtemisStatus(testNamespace, broker, Constants.CONDITION_TYPE_READY,
-                Constants.CONDITION_REASON_WAITING_FOR_ALL_CONDITIONS, "Some conditions are not met");
+        boolean readyCondition = ResourceManager.getArtemisStatus(testNamespace, broker, ArtemisConstants.CONDITION_TYPE_READY,
+                ArtemisConstants.CONDITION_REASON_WAITING_FOR_ALL_CONDITIONS, "Some conditions are not met");
         assertThat("Artemis ready condition does not match", readyCondition);
         
         ResourceManager.deleteArtemis(testNamespace, broker);
@@ -753,7 +754,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .endSpec().build();
         broker = ResourceManager.createArtemis(testNamespace, broker, false);
         // This is speculative expectation, to be fixed in future.
-        ResourceManager.waitForArtemisStatusUpdate(testNamespace, broker, Constants.CONDITION_TYPE_VALID, Constants.CONDITION_FALSE, Constants.DURATION_5_MINUTES, false);
+        ResourceManager.waitForArtemisStatusUpdate(testNamespace, broker, ArtemisConstants.CONDITION_TYPE_VALID, ArtemisConstants.CONDITION_FALSE, Constants.DURATION_5_MINUTES, false);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 }

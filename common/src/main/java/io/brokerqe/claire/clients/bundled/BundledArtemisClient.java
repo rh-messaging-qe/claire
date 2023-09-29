@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.clients.bundled;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.clients.DeployableClient;
 import org.slf4j.Logger;
@@ -26,11 +27,11 @@ public class BundledArtemisClient {
     private String destination;
 
     public BundledArtemisClient(DeployableClient deployableClient, ArtemisCommand artemisCommand, Map<String, String> commandOptions) {
-        this(deployableClient, artemisCommand, Constants.ARTEMIS_INSTANCE_USER_NAME, Constants.ARTEMIS_INSTANCE_USER_PASS, commandOptions);
+        this(deployableClient, artemisCommand, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, commandOptions);
     }
 
     public BundledArtemisClient(DeployableClient deployableClient, ArtemisCommand artemisCommand, Map<String, String> commandOptions, String destination) {
-        this(deployableClient, artemisCommand, Constants.ARTEMIS_INSTANCE_USER_NAME, Constants.ARTEMIS_INSTANCE_USER_PASS, commandOptions);
+        this(deployableClient, artemisCommand, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, commandOptions);
         this.destination = destination;
     }
 

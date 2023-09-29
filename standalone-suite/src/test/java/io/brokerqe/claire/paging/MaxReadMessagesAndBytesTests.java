@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.paging;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.AbstractSystemTests;
@@ -49,12 +50,12 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
         String queueName = "testPagingMaxReadMessagesAs10";
 
         // create a qpid jms client
-        String artemisAmqpHostAndPort = artemisInstance.getHostAndPort(ArtemisContainer.DEFAULT_ALL_PROTOCOLS_PORT);
+        String artemisAmqpHostAndPort = artemisInstance.getHostAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
         String url = AmqpUtil.buildAmqpUrl(artemisAmqpHostAndPort);
 
         LOGGER.info("Creating client producer");
         JmsClient client = ResourceManager.getJmsClient("client-1", new JmsConnectionFactory(url))
-                .withCredentials(Constants.ARTEMIS_INSTANCE_USER_NAME, Constants.ARTEMIS_INSTANCE_USER_PASS)
+                .withCredentials(ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS)
                 .withDestination(Queue.class, queueName);
 
         // specific message property
@@ -127,12 +128,12 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
         String msgSelector = propKey + "='" + propValue + "'";
 
         // create a qpid jms client
-        String artemisAmqpHostAndPort = artemisInstance.getHostAndPort(ArtemisContainer.DEFAULT_ALL_PROTOCOLS_PORT);
+        String artemisAmqpHostAndPort = artemisInstance.getHostAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
         String url = AmqpUtil.buildAmqpUrl(artemisAmqpHostAndPort);
 
         LOGGER.info("Creating client producer");
         JmsClient client = ResourceManager.getJmsClient("client-1", new JmsConnectionFactory(url))
-                .withCredentials(Constants.ARTEMIS_INSTANCE_USER_NAME, Constants.ARTEMIS_INSTANCE_USER_PASS)
+                .withCredentials(ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS)
                 .withDestination(Queue.class, queueName);
 
         // produce 10 random message to generate a queue which will be paged

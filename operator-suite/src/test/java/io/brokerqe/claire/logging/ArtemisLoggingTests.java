@@ -7,6 +7,7 @@ package io.brokerqe.claire.logging;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -44,8 +45,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     private static final String LOGGER_CONFIG_MAP_NAME = "artemis-cm-logging-config";
     private static final String LOGGER_SECRET_NAME = "artemis-secret-logging-config";
     private static final String LOGGING_PROPERTIES_KEY = "logging.properties";
-    private static final String AUDIT_LOG_FILE = "audit.log";
-    private static final String ARTEMIS_LOG_FILE = "artemis.log";
     private static final String LOGGING_MOUNT_ONLY_ONCE = "Spec.DeploymentPlan.ExtraMounts, entry with suffix -logging-config can only be supplied once";
 
     private final String testNamespace = getRandomNamespaceName("artemis-log-tests", 3);
@@ -67,8 +66,10 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisName);
 
         String artemisLogs = getClient().getLogsFromPod(artemisPod);
+        LOGGER.info("[{}] Ensure artemis pod logs contains using default log message", testNamespace);
+        assertThat(artemisLogs, containsString(ArtemisConstants.USING_DEFAULT_LOG_MSG));
         LOGGER.info("[{}] Ensure artemis pod logs contains INFO level", testNamespace);
-        assertThat(artemisLogs, containsString(Constants.ARTEMIS_IS_LIVE_LOG_MSG));
+        assertThat(artemisLogs, containsString(ArtemisConstants.IS_LIVE_LOG_MSG));
 
         assertLogIsNotInFilesystem(artemisPod);
 
@@ -140,8 +141,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     private void assertLoggingDoesNotContainsException(Pod artemisPod) {
         LOGGER.info("[{}] Ensure artemis pod logs does not contains java exceptions", testNamespace);
         String artemisLogs = getClient().getLogsFromPod(artemisPod);
-        org.assertj.core.api.Assertions.assertThat(artemisLogs).doesNotContain(Constants.ARTEMIS_LOG_EXCEPTION);
-        org.assertj.core.api.Assertions.assertThat(artemisLogs).doesNotContain(Constants.ARTEMIS_LOG_EXCEPTION_CAUSE);
+        org.assertj.core.api.Assertions.assertThat(artemisLogs).doesNotContain(ArtemisConstants.LOG_EXCEPTION);
+        org.assertj.core.api.Assertions.assertThat(artemisLogs).doesNotContain(ArtemisConstants.LOG_EXCEPTION_CAUSE);
     }
 
     @Test
@@ -169,7 +170,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
 
         String artemisLogs = getClient().getLogsFromPod(artemisPod);
         LOGGER.info("[{}] Ensure artemis pod logs not contains INFO level", testNamespace);
-        assertThat(artemisLogs, not(containsString(Constants.ARTEMIS_IS_LIVE_LOG_MSG)));
+        assertThat(artemisLogs, not(containsString(ArtemisConstants.IS_LIVE_LOG_MSG)));
         assertLogIsNotInFilesystem(artemisPod);
 
         ResourceManager.deleteArtemis(testNamespace, artemis);
@@ -202,8 +203,8 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
                 .build();
 
         assertThrows(WaitException.class, () -> ResourceManager.createArtemis(testNamespace, artemis, true, Constants.DURATION_30_SECONDS));
-        boolean logStatus = ResourceManager.getArtemisStatus(testNamespace, artemis, Constants.CONDITION_TYPE_VALID,
-                Constants.CONDITION_REASON_INVALID_EXTRA_MOUNT, LOGGING_MOUNT_ONLY_ONCE);
+        boolean logStatus = ResourceManager.getArtemisStatus(testNamespace, artemis, ArtemisConstants.CONDITION_TYPE_VALID,
+                ArtemisConstants.CONDITION_REASON_INVALID_EXTRA_MOUNT, LOGGING_MOUNT_ONLY_ONCE);
         assertThat("Artemis condition does not match", Boolean.TRUE, is(logStatus));
 
         ResourceManager.deleteArtemis(testNamespace, artemis);
@@ -216,7 +217,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         String testDirName = testInfo.getTestClass().orElseThrow().getName() + Constants.FILE_SEPARATOR
                 + testInfo.getTestMethod().orElseThrow().getName();
         Path tmpDirName = TestUtils.createTestTemporaryDir(testDirName, testEnvironmentOperator.getTmpDirLocation());
-        Path logDestDir = getClient().copyPodDir(artemisPod, Constants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
+        Path logDestDir = getClient().copyPodDir(artemisPod, ArtemisConstants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
         assertThat(Files.isDirectory(logDestDir), is(Boolean.TRUE));
         try (Stream<Path> entries = Files.list(logDestDir)) {
             entries.forEach(e -> assertThat(e.toFile().length(), equalTo(0L)));
@@ -230,17 +231,17 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         String testDirName = testInfo.getTestClass().orElseThrow().getName() + Constants.FILE_SEPARATOR
                 + testInfo.getTestMethod().orElseThrow().getName();
         Path tmpDirName = TestUtils.createTestTemporaryDir(testDirName, testEnvironmentOperator.getTmpDirLocation());
-        Path logDestDir = getClient().copyPodDir(artemisPod, Constants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
+        Path logDestDir = getClient().copyPodDir(artemisPod, ArtemisConstants.CONTAINER_BROKER_HOME_LOG_DIR, tmpDirName);
         assertThat(Files.isDirectory(logDestDir), is(Boolean.TRUE));
 
-        LOGGER.info("[{}] Ensure artemis pod is logging into " + ARTEMIS_LOG_FILE + " into filesystem", testNamespace);
-        Path artemisLogFile = Paths.get(logDestDir + Constants.FILE_SEPARATOR + ARTEMIS_LOG_FILE);
+        LOGGER.info("[{}] Ensure artemis pod is logging into " + ArtemisConstants.ARTEMIS_LOG_FILE + " into filesystem", testNamespace);
+        Path artemisLogFile = Paths.get(logDestDir + Constants.FILE_SEPARATOR + ArtemisConstants.ARTEMIS_LOG_FILE);
         assertThat(artemisLogFile.toFile().length(), greaterThan(0L));
         List<String> artemisLogs = Files.readAllLines(artemisLogFile);
-        assertThat(artemisLogs, hasItem(containsString(Constants.ARTEMIS_IS_LIVE_LOG_MSG)));
+        assertThat(artemisLogs, hasItem(containsString(ArtemisConstants.IS_LIVE_LOG_MSG)));
 
-        LOGGER.info("[{}] Ensure artemis pod is logging into " + AUDIT_LOG_FILE + " into filesystem", testNamespace);
-        Path auditLogFile = Paths.get(logDestDir + Constants.FILE_SEPARATOR + AUDIT_LOG_FILE);
+        LOGGER.info("[{}] Ensure artemis pod is logging into " + ArtemisConstants.AUDIT_LOG_FILE + " into filesystem", testNamespace);
+        Path auditLogFile = Paths.get(logDestDir + Constants.FILE_SEPARATOR + ArtemisConstants.AUDIT_LOG_FILE);
         assertThat(auditLogFile.toFile().length(), greaterThan(0L));
         List<String> auditLogs = Files.readAllLines(auditLogFile);
         assertThat(auditLogs, hasItem(containsString(" [AUDIT]")));

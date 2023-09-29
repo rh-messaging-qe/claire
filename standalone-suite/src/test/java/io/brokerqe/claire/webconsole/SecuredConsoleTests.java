@@ -5,6 +5,7 @@
 package io.brokerqe.claire.webconsole;
 
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -73,7 +74,7 @@ public class SecuredConsoleTests extends AbstractSystemTests {
                 """, keyStoreContainerPath,  trustStoreContainerPath);
 
         TestUtils.createFile(tuneFileName, tuneFileContent);
-        artemis = ResourceManager.getArtemisContainerInstance(Constants.ARTEMIS_STRING);
+        artemis = ResourceManager.getArtemisContainerInstance(ArtemisConstants.ARTEMIS_STRING);
         artemis.withFileSystemBind(keystoreBrokerData.getKeyStorePath(), keyStoreContainerPath, BindMode.READ_WRITE);
         artemis.withFileSystemBind(truststoreBrokerData.getKeyStorePath(), trustStoreContainerPath, BindMode.READ_WRITE);
         generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));

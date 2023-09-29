@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.security;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
@@ -83,7 +84,7 @@ public class TLSCACertsTests extends TLSAuthorizationTests {
         Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
             ResourceManager.generateDefaultBrokerDN(),
             ResourceManager.generateDefaultClientDN(),
-            List.of(ResourceManager.generateSanDnsNames(broker, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX))),
+            List.of(ResourceManager.generateSanDnsNames(broker, List.of(amqpAcceptorName, ArtemisConstants.WEBCONSOLE_URI_PREFIX))),
             myCACertData
         );
 

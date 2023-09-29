@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.helper.webconsole;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.container.ArtemisContainer;
 import org.openqa.selenium.By;
@@ -20,9 +21,9 @@ public class LoginPageHelper extends PageHelper {
 
     public static void login(RemoteWebDriver driver, ArtemisContainer artemisInstance) {
         WebElement username = driver.findElement(USERNAME_LOCATOR);
-        username.sendKeys(Constants.ARTEMIS_INSTANCE_USER_NAME);
+        username.sendKeys(ArtemisConstants.ADMIN_NAME);
         WebElement password = driver.findElement(PASSWORD_LOCATOR);
-        password.sendKeys(Constants.ARTEMIS_INSTANCE_USER_PASS);
+        password.sendKeys(ArtemisConstants.ADMIN_PASS);
         driver.findElement(LOGIN_BUTTON_LOCATOR).click();
         MainPageHelper.waitMainPageToBeVisible(driver);
 

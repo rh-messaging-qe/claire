@@ -7,6 +7,7 @@ package io.brokerqe.claire.webconsole;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubernetesPlatform;
@@ -106,7 +107,7 @@ public class WebConsoleTests extends AbstractSystemTests {
         ResourceManager.createArtemis(testNamespace, artemis, true);
 
         List<HasMetadata> webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace,
-                brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX);
+                brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX);
         for (HasMetadata service : webserviceUrl) {
             String serviceUrl = getClient().getExternalAccessServiceUrl(testNamespace, service.getMetadata().getName());
             LOGGER.debug("[{}] Using webservice url {}", testNamespace, serviceUrl);
@@ -174,14 +175,14 @@ public class WebConsoleTests extends AbstractSystemTests {
         Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
                 ResourceManager.generateDefaultBrokerDN(),
                 ResourceManager.generateDefaultClientDN(),
-                List.of(ResourceManager.generateSanDnsNames(artemis, List.of(amqpAcceptorName, Constants.WEBCONSOLE_URI_PREFIX))),
+                List.of(ResourceManager.generateSanDnsNames(artemis, List.of(amqpAcceptorName, ArtemisConstants.WEBCONSOLE_URI_PREFIX))),
                 null
         );
         Secret consoleSecret = getClient().createSecretEncodedData(testNamespace, consoleSecretName, CertificateManager.createConsoleKeystoreSecret(keystores));
 
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         ResourceManager.createArtemis(testNamespace, artemis, true);
-        List<HasMetadata> webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace, brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX);
+        List<HasMetadata> webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace, brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX);
         LOGGER.info("[{}] webservice url {}", testNamespace, webserviceUrl);
 
         if (checkLogForSecret) {

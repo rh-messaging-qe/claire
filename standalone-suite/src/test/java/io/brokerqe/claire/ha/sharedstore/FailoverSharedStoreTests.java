@@ -6,6 +6,7 @@ package io.brokerqe.claire.ha.sharedstore;
 
 import eu.rekawek.toxiproxy.Proxy;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.DeployableClient;
@@ -80,19 +81,19 @@ public class FailoverSharedStoreTests extends AbstractSystemTests {
 
         addressName = getTestRandomName();
         Map<String, String> senderOpts = new HashMap<>(Map.of(
-                "conn-username", Constants.ARTEMIS_INSTANCE_USER_NAME,
-                "conn-password", Constants.ARTEMIS_INSTANCE_USER_PASS,
+                "conn-username", ArtemisConstants.ADMIN_NAME,
+                "conn-password", ArtemisConstants.ADMIN_PASS,
                 "address", addressName,
                 "count", String.valueOf(SEND_CHUNK)
         ));
         Map<String, String> receiverOpts = new HashMap<>(Map.of(
-                "conn-username", Constants.ARTEMIS_INSTANCE_USER_NAME,
-                "conn-password", Constants.ARTEMIS_INSTANCE_USER_PASS,
+                "conn-username", ArtemisConstants.ADMIN_NAME,
+                "conn-password", ArtemisConstants.ADMIN_PASS,
                 "address", addressName,
                 "count", String.valueOf(RECEIVE_CHUNK)
         ));
-        String primaryAmqpHostAndPort = artemisPrimary.getInstanceNameAndPort(ArtemisContainer.DEFAULT_ALL_PROTOCOLS_PORT);
-        String backupAmqpHostAndPort = artemisBackup.getInstanceNameAndPort(ArtemisContainer.DEFAULT_ALL_PROTOCOLS_PORT);
+        String primaryAmqpHostAndPort = artemisPrimary.getInstanceNameAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
+        String backupAmqpHostAndPort = artemisBackup.getInstanceNameAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
         primaryMessagingClient = new AmqpQpidClient(stDeployableClient, primaryAmqpHostAndPort, senderOpts, receiverOpts);
         backupMessagingClient = new AmqpQpidClient(stDeployableClient, backupAmqpHostAndPort, senderOpts, receiverOpts);
     }

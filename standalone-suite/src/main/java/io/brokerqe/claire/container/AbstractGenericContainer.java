@@ -12,6 +12,7 @@ import com.github.dockerjava.api.command.PauseContainerCmd;
 import com.github.dockerjava.api.command.UnpauseContainerCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Bind;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.EnvironmentStandalone;
 import io.brokerqe.claire.ResourceManager;
@@ -236,7 +237,7 @@ public abstract class AbstractGenericContainer {
 
     public void copyDirFrom(String containerDir, String hostDir) {
         LOGGER.debug("[Container {}] - Copying directory {} to host directory {}", name, containerDir, hostDir);
-        String tarDstDir = Constants.TMP_DIR;
+        String tarDstDir = ArtemisConstants.TMP_DIR;
         String tarFilename = Constants.TAR_TMP_FILE_PREFIX + TestUtils.getRandomString(6) + ".tar";
         String tarFile = tarDstDir + tarFilename;
         executeCommand("tar", "-cf", tarFile, "-C", containerDir, ".");

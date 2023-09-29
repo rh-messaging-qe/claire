@@ -9,6 +9,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -143,7 +144,7 @@ public class TLSProviderTests extends AbstractSystemTests {
     }
 
     private void assertBrokerConfigHasSslProvider(Pod artemisPod, String sslProvider) {
-        String cmd = "grep \"acceptor name=\" " + Constants.CONTAINER_BROKER_HOME_ETC_DIR + "broker.xml";
+        String cmd = "grep \"acceptor name=\" " + ArtemisConstants.CONTAINER_BROKER_HOME_ETC_DIR + "broker.xml";
         String acceptors = getClient().executeCommandInPod(artemisPod, cmd, Constants.DURATION_10_SECONDS);
 
         if (sslProvider == null || sslProvider.isEmpty()) {

@@ -8,6 +8,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -318,7 +319,7 @@ public class PrometheusTests extends AbstractSystemTests {
         LOGGER.debug("[{}] Broker Properties: {}", testNamespace, brokerProperties);
         // DateTime needs to be measured before call to createOrReplace due to timing issues otherwise
         ActiveMQArtemis initialArtemis = ResourceManager.createArtemis(testNamespace, broker);
-        ResourceManager.waitForArtemisStatusUpdate(testNamespace, initialArtemis, Constants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED, Constants.CONDITION_REASON_APPLIED, Constants.DURATION_5_MINUTES);
+        ResourceManager.waitForArtemisStatusUpdate(testNamespace, initialArtemis, ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED, ArtemisConstants.CONDITION_REASON_APPLIED, Constants.DURATION_5_MINUTES);
         metrics = prometheus.getMetrics(0, broker.getMetadata().getName());
         LOGGER.trace("[{}] Got metrics: {}", testNamespace, metrics);
         for (String item : keysGc) {
@@ -335,7 +336,7 @@ public class PrometheusTests extends AbstractSystemTests {
         LOGGER.info("[{}] Updating Broker deployment to enable GC metrics", testNamespace);
         LOGGER.debug("[{}] Broker Properties: {}", testNamespace, brokerProperties);
         initialArtemis = ResourceManager.createArtemis(testNamespace, broker);
-        ResourceManager.waitForArtemisStatusUpdate(testNamespace, initialArtemis, Constants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED, Constants.CONDITION_REASON_APPLIED, Constants.DURATION_5_MINUTES);
+        ResourceManager.waitForArtemisStatusUpdate(testNamespace, initialArtemis, ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED, ArtemisConstants.CONDITION_REASON_APPLIED, Constants.DURATION_5_MINUTES);
         LOGGER.info("[{}] waiting for Broker pod {} to reload BrokerProperties configuration", testNamespace, broker.getMetadata().getName());
         TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
         metrics = prometheus.getMetrics(0, broker.getMetadata().getName());

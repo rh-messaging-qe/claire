@@ -4,6 +4,9 @@
  */
 package io.brokerqe.claire;
 
+import io.brokerqe.claire.clients.DeployableClient;
+import io.brokerqe.claire.clients.bundled.ArtemisCommand;
+import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
 import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helper.ArtemisJmxHelper;
@@ -46,8 +49,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AbstractSystemTests implements TestSeparator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSystemTests.class);
-    protected static final String DEFAULT_ALL_PORT = String.valueOf(ArtemisContainer.DEFAULT_ALL_PROTOCOLS_PORT);
-    protected static final String DEFAULT_AMQP_PORT = String.valueOf(ArtemisContainer.DEFAULT_AMQP_PORT);
+    protected static final String DEFAULT_ALL_PORT = String.valueOf(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
+    protected static final String DEFAULT_AMQP_PORT = String.valueOf(ArtemisConstants.DEFAULT_AMQP_PORT);
     protected Database database;
 
     @BeforeAll
@@ -85,7 +88,7 @@ public class AbstractSystemTests implements TestSeparator {
         if (database.getClass().getSuperclass().equals(DatabaseContainer.class)) {
             ((DatabaseContainer) database).start();
         }
-        ArtemisContainer artemis = ResourceManager.getArtemisContainerInstance(Constants.ARTEMIS_STRING);
+        ArtemisContainer artemis = ResourceManager.getArtemisContainerInstance(ArtemisConstants.ARTEMIS_STRING);
         LOGGER.info("[{}] Setting up database {}", artemis.getName(), database.getName());
         generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + database.getTuneFile())));
         artemis.withLibFile(database.getDriverFile(), database.getDriverFilename());
@@ -170,7 +173,7 @@ public class AbstractSystemTests implements TestSeparator {
                 + Constants.FILE_SEPARATOR + getPkgClassAsDir() + Constants.FILE_SEPARATOR + file;
     }
 
-    private String getTestConfigDir() {
+    protected String getTestConfigDir() {
         String cfgDir = getPkgClassAsDir();
         return TestUtils.getProjectRelativeFile(Constants.ARTEMIS_TEST_CFG_DIR + Constants.FILE_SEPARATOR + cfgDir);
     }
@@ -191,12 +194,12 @@ public class AbstractSystemTests implements TestSeparator {
 
     protected void generateArtemisCfg(ArtemisContainer artemisInstance, List<String> yacfgParams, String profileFileName) {
         String instanceDir = getTestConfigDir() + Constants.FILE_SEPARATOR + artemisInstance.getName();
-        TestUtils.createDirectory(instanceDir + Constants.BIN_DIR);
-        TestUtils.createDirectory(instanceDir + Constants.DATA_DIR);
-        TestUtils.createDirectory(instanceDir + Constants.ETC_DIR);
-        TestUtils.createDirectory(instanceDir + Constants.LIB_DIR);
-        TestUtils.createDirectory(instanceDir + Constants.LOG_DIR);
-        TestUtils.createDirectory(instanceDir + Constants.TMP_DIR);
+        TestUtils.createDirectory(instanceDir + ArtemisConstants.BIN_DIR);
+        TestUtils.createDirectory(instanceDir + ArtemisConstants.DATA_DIR);
+        TestUtils.createDirectory(instanceDir + ArtemisConstants.ETC_DIR);
+        TestUtils.createDirectory(instanceDir + ArtemisConstants.LIB_DIR);
+        TestUtils.createDirectory(instanceDir + ArtemisConstants.LOG_DIR);
+        TestUtils.createDirectory(instanceDir + ArtemisConstants.TMP_DIR);
         artemisInstance.withInstanceDir(instanceDir);
 
         String artemisConfig = EnvironmentStandalone.getInstance().getProvidedArtemisConfig();
@@ -208,7 +211,7 @@ public class AbstractSystemTests implements TestSeparator {
             final YacfgArtemisContainer yacfg;
 
             yacfg = ResourceManager.getYacfgArtemisContainerInstance(String.format("yacfg-%s", artemisInstance.getName()));
-            String instanceYacfgOutputDir = instanceDir + Constants.FILE_SEPARATOR + Constants.ETC_DIR;
+            String instanceYacfgOutputDir = instanceDir + Constants.FILE_SEPARATOR + ArtemisConstants.ETC_DIR;
             yacfg.withHostOutputDir(instanceYacfgOutputDir);
 
             if (profileFileName != null && !profileFileName.isBlank() && !profileFileName.isEmpty()) {
@@ -329,5 +332,15 @@ public class AbstractSystemTests implements TestSeparator {
         nfsServer.withExportDir(hostExportDir, containerExportDir);
         nfsServer.start();
         return nfsServer;
+    }
+
+    protected void deleteAddress(DeployableClient artemisDeployableClient, String name) {
+        BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.ADDRESS_DELETE, Map.of("name", name));
+        artemisClient.executeCommand();
+    }
+
+    protected void deleteQueue(DeployableClient artemisDeployableClient, String name) {
+        BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.QUEUE_DELETE, Map.of("name", name));
+        artemisClient.executeCommand();
     }
 }

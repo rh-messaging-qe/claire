@@ -310,7 +310,7 @@ public class ResourceManager {
     }
 
     public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String addressName, String queueName) {
-        return createArtemisAddress(namespace, addressName, queueName, Constants.ROUTING_TYPE_ANYCAST);
+        return createArtemisAddress(namespace, addressName, queueName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
     }
 
     public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String addressName, String queueName, String routingType) {

@@ -6,6 +6,7 @@ package io.brokerqe.claire.container;
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.sun.security.auth.module.UnixSystem;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
@@ -30,20 +31,13 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArtemisContainer.class);
 
     public static final String BACKUP_ANNOUNCED_LOG_REGEX = ".*AMQ221031: backup announced\\n";
-    public static final int DEFAULT_ALL_PROTOCOLS_PORT = 61616;
-    public static final int DEFAULT_AMQP_PORT = 5672;
-    public static final int DEFAULT_HORNETQ_PORT = 5445;
-    public static final int DEFAULT_JMX_PORT = 1099;
-    public static final int DEFAULT_MQTT_PORT = 1883;
-    public static final int DEFAULT_STOMP_PORT = 61613;
-    public static final int DEFAULT_WEB_CONSOLE_PORT = 8161;
-    public static final List<Integer> DEFAULT_PORTS = List.of(DEFAULT_ALL_PROTOCOLS_PORT, DEFAULT_AMQP_PORT,
-            DEFAULT_MQTT_PORT, DEFAULT_STOMP_PORT, DEFAULT_HORNETQ_PORT, DEFAULT_WEB_CONSOLE_PORT, DEFAULT_JMX_PORT);
-    public static final String ARTEMIS_INSTALL_DIR = Constants.OPT_DIR + Constants.FILE_SEPARATOR +
-            Constants.ARTEMIS_STRING;
-    public static final String ARTEMIS_INSTANCE_DIR = Constants.VAR_DIR + Constants.LIB_DIR +
-            Constants.FILE_SEPARATOR + Constants.ARTEMIS_INSTANCE_STRING;
-    public static final String ARTEMIS_INSTANCE_DATA_DIR = ARTEMIS_INSTANCE_DIR + Constants.DATA_DIR;
+    public static final List<Integer> DEFAULT_PORTS = List.of(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT, ArtemisConstants.DEFAULT_AMQP_PORT,
+            ArtemisConstants.DEFAULT_MQTT_PORT, ArtemisConstants.DEFAULT_STOMP_PORT, ArtemisConstants.DEFAULT_HORNETQ_PORT, ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT, ArtemisConstants.DEFAULT_JMX_PORT);
+    public static final String ARTEMIS_INSTALL_DIR = ArtemisConstants.OPT_DIR + Constants.FILE_SEPARATOR +
+            ArtemisConstants.ARTEMIS_STRING;
+    public static final String ARTEMIS_INSTANCE_DIR = ArtemisConstants.VAR_DIR + ArtemisConstants.LIB_DIR +
+            Constants.FILE_SEPARATOR + ArtemisConstants.INSTANCE_STRING;
+    public static final String ARTEMIS_INSTANCE_DATA_DIR = ARTEMIS_INSTANCE_DIR + ArtemisConstants.DATA_DIR;
     private static final String ARTEMIS_INSTANCE_CONTROLLER_CMD = "/usr/local/bin/artemis-controller.sh";
     private boolean secured = false;
 
@@ -53,7 +47,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public String getArtemisInstallDir() {
-        return TestUtils.getProjectRelativeFile(Constants.ARTEMIS_INSTALL_DIR);
+        return TestUtils.getProjectRelativeFile(ArtemisConstants.INSTALL_DIR);
     }
 
     public String getArtemisDefaultCfgBinDir() {
@@ -75,7 +69,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void withConfigDir(String dirPath) {
-        String configDir = ARTEMIS_INSTANCE_DIR + Constants.ETC_DIR;
+        String configDir = ARTEMIS_INSTANCE_DIR + ArtemisConstants.ETC_DIR;
         LOGGER.debug("[Container {}] with config dir {} = {}", name, dirPath, configDir);
         TestUtils.createDirectory(dirPath);
         withFileSystemBind(dirPath, configDir, BindMode.READ_ONLY);
@@ -89,7 +83,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void withConfigFile(String srcFilePath, String dstFileName) {
-        String destination = ARTEMIS_INSTANCE_DIR + Constants.ETC_DIR + File.separator + dstFileName;
+        String destination = ARTEMIS_INSTANCE_DIR + ArtemisConstants.ETC_DIR + File.separator + dstFileName;
         LOGGER.debug("[Container {}] with config file {} = {}", name, srcFilePath, destination);
         withFileSystemBind(srcFilePath, destination, BindMode.READ_ONLY);
     }
@@ -106,7 +100,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void withLibFile(String srcFilePath, String dstFileName) {
-        String destination = ARTEMIS_INSTANCE_DIR + Constants.LIB_DIR + File.separator + dstFileName;
+        String destination = ARTEMIS_INSTANCE_DIR + ArtemisConstants.LIB_DIR + File.separator + dstFileName;
         LOGGER.debug("[Container {}] with lib file {} = {}", name, srcFilePath, destination);
         withFileSystemBind(srcFilePath, destination, BindMode.READ_ONLY);
     }
@@ -122,8 +116,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         container.withStartupTimeout(startupTimeout);
         withInstallDir(getArtemisInstallDir());
         withJavaHome(getArtemisJavaHomeDir());
-        withFileSystemBind(getArtemisDefaultCfgBinDir(), ARTEMIS_INSTANCE_DIR + Constants.BIN_DIR, BindMode.READ_WRITE);
-        withFileSystemBind(getArtemisDefaultCfgLibDir(), ARTEMIS_INSTANCE_DIR + Constants.LIB_DIR, BindMode.READ_WRITE);
+        withFileSystemBind(getArtemisDefaultCfgBinDir(), ARTEMIS_INSTANCE_DIR + ArtemisConstants.BIN_DIR, BindMode.READ_WRITE);
+        withFileSystemBind(getArtemisDefaultCfgLibDir(), ARTEMIS_INSTANCE_DIR + ArtemisConstants.LIB_DIR, BindMode.READ_WRITE);
         long uid = new UnixSystem().getUid();
         long gid = new UnixSystem().getGid();
         withEnvVar(Map.of("ARTEMIS_GROUP_GID", String.valueOf(gid), "ARTEMIS_USER_UID", String.valueOf(uid)));
@@ -139,20 +133,20 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
     public String getHttpConsoleUrl() {
         return Constants.HTTP + "://" + this.getName()
-                + ":" + ArtemisContainer.DEFAULT_WEB_CONSOLE_PORT + "/" + Constants.CONSOLE_STRING;
+                + ":" + ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT + "/" + ArtemisConstants.CONSOLE_STRING;
     }
 
     public String getHttpsConsoleUrl() {
         return Constants.HTTPS + "://" + this.getName()
-                + ":" + ArtemisContainer.DEFAULT_WEB_CONSOLE_PORT + "/" + Constants.CONSOLE_STRING;
+                + ":" + ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT + "/" + ArtemisConstants.CONSOLE_STRING;
     }
 
     public String getLoginUrl() {
-        return getConsoleUrl() + "/" + Constants.AUTH_STRING + "/" + Constants.LOGIN_STRING;
+        return getConsoleUrl() + "/" + ArtemisConstants.AUTH_STRING + "/" + ArtemisConstants.LOGIN_STRING;
     }
 
     public String getLoggedInUrl() {
-        return getConsoleUrl() + "/" + Constants.ARTEMIS_STRING
+        return getConsoleUrl() + "/" + ArtemisConstants.ARTEMIS_STRING
                 + "/artemisStatus?nid=root-org.apache.activemq.artemis-" + this.getName();
     }
 

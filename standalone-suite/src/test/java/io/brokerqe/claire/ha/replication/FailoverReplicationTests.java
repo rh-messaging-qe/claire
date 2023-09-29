@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.ha.replication;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ResourceManager;
@@ -54,14 +55,14 @@ public class FailoverReplicationTests extends AbstractSystemTests {
         String queueName = "TestQueue1";
 
         // create a qpid jms client
-        String primaryAmqpHostAndPort = artemisPrimary.getHostAndPort(ArtemisContainer.DEFAULT_ALL_PROTOCOLS_PORT);
-        String backupAmqpHostAndPort = artemisBackup.getHostAndPort(ArtemisContainer.DEFAULT_ALL_PROTOCOLS_PORT);
+        String primaryAmqpHostAndPort = artemisPrimary.getHostAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
+        String backupAmqpHostAndPort = artemisBackup.getHostAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
         String amqpOpts = "failover.amqpOpenServerListAction=IGNORE";
         String url = AmqpUtil.buildAmqFailoverUrl(amqpOpts, primaryAmqpHostAndPort, backupAmqpHostAndPort);
 
         LOGGER.info("Creating client");
         JmsClient client = ResourceManager.getJmsClient("client-1", new JmsConnectionFactory(url))
-                .withCredentials(Constants.ARTEMIS_INSTANCE_USER_NAME, Constants.ARTEMIS_INSTANCE_USER_PASS)
+                .withCredentials(ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS)
                 .withDestination(Queue.class, queueName);
 
         LOGGER.info("Producing {} messages to queue {}", numOfMessages, queueName);

@@ -5,6 +5,7 @@
 package io.brokerqe.claire.messaging;
 
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
@@ -47,8 +48,8 @@ public class MessagingTests extends AbstractSystemTests {
     private BundledClientDeployment artemisDeployableClient;
     private final String address = "lala";
     private final String queue = "lala";
-    private final String username = Constants.ARTEMIS_INSTANCE_USER_NAME;
-    private final String password = Constants.ARTEMIS_INSTANCE_USER_PASS;
+    private final String username = ArtemisConstants.ADMIN_NAME;
+    private final String password = ArtemisConstants.ADMIN_PASS;
 
     @BeforeAll
     void setupEnv() {

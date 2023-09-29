@@ -45,7 +45,7 @@ public class StandaloneTestDataCollector extends TestDataCollector {
             if (ContainerType.ARTEMIS == container.getContainerType()) {
                 String containersDir =  archiveDir + Constants.FILE_SEPARATOR + CONTAINERS_STRING;
                 String containerDir = containersDir + Constants.FILE_SEPARATOR + name;
-                String dstDir = containerDir + Constants.FILE_SEPARATOR + Constants.ARTEMIS_INSTANCE_STRING;
+                String dstDir = containerDir + Constants.FILE_SEPARATOR + ArtemisConstants.INSTANCE_STRING;
                 String srcDir = ArtemisContainer.ARTEMIS_INSTANCE_DIR;
                 try {
                     container.copyDirFrom(srcDir, dstDir);

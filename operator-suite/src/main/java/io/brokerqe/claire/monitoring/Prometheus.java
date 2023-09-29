@@ -5,6 +5,7 @@
 
 package io.brokerqe.claire.monitoring;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
@@ -80,9 +81,9 @@ public class Prometheus {
     public void createServiceMonitor(String applicationName) {
         ArtemisVersion artemisVersion = ResourceManager.getEnvironment().getArtemisTestVersion();
 
-        String webConsolePort = Constants.WEBCONSOLE_URI_PREFIX;
+        String webConsolePort = ArtemisConstants.WEBCONSOLE_URI_PREFIX;
         if (artemisVersion.getVersionNumber() < ArtemisVersion.VERSION_2_28.getVersionNumber()) {
-            webConsolePort = Constants.WEBCONSOLE_URI_PREFIX + "-0";
+            webConsolePort = ArtemisConstants.WEBCONSOLE_URI_PREFIX + "-0";
         }
 
         ServiceMonitor serviceMonitor = new ServiceMonitorBuilder()
@@ -129,7 +130,7 @@ public class Prometheus {
     }
 
     public String getMetricsUrl(int podIndex, String brokerName) {
-        return Constants.HTTP + "://" + kubeClient.getExternalAccessServiceUrlPrefixName(namespace, brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX + "-").get(podIndex) + "/metrics/";
+        return Constants.HTTP + "://" + kubeClient.getExternalAccessServiceUrlPrefixName(namespace, brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX + "-").get(podIndex) + "/metrics/";
     }
 
     public void disablePrometheusUserMonitoring() {

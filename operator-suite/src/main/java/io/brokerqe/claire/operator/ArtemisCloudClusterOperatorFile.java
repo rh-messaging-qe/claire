@@ -4,7 +4,7 @@
  */
 package io.brokerqe.claire.operator;
 
-import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -234,11 +234,11 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         }
         Deployment operator = TestUtils.configFromYaml(operatorFile.toFile(), Deployment.class);
 
-        if (imageType.equals(Constants.OPERATOR_IMAGE_OPERATOR_PREFIX)) {
+        if (imageType.equals(ArtemisConstants.OPERATOR_IMAGE_OPERATOR_PREFIX)) {
             operator.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(imageUrl);
         }
 
-        if (imageType.equals(Constants.BROKER_IMAGE_OPERATOR_PREFIX) || imageType.equals(Constants.BROKER_INIT_IMAGE_OPERATOR_PREFIX)) {
+        if (imageType.equals(ArtemisConstants.BROKER_IMAGE_OPERATOR_PREFIX) || imageType.equals(ArtemisConstants.BROKER_INIT_IMAGE_OPERATOR_PREFIX)) {
             envVars = operator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
             String finalImageTypeVersion = imageTypeVersion;
             EnvVar brokerImageEV = envVars.stream().filter(envVar -> envVar.getName().equals(finalImageTypeVersion)).findFirst().get();

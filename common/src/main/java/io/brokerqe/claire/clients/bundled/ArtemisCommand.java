@@ -7,6 +7,7 @@ package io.brokerqe.claire.clients.bundled;
 public enum ArtemisCommand {
     ADDRESS_SHOW("address show"),
     ADDRESS_CREATE("address create"),
+    ADDRESS_DELETE("address delete"),
     QUEUE_CREATE("queue create"),
     QUEUE_DELETE("queue delete"),
     QUEUE_STAT("queue stat"),

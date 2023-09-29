@@ -10,6 +10,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.addresssettings.AddressSetting;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.helpers.JolokiaHelper;
@@ -105,7 +106,7 @@ public class AddressSettingsTests extends AbstractSystemTests {
         AddressSetting setting = new AddressSetting();
         setting.setAutoDeleteAddresses(true);
         setting.setAutoCreateAddresses(true);
-        setting.setAddressFullPolicy(Constants.ADDRESSSETTINGS_POLICY_DROP);
+        setting.setAddressFullPolicy(ArtemisConstants.ADDRESSSETTINGS_POLICY_DROP);
         setting.setAutoCreateDeadLetterResources(true);
         setting.setAutoCreateExpiryResources(true);
         setting.setAutoCreateJmsQueues(true);
@@ -123,13 +124,13 @@ public class AddressSettingsTests extends AbstractSystemTests {
         setting.setAutoCreateJmsQueues(true);
         setting.setAutoCreateExpiryResources(true);
         setting.setAutoCreateDeadLetterResources(true);
-        setting.setConfigDeleteAddresses(Constants.ADDRESSSETTING_FORCE);
-        setting.setConfigDeleteDiverts(Constants.ADDRESSSETTING_FORCE);
-        setting.setConfigDeleteQueues(Constants.ADDRESSSETTING_FORCE);
+        setting.setConfigDeleteAddresses(ArtemisConstants.ADDRESSSETTING_FORCE);
+        setting.setConfigDeleteDiverts(ArtemisConstants.ADDRESSSETTING_FORCE);
+        setting.setConfigDeleteQueues(ArtemisConstants.ADDRESSSETTING_FORCE);
         setting.setDeadLetterAddress("deadlq");
         setting.setDeadLetterQueuePrefix("deadlq");
         setting.setDeadLetterQueueSuffix("deadlq");
-        setting.setDefaultAddressRoutingType(Constants.ADDRESSSETTINGS_ROUTING_MULTICAST);
+        setting.setDefaultAddressRoutingType(ArtemisConstants.ADDRESSSETTINGS_ROUTING_MULTICAST);
         setting.setDefaultConsumersBeforeDispatch(100);
         setting.setDefaultConsumerWindowSize(100);
         setting.setDefaultGroupBuckets(100);
@@ -143,7 +144,7 @@ public class AddressSettingsTests extends AbstractSystemTests {
         setting.setDefaultMaxConsumers(100);
         setting.setDefaultNonDestructive(true);
         setting.setDefaultPurgeOnNoConsumers(true);
-        setting.setDefaultQueueRoutingType(Constants.ADDRESSSETTINGS_ROUTING_MULTICAST);
+        setting.setDefaultQueueRoutingType(ArtemisConstants.ADDRESSSETTINGS_ROUTING_MULTICAST);
         setting.setDefaultRingSize(100);
         /*
         * This parameter is bugged starting 7.10.0
@@ -173,9 +174,9 @@ public class AddressSettingsTests extends AbstractSystemTests {
         setting.setRetroactiveMessageCount(100);
         setting.setSendToDlaOnNoRoute(true);
         setting.setSlowConsumerCheckPeriod(100);
-        setting.setSlowConsumerPolicy(Constants.ADDRESSETTINGS_POLICY_NOTIFY);
+        setting.setSlowConsumerPolicy(ArtemisConstants.ADDRESSETTINGS_POLICY_NOTIFY);
         setting.setSlowConsumerThreshold(100);
-        setting.setSlowConsumerThresholdMeasurementUnit(Constants.ADDRESSSETING_UNIT_MPS);
+        setting.setSlowConsumerThresholdMeasurementUnit(ArtemisConstants.ADDRESSSETING_UNIT_MPS);
 
         setting.setMatch(match);
         return setting;
@@ -208,7 +209,7 @@ public class AddressSettingsTests extends AbstractSystemTests {
         ResourceManager.createArtemis(testNamespace, broker);
 
         String brokerName = broker.getMetadata().getName();
-        String response = JolokiaHelper.getAddressSettings(getClient().getExternalAccessServiceUrl(testNamespace, brokerName + "-" + Constants.WEBCONSOLE_URI_PREFIX + "-0-svc-rte"), "someQueue");
+        String response = JolokiaHelper.getAddressSettings(getClient().getExternalAccessServiceUrl(testNamespace, brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX + "-0-svc-rte"), "someQueue");
         LOGGER.trace("Content: " + response);
         JSONObject jsonResponse = new JSONObject(response);
         JSONObject jsonValue = new JSONObject(jsonResponse.getString("value").replace("\\", ""));

@@ -203,17 +203,17 @@ public class EnvironmentOperator extends Environment {
 
         if (brokerImage != null && !brokerImage.equals("")) {
             LOGGER.debug("[ENV] Updating {} with {}", operatorFile, brokerImage);
-            ArtemisCloudClusterOperatorFile.updateImagesInOperatorFile(operatorFile, Constants.BROKER_IMAGE_OPERATOR_PREFIX, brokerImage, artemisVersion);
+            ArtemisCloudClusterOperatorFile.updateImagesInOperatorFile(operatorFile, ArtemisConstants.BROKER_IMAGE_OPERATOR_PREFIX, brokerImage, artemisVersion);
         }
 
         if (brokerInitImage != null && !brokerInitImage.equals("")) {
             LOGGER.debug("[ENV] Updating {} with {}", operatorFile, brokerInitImage);
-            ArtemisCloudClusterOperatorFile.updateImagesInOperatorFile(operatorFile, Constants.BROKER_INIT_IMAGE_OPERATOR_PREFIX, brokerInitImage, artemisVersion);
+            ArtemisCloudClusterOperatorFile.updateImagesInOperatorFile(operatorFile, ArtemisConstants.BROKER_INIT_IMAGE_OPERATOR_PREFIX, brokerInitImage, artemisVersion);
         }
 
         if (operatorImage != null && !operatorImage.equals("")) {
             LOGGER.debug("[ENV] Updating {} with {}", operatorFile, operatorImage);
-            ArtemisCloudClusterOperatorFile.updateImagesInOperatorFile(operatorFile, Constants.OPERATOR_IMAGE_OPERATOR_PREFIX, operatorImage, null);
+            ArtemisCloudClusterOperatorFile.updateImagesInOperatorFile(operatorFile, ArtemisConstants.OPERATOR_IMAGE_OPERATOR_PREFIX, operatorImage, null);
         }
     }
 

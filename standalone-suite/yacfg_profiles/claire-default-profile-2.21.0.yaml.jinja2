@@ -32,6 +32,21 @@ _defaults:
     max_size_messages: -1
     page_size_bytes: 10M
 
+  user_artemis_roles:
+    amq:
+    - admin
+    - lala
+    senders:
+    - alice
+    receivers:
+    - bob
+
+  user_artemis_users:
+    admin: admin
+    alice: alice
+    bob: bob
+    lala: lala
+
 render:
   generator_notice: true
   licenses: true
@@ -65,7 +80,7 @@ broker_xml:
 
 {% include 'artemis/_modules/broker_xml/ha_policy/user_ha_policy.yaml.jinja2' %}
 
-{% include 'artemis/_modules/users_roles_security/admin_broker_security_settings.yaml.jinja2' %}
+{% include 'artemis/_modules/users_roles_security/gssapi_security_settings.yaml.jinja2' %}
 
 {% include 'artemis/_modules/broker_xml/address_settings/user_address_settings.yaml.jinja2' %}
 
@@ -75,7 +90,7 @@ broker_xml:
 {% include 'artemis/_modules/artemis_profile/default_jmx.yaml.jinja2' %}
 
 # users and roles properties xml
-{% include 'artemis/_modules/users_roles_security/admin.yaml.jinja2' %}
+{% include 'artemis/_modules/users_roles_security/user_user_roles.yaml.jinja2' %}
 
 # bootstrap.xml
 {% include 'artemis/_modules/bootstrap_xml/allow.yaml.jinja2' %}

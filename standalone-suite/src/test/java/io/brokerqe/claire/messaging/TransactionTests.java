@@ -5,6 +5,7 @@
 package io.brokerqe.claire.messaging;
 
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.DeployableClient;
@@ -39,8 +40,8 @@ public class TransactionTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionTests.class);
     private ArtemisContainer artemis;
     private DeployableClient deployableClient;
-    private final String username = Constants.ARTEMIS_INSTANCE_USER_NAME;
-    private final String password = Constants.ARTEMIS_INSTANCE_USER_PASS;
+    private final String username = ArtemisConstants.ADMIN_NAME;
+    private final String password = ArtemisConstants.ADMIN_PASS;
     private String brokerUri;
 
     @BeforeAll

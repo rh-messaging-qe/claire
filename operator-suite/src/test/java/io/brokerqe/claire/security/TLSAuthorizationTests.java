@@ -14,6 +14,7 @@ import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.broker
 import io.amq.broker.v1beta1.activemqartemissecurityspec.securitysettings.broker.PermissionsBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -98,7 +99,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
 
     protected void createArtemisDeployment() {
         Map<String, String> jaasData = Map.of(
-            Constants.LOGIN_CONFIG_CONFIG_KEY, """
+            ArtemisConstants.LOGIN_CONFIG_CONFIG_KEY, """
                 activemq {
                     org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
                         reload=false
@@ -129,7 +130,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
         getClient().createSecretStringData(testNamespace, secretName, jaasData, true);
 
         getClient().createConfigMap(testNamespace, "debug-logging-config",
-                Map.of(Constants.LOGGING_PROPERTIES_CONFIG_KEY, """
+                Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, """
                     appender.stdout.name = STDOUT
                     appender.stdout.type = Console
                     rootLogger = info, STDOUT
