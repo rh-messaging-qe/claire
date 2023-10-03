@@ -30,7 +30,7 @@ jobs:
       - name: Configure GitHub Packages Maven repository
         run: cp .github/workflows/settings.xml ~/.m2/
 
-      - name: Build standalone tests with Maven
+      - name: Build with Maven
         run: make build
 
       - name: Run standalone smoke tests
