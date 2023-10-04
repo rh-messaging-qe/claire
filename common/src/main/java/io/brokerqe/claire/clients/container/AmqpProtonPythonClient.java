@@ -118,7 +118,7 @@ public class AmqpProtonPythonClient extends SystemtestClient {
         String cmdOutput;
         String[] command = constructClientCommand(MessagingClient.SENDER, senderOptions);
         cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
-        LOGGER.debug("[{}] [TX] \n{}", deployableClient.getContainerName(), cmdOutput);
+        LOGGER.debug("[{}][TX] \n{}", deployableClient.getContainerName(), cmdOutput);
         this.sentMessages = parseMessages(cmdOutput);
         return sentMessages.size();
     }
@@ -166,7 +166,7 @@ public class AmqpProtonPythonClient extends SystemtestClient {
             String cmdOutput;
             String[] command = constructClientCommand(MessagingClient.RECEIVER, receiverOptions);
             cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
-            LOGGER.debug("[{}] [RX] \n{}", deployableClient.getContainerName(), cmdOutput);
+            LOGGER.debug("[{}][RX] \n{}", deployableClient.getContainerName(), cmdOutput);
             this.receivedMessages = parseMessages(cmdOutput);
             return receivedMessages.size();
         }

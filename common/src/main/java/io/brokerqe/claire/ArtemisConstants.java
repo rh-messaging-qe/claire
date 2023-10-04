@@ -32,7 +32,10 @@ public interface ArtemisConstants {
     int DEFAULT_STOMP_PORT = 61613;
     int DEFAULT_WEB_CONSOLE_PORT = 8161;
 
-
+    // Security
+    String SASL_ANON = "ANONYMOUS";
+    String SASL_PLAIN = "PLAIN";
+    String SASL_EXTERNAL = "EXTERNAL";
 
     // Logging
     String DEFAULT_LOG_LEVEL = "INFO";
@@ -168,7 +171,7 @@ public interface ArtemisConstants {
     String LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN = ".* AMQ601264: User %s\\(%s\\)@.* gets security check failure, reason = AMQ229032: User: %s does not have permission='SEND' on address %s.*";
     String LOG_AUDIT_AUTHENTICATION_FAIL_CONSUME_PATTERN = ".* AMQ601264: User %s\\(%s\\)@.* gets security check failure, reason = AMQ229213: User: %s does not have permission='CONSUME' for queue %s on address %s.*";
 
-    String LOG_AUDIT_CREATE_ADDRESS_PATTERN = ".* AMQ601262: User %s\\(%s\\)@.* is creating address on target resource: .* with parameters: \\[%s::%s.*";
+    String LOG_AUDIT_CREATE_ADDRESS_PATTERN_CORE = ".* AMQ601262: User %s\\(%s\\)@.* is creating address on target resource: .* with parameters: \\[%s::%s.*";
     String LOG_AUDIT_CREATE_ADDRESS_PATTERN_AMQP = ".* AMQ601262: User %s\\(%s\\)@.* is creating address on target resource: .* with parameters: .*name=%s.*";
     String LOG_AUDIT_CREATE_QUEUE_PATTERN = ".* AMQ601065: User %s\\(%s\\)@.* is creating a queue on target resource: .* with parameters: \\[.* name=%s, address=%s.*";
     String LOG_AUDIT_SENT_MESSAGE_PATTERN = ".* AMQ601500: User %s\\(%s\\)@.* sent a message .* address=%s::%s.*";

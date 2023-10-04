@@ -18,7 +18,6 @@ import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
-import io.brokerqe.claire.clients.container.AmqpQpidClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
 import io.brokerqe.claire.junit.TestValidSince;
@@ -58,7 +57,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
     String expiredAfterSecretName = "expired-after-tls-secret";
     String expiredSecretName = "expired-tls-secret";
     int msgsExpected = 2;
-    String saslMechanism = AmqpQpidClient.SASL_EXTERNAL;
+    String saslMechanism = ArtemisConstants.SASL_EXTERNAL;
     ActiveMQArtemis broker;
     ActiveMQArtemisSecurity artemisSecurity;
     Acceptors amqpAcceptors;

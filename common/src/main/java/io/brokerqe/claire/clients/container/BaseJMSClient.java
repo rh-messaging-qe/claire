@@ -8,6 +8,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.executor.Executor;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,9 +23,6 @@ import java.util.Map;
 public abstract class BaseJMSClient extends SystemtestClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseJMSClient.class);
-    public static final String SASL_ANON = "ANONYMOUS";
-    public static final String SASL_PLAIN = "PLAIN";
-    public static final String SASL_EXTERNAL = "EXTERNAL";
     private String keystorePassword;
     private String trustStore;
     private String trustStorePassword;
@@ -93,10 +91,14 @@ public abstract class BaseJMSClient extends SystemtestClient {
     public int sendMessages() {
         String cmdOutput;
         String[] command = constructClientCommand(MessagingClient.SENDER);
-        cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
-        LOGGER.debug("[{}][TX] \n{}", deployableClient.getContainerName(), cmdOutput);
-        this.sentMessages = parseMessages(cmdOutput);
-        return sentMessages.size();
+        try {
+            cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+            LOGGER.debug("[{}][TX] \n{}", deployableClient.getContainerName(), cmdOutput);
+            this.sentMessages = parseMessages(cmdOutput);
+            return sentMessages.size();
+        } catch (ClaireRuntimeException e) {
+            throw new MessagingClientException(e.getMessage(), e);
+        }
     }
 
     @Override
@@ -108,10 +110,14 @@ public abstract class BaseJMSClient extends SystemtestClient {
             // executed client on foreground
             String cmdOutput;
             String[] command = constructClientCommand(MessagingClient.RECEIVER);
-            cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
-            LOGGER.debug("[{}] [RX] \n{}", deployableClient.getContainerName(), cmdOutput);
-            this.receivedMessages = parseMessages(cmdOutput);
-            return receivedMessages.size();
+            try {
+                cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+                LOGGER.debug("[{}][RX] \n{}", deployableClient.getContainerName(), cmdOutput);
+                this.receivedMessages = parseMessages(cmdOutput);
+                return receivedMessages.size();
+            } catch (ClaireRuntimeException e) {
+                throw new MessagingClientException(e.getMessage(), e);
+            }
         }
     }
 

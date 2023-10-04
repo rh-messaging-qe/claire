@@ -38,10 +38,10 @@ public class ExecutorStandalone implements Executor {
             Container.ExecResult execResult = container.execInContainer(command);
             int cmdReturnCode = execResult.getExitCode();
             if (cmdReturnCode != 0) {
-                String errMsg = String.format("Error on executing command '%s' in container %s, return code: %s ",
-                        String.join(" ", command), container.getContainerName(), cmdReturnCode);
-                LOGGER.error("[ExecutorStandalone] {} {} ", errMsg, execResult.getStderr());
-                throw new ClaireRuntimeException(errMsg);
+                String errMsg = String.format("Error on executing command '%s' in container %s, return code: %s\n%s",
+                        String.join(" ", command), container.getContainerName(), cmdReturnCode, execResult.getStderr());
+                LOGGER.error("[ExecutorStandalone] {}", errMsg);
+                throw new ClaireRuntimeException(execResult.getStderr(), new Throwable(errMsg));
             }
             return execResult.getStdout();
         } catch (IOException | InterruptedException e) {

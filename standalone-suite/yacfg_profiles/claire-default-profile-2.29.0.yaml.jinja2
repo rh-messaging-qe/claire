@@ -34,21 +34,6 @@ _defaults:
     max_read_page_messages: -1
     max_read_page_bytes: 20M
 
-  user_artemis_roles:
-    amq:
-    - admin
-    - lala
-    senders:
-    - alice
-    receivers:
-    - bob
-
-  user_artemis_users:
-    admin: admin
-    alice: alice
-    bob: bob
-    lala: lala
-
 render:
   generator_notice: true
   licenses: true
@@ -68,7 +53,11 @@ broker_xml:
 
 {% include 'artemis/_modules/broker_xml/critical_analyzer/user_critical_analyzer.yaml.jinja2' %}
 
-{% include 'artemis/_modules/broker_xml/acceptors/default.yaml.jinja2' %}
+{% if use_scram is sameas true -%}
+  {% include 'artemis/_modules/broker_xml/acceptors/scram.yaml.jinja2' %}
+{% else %}
+  {% include 'artemis/_modules/broker_xml/acceptors/default.yaml.jinja2' %}
+{% endif %}
 
 {% include 'artemis/_modules/broker_xml/connectors/user_connectors.yaml.jinja2' %}
 
@@ -92,7 +81,11 @@ broker_xml:
 {% include 'artemis/_modules/artemis_profile/default_jmx.yaml.jinja2' %}
 
 # users and roles properties xml
-{% include 'artemis/_modules/users_roles_security/user_user_roles.yaml.jinja2' %}
+{% if use_scram is sameas true %}
+  {% include 'artemis/_modules/users_roles_security/scram_users.yaml.jinja2' %}
+{% else %}
+  {% include 'artemis/_modules/users_roles_security/default_test_users.yaml.jinja2' %}
+{% endif %}
 
 # bootstrap.xml
 {% include 'artemis/_modules/bootstrap_xml/allow.yaml.jinja2' %}
@@ -104,7 +97,11 @@ broker_xml:
 {% include 'artemis/_modules/log4j2/default.yaml.jinja2' %}
 
 # login.config
-{% include 'artemis/_modules/login_config/jaas_default.yaml.jinja2' %}
+{% if use_scram is sameas true %}
+    {% include 'artemis/_modules/login_config/jaas_scram.yaml.jinja2' %}
+{% else %}
+    {% include 'artemis/_modules/login_config/jaas_default.yaml.jinja2' %}
+{% endif %}
 
 # management.xml
 {% include 'artemis/_modules/management_xml/unauthenticated_connector.yaml.jinja2' %}

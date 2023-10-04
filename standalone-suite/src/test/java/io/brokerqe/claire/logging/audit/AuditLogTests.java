@@ -6,27 +6,33 @@ package io.brokerqe.claire.logging.audit;
 
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.BundledClientDeployment;
+import io.brokerqe.claire.client.deployment.StJavaClientDeployment;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
 import io.brokerqe.claire.clients.bundled.BundledAmqpMessagingClient;
 import io.brokerqe.claire.clients.bundled.BundledClientOptions;
-import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
+import io.brokerqe.claire.clients.container.AmqpCliOptionsBuilder;
+import io.brokerqe.claire.clients.container.AmqpQpidClient;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
 import io.brokerqe.claire.helper.webconsole.MainPageHelper;
 import io.brokerqe.claire.helper.webconsole.WebConsoleHelper;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -34,18 +40,63 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuditLogTests extends AbstractSystemTests {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogTests.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AuditLogTests.class);
 
-    private ArtemisContainer artemisInstance;
-    private BundledClientDeployment artemisDeployableClient;
+    protected ArtemisContainer artemis;
+    protected BundledClientDeployment artemisDeployableClient;
+    private StJavaClientDeployment stDeployableClient;
+    private String brokerUri;
+    private Path auditLogPath;
+
+    protected String adminFormattedAuth;
+    protected String adminFormattedAddressCore;
+    protected String adminFormattedAddressAmqp;
+    protected String adminFormattedQueue;
+    protected String adminFormattedSent;
+    protected String adminFormattedRecv;
+    protected String charlieFormattedAuth;
+    protected String charlieFormattedSent;
+    protected String charlieFormattedRecv;
+    protected String aliceFormattedAuth;
+    protected String aliceFormattedSent;
+    protected String aliceFormattedRecv;
+    protected String bobFormattedAuth;
+    protected String bobFormattedSent;
+    protected String bobFormattedRecv;
+    protected String address;
+    protected String queue;
 
     @BeforeAll
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
         String tuneFile = generateYacfgProfilesContainerTestDir("tune.yaml.jinja2");
-        artemisInstance = getArtemisInstance(artemisName, tuneFile);
+        artemis = getArtemisInstance(artemisName, tuneFile);
         artemisDeployableClient = new BundledClientDeployment();
+        stDeployableClient = new StJavaClientDeployment();
+        brokerUri = Constants.AMQP_URL_PREFIX + artemis.getName() + ":" + DEFAULT_AMQP_PORT;
+        auditLogPath = Path.of(getTestConfigDir(), artemis.getName(), ArtemisConstants.LOG_DIR, ArtemisConstants.AUDIT_LOG_FILE);
+
+        // Test data
+        address = "myAddress";
+        queue = "myQueue";
+        charlieFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS);
+        charlieFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS, address, queue);
+        charlieFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS, queue);
+
+        aliceFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS);
+        aliceFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS, address, queue);
+        aliceFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_CONSUME_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS, ArtemisConstants.ALICE_NAME, queue, address);
+
+        bobFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS);
+        bobFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, queue);
+        bobFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, ArtemisConstants.BOB_NAME, address);
+        adminFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN);
+        adminFormattedAddressCore = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN_CORE, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
+        adminFormattedAddressAmqp = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN_AMQP, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
+        adminFormattedQueue = String.format(ArtemisConstants.LOG_AUDIT_CREATE_QUEUE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue, address);
+        adminFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
+        adminFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue);
     }
 
     @Test
@@ -55,247 +106,170 @@ public class AuditLogTests extends AbstractSystemTests {
         RemoteWebDriver driver = ResourceManager.getChromeRemoteDriver("chrome-browser");
 
         // load the console url (assertion is inside the method to be reused)
-        WebConsoleHelper.load(driver, artemisInstance);
+        WebConsoleHelper.load(driver, artemis);
 
         // try to log in (assertion is inside the method to be reused)
-        LoginPageHelper.login(driver, artemisInstance);
+        LoginPageHelper.login(driver, artemis);
 
         // try to log out (assertion is inside the method to be reused)
-        MainPageHelper.logout(driver, artemisInstance);
+        MainPageHelper.logout(driver, artemis);
 
         // assert the log does not contain the pattern
-        String logs = artemisInstance.getLogs();
+        String logs = artemis.getLogs();
         assertThat(logs).doesNotContainPattern(ArtemisConstants.LOG_PATTERN_FAILED_AUTH_304);
     }
 
-    @Test
-    void checkAuditLogsTest() {
-        String address = "myAddress";
-        String queue = "myQueue";
-        Path auditLogPath = Path.of(getTestConfigDir(), artemisInstance.getName(), ArtemisConstants.LOG_DIR, ArtemisConstants.AUDIT_LOG_FILE);
-
-        String adminFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN);
-        String adminFormattedAddress = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
-        String adminFormattedQueue = String.format(ArtemisConstants.LOG_AUDIT_CREATE_QUEUE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue, address);
-        String adminFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
-        String adminFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue);
-
-        String charlieFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS);
-        String charlieFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS, address, queue);
-        String charlieFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS, queue);
-
-        String aliceFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS);
-        String aliceFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS, address, queue);
-        String aliceFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_CONSUME_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS, ArtemisConstants.ALICE_NAME, queue, address);
-
-        String bobFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS);
-        String bobFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, queue);
-        String bobFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, ArtemisConstants.BOB_NAME, address);
-
-        LOGGER.info("Test Bundled Core Messaging");
-        int msgsExpected = 5;
-        BundledClientOptions options = new BundledClientOptions()
-                .withDeployableClient(artemisDeployableClient)
-                .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
-                .withMessageCount(msgsExpected)
-                .withPassword(ArtemisConstants.ADMIN_NAME)
-                .withUsername(ArtemisConstants.ADMIN_PASS)
-                .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
-        MessagingClient bundledClient = new BundledCoreMessagingClient(options);
-        int sent = bundledClient.sendMessages();
-        int received = bundledClient.receiveMessages();
-        MatcherAssert.assertThat(sent, equalTo(msgsExpected));
-        MatcherAssert.assertThat(received, equalTo(msgsExpected));
-
+    protected void checkAuditLogs(List<String> checkPatternLogs) {
         String auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        LOGGER.warn("auditLog: {}", auditLog);
+        LOGGER.debug("auditLog: {}", auditLog);
+        for (String patternLog : checkPatternLogs) {
+            assertThat(auditLog).containsPattern(patternLog);
+        }
+    }
 
-        assertThat(auditLog).containsPattern(adminFormattedAuth);
-        assertThat(auditLog).containsPattern(adminFormattedAddress);
-        assertThat(auditLog).containsPattern(adminFormattedQueue);
-        assertThat(auditLog).containsPattern(adminFormattedSent);
-        assertThat(auditLog).containsPattern(adminFormattedRecv);
-
-        options = new BundledClientOptions()
-                .withDeployableClient(artemisDeployableClient)
-                .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
-                .withMessageCount(msgsExpected)
-                .withPassword(ArtemisConstants.CHARLIE_NAME)
-                .withUsername(ArtemisConstants.CHARLIE_PASS)
-                .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
-        bundledClient = new BundledCoreMessagingClient(options);
-        sent = bundledClient.sendMessages();
-        received = bundledClient.receiveMessages();
-        MatcherAssert.assertThat(sent, equalTo(msgsExpected));
-        MatcherAssert.assertThat(received, equalTo(msgsExpected));
-
-        auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        assertThat(auditLog).containsPattern(charlieFormattedAuth);
-        assertThat(auditLog).containsPattern(charlieFormattedSent);
-        assertThat(auditLog).containsPattern(charlieFormattedRecv);
-
-        options = new BundledClientOptions()
-                .withDeployableClient(artemisDeployableClient)
-                .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
-                .withMessageCount(msgsExpected)
-                .withPassword(ArtemisConstants.ALICE_NAME)
-                .withUsername(ArtemisConstants.ALICE_PASS)
-                .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
-        BundledCoreMessagingClient bundledClientAlice = new BundledCoreMessagingClient(options);
-        int sentAlice = bundledClientAlice.sendMessages();
-        assertThrows(MessagingClientException.class, bundledClientAlice::receiveMessages);
-
-        auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        LOGGER.warn("auditLog: {}", auditLog);
-        assertThat(auditLog).containsPattern(aliceFormattedAuth);
-        assertThat(auditLog).containsPattern(aliceFormattedSent);
-        assertThat(auditLog).containsPattern(aliceFormattedRecv);
-
-        options = new BundledClientOptions()
-                .withDeployableClient(artemisDeployableClient)
-                .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
-                .withMessageCount(msgsExpected)
-                .withPassword(ArtemisConstants.BOB_NAME)
-                .withUsername(ArtemisConstants.BOB_PASS)
-                .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
-        BundledCoreMessagingClient bundledClientBob = new BundledCoreMessagingClient(options);
-
-        assertThrows(MessagingClientException.class, bundledClientBob::sendMessages);
-        int receivedBob = bundledClientBob.receiveMessages();
-        MatcherAssert.assertThat(sentAlice, equalTo(msgsExpected));
-        MatcherAssert.assertThat(receivedBob, equalTo(msgsExpected));
-
-        auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        LOGGER.warn("auditLog: {}", auditLog);
-        assertThat(auditLog).containsPattern(bobFormattedAuth);
-        assertThat(auditLog).containsPattern(bobFormattedSent);
-        assertThat(auditLog).containsPattern(bobFormattedRecv);
-
-        deleteQueue(artemisDeployableClient, queue);
-        deleteAddress(artemisDeployableClient, address);
+    @AfterEach
+    public void cleanBroker(TestInfo testInfo) {
+        String auditLogCopy = String.format("%s.%s", auditLogPath.toString(), testInfo.getDisplayName());
+        LOGGER.info("Copying file {} -> {}. \nRestarting broker", auditLogPath.toString(), auditLogCopy);
+        TestUtils.copyFile(auditLogPath.toString(), auditLogCopy);
+        artemis.restartWithStop();
     }
 
     @Test
-    @Disabled("Some AMQP discrepancy on user logging")
-    void checkAmqpAuditLogsTest() {
-        String address = "myAddress";
-        String queue = "myQueue";
-        Path auditLogPath = Path.of(getTestConfigDir(), artemisInstance.getName(), ArtemisConstants.LOG_DIR, ArtemisConstants.AUDIT_LOG_FILE);
-        String adminFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN);
-        String adminFormattedAddress = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN_AMQP, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
-        String adminFormattedQueue = String.format(ArtemisConstants.LOG_AUDIT_CREATE_QUEUE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue, address);
-        String adminFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
-        String adminFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue);
-
-        String charlieFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS);
-        String charlieFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS, address, queue);
-        String charlieFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.CHARLIE_NAME, ArtemisConstants.ROLE_SENDERS, queue);
-
-        String aliceFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS);
-        String aliceFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS, address, queue);
-        String aliceFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_CONSUME_PATTERN, ArtemisConstants.ALICE_NAME, ArtemisConstants.ROLE_SENDERS, ArtemisConstants.ALICE_NAME, queue, address);
-
-        String bobFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS);
-        String bobFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, queue);
-        String bobFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, ArtemisConstants.BOB_NAME, address);
-
-        LOGGER.info("Test Bundled Core Messaging");
+    void checkBundledAmqpAuditLogsTest() {
         int msgsExpected = 5;
+        LOGGER.info("Test Bundled AMQP Messaging. Starting test for admin user: {}", ArtemisConstants.ADMIN_NAME);
         BundledClientOptions options = new BundledClientOptions()
                 .withDeployableClient(artemisDeployableClient)
                 .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withDestinationPort(DEFAULT_AMQP_PORT)
                 .withMessageCount(msgsExpected)
                 .withPassword(ArtemisConstants.ADMIN_NAME)
                 .withUsername(ArtemisConstants.ADMIN_PASS)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
+                .withDestinationUrl(artemis.getName());
         MessagingClient bundledClient = new BundledAmqpMessagingClient(options);
         int sent = bundledClient.sendMessages();
         int received = bundledClient.receiveMessages();
         MatcherAssert.assertThat(sent, equalTo(msgsExpected));
         MatcherAssert.assertThat(received, equalTo(msgsExpected));
+        checkAuditLogs(List.of(adminFormattedAuth, adminFormattedAddressAmqp, adminFormattedQueue, adminFormattedSent, adminFormattedRecv));
 
-        String auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        LOGGER.warn("auditLog: {}", auditLog);
-        //       AMQ601262: User admin(amq)@192.168.32.2:34798 is creating address on target resource: 371c8f14-5e35-11ee-bfdb-0242c0a82002 with parameters: [Address [name=myAddress, id=0, routingTypes={ANYCAST}, autoCreated=false, paused=false, bindingRemovedTimestamp=-1, swept=false, createdTimestamp=1695929314633], true]
-        //   ".* AMQ601262: User admin\(amq\)@.* is creating address on target resource: .* with parameters: \[myAddress::myQueue.*"
-        assertThat(auditLog).containsPattern(adminFormattedAuth);
-        assertThat(auditLog).containsPattern(adminFormattedAddress);
-        assertThat(auditLog).containsPattern(adminFormattedQueue);
-        assertThat(auditLog).containsPattern(adminFormattedSent);
-        assertThat(auditLog).containsPattern(adminFormattedRecv);
-
+        LOGGER.info("Starting test for senders/receivers user: {}", ArtemisConstants.CHARLIE_NAME);
         options = new BundledClientOptions()
                 .withDeployableClient(artemisDeployableClient)
                 .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withDestinationPort(DEFAULT_AMQP_PORT)
                 .withMessageCount(msgsExpected)
                 .withPassword(ArtemisConstants.CHARLIE_NAME)
                 .withUsername(ArtemisConstants.CHARLIE_PASS)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
+                .withDestinationUrl(artemis.getName());
         bundledClient = new BundledAmqpMessagingClient(options);
         sent = bundledClient.sendMessages();
         received = bundledClient.receiveMessages();
         MatcherAssert.assertThat(sent, equalTo(msgsExpected));
         MatcherAssert.assertThat(received, equalTo(msgsExpected));
+        checkAuditLogs(List.of(charlieFormattedAuth, charlieFormattedSent, charlieFormattedRecv));
 
-        auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        assertThat(auditLog).containsPattern(charlieFormattedAuth);
-        assertThat(auditLog).containsPattern(charlieFormattedSent);
-        assertThat(auditLog).containsPattern(charlieFormattedRecv);
-
+        LOGGER.info("Starting test for senders user: {}", ArtemisConstants.ALICE_NAME);
         options = new BundledClientOptions()
                 .withDeployableClient(artemisDeployableClient)
                 .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withDestinationPort(DEFAULT_AMQP_PORT)
                 .withMessageCount(msgsExpected)
                 .withPassword(ArtemisConstants.ALICE_NAME)
                 .withUsername(ArtemisConstants.ALICE_PASS)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
+                .withDestinationUrl(artemis.getName());
         BundledAmqpMessagingClient bundledClientAlice = new BundledAmqpMessagingClient(options);
         int sentAlice = bundledClientAlice.sendMessages();
         assertThrows(MessagingClientException.class, bundledClientAlice::receiveMessages);
+        checkAuditLogs(List.of(aliceFormattedAuth, aliceFormattedSent, aliceFormattedRecv));
 
-        auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        LOGGER.warn("auditLog: {}", auditLog);
-        assertThat(auditLog).containsPattern(aliceFormattedAuth);
-        assertThat(auditLog).containsPattern(aliceFormattedSent);
-        assertThat(auditLog).containsPattern(aliceFormattedRecv);
-
+        LOGGER.info("Starting test for receivers user: {}", ArtemisConstants.BOB_NAME);
         options = new BundledClientOptions()
                 .withDeployableClient(artemisDeployableClient)
                 .withDestinationAddress(address)
-                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withDestinationPort(DEFAULT_AMQP_PORT)
                 .withMessageCount(msgsExpected)
                 .withPassword(ArtemisConstants.BOB_NAME)
                 .withUsername(ArtemisConstants.BOB_PASS)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemisInstance.getName());
+                .withDestinationUrl(artemis.getName());
         BundledAmqpMessagingClient bundledClientBob = new BundledAmqpMessagingClient(options);
 
         assertThrows(MessagingClientException.class, bundledClientBob::sendMessages);
         int receivedBob = bundledClientBob.receiveMessages();
         MatcherAssert.assertThat(sentAlice, equalTo(msgsExpected));
         MatcherAssert.assertThat(receivedBob, equalTo(msgsExpected));
+        checkAuditLogs(List.of(bobFormattedAuth, bobFormattedSent, bobFormattedRecv));
 
-        auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        LOGGER.warn("auditLog: {}", auditLog);
-        assertThat(auditLog).containsPattern(bobFormattedAuth);
-        assertThat(auditLog).containsPattern(bobFormattedSent);
-        assertThat(auditLog).containsPattern(bobFormattedRecv);
         deleteQueue(artemisDeployableClient, queue);
         deleteAddress(artemisDeployableClient, address);
     }
 
+    @Test
+    void checkAmqpAuditLogsTest() {
+        String fqqn = String.format("%s::%s", address, queue);
+        int msgsExpected = 5;
+
+        LOGGER.info("Starting test for admin user: {}", ArtemisConstants.ADMIN_NAME);
+        Map<String, String> optionsAdmin = new AmqpCliOptionsBuilder()
+                .connUsername(ArtemisConstants.ADMIN_NAME)
+                .connPassword(ArtemisConstants.ADMIN_PASS)
+                .address(fqqn)
+                .count(msgsExpected)
+                .build();
+        MessagingClient messagingClient = new AmqpQpidClient(stDeployableClient, brokerUri, optionsAdmin, optionsAdmin);
+        int sent = messagingClient.sendMessages();
+        int received = messagingClient.receiveMessages();
+        MatcherAssert.assertThat(sent, equalTo(msgsExpected));
+        MatcherAssert.assertThat(received, equalTo(msgsExpected));
+        checkAuditLogs(List.of(adminFormattedAuth, adminFormattedAddressAmqp, adminFormattedQueue, adminFormattedSent, adminFormattedRecv));
+
+        LOGGER.info("Starting test for senders/receivers user: {}", ArtemisConstants.CHARLIE_NAME);
+        Map<String, String> optionsCharlie = new AmqpCliOptionsBuilder()
+                .connUsername(ArtemisConstants.CHARLIE_NAME)
+                .connPassword(ArtemisConstants.CHARLIE_PASS)
+                .address(fqqn)
+                .count(msgsExpected)
+                .build();
+
+        messagingClient = new AmqpQpidClient(stDeployableClient, brokerUri, optionsCharlie, optionsCharlie);
+        sent = messagingClient.sendMessages();
+        received = messagingClient.receiveMessages();
+        MatcherAssert.assertThat(sent, equalTo(msgsExpected));
+        MatcherAssert.assertThat(received, equalTo(msgsExpected));
+        checkAuditLogs(List.of(charlieFormattedAuth, charlieFormattedSent, charlieFormattedRecv));
+
+        LOGGER.info("Starting test for senders user: {}", ArtemisConstants.ALICE_NAME);
+        Map<String, String> optionsAlice = new AmqpCliOptionsBuilder()
+                .connUsername(ArtemisConstants.ALICE_NAME)
+                .connPassword(ArtemisConstants.ALICE_PASS)
+                .address(fqqn)
+                .count(msgsExpected)
+                .build();
+        AmqpQpidClient messagingClientAlice = new AmqpQpidClient(stDeployableClient, brokerUri, optionsAlice, optionsAlice);
+        int sentAlice = messagingClientAlice.sendMessages();
+        assertThrows(MessagingClientException.class, messagingClientAlice::receiveMessages);
+        checkAuditLogs(List.of(aliceFormattedAuth, aliceFormattedSent, aliceFormattedRecv));
+
+        LOGGER.info("Starting test for receivers user: {}", ArtemisConstants.BOB_NAME);
+        Map<String, String> optionsBob = new AmqpCliOptionsBuilder()
+                .connUsername(ArtemisConstants.BOB_NAME)
+                .connPassword(ArtemisConstants.BOB_PASS)
+                .address(fqqn)
+                .count(msgsExpected)
+                .build();
+        AmqpQpidClient messagingClientBob = new AmqpQpidClient(stDeployableClient, brokerUri, optionsBob, optionsBob);
+        assertThrows(MessagingClientException.class, messagingClientBob::sendMessages);
+        int receivedBob = messagingClientBob.receiveMessages();
+        MatcherAssert.assertThat(sentAlice, equalTo(msgsExpected));
+        MatcherAssert.assertThat(receivedBob, equalTo(msgsExpected));
+        checkAuditLogs(List.of(bobFormattedAuth, bobFormattedSent, bobFormattedRecv));
+
+        deleteQueue(artemisDeployableClient, queue);
+        deleteAddress(artemisDeployableClient, address);
+    }
 }
