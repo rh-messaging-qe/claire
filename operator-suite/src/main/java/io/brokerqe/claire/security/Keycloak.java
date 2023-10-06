@@ -262,7 +262,7 @@ public class Keycloak {
     public void importRealm(String realmName, String realmFilePath) {
         LOGGER.debug("[{}] [KC] Importing realm {} from file {}", namespace, realmName, realmFilePath);
         String realmPodFilePath = "/tmp/" + realmName + "_realm.json";
-        kubeClient.getKubernetesClient().pods().inNamespace(namespace).withName(keycloakPod.getMetadata().getName()).file(realmPodFilePath).upload(Paths.get(realmFilePath));
+        kubeClient.uploadFileToPod(namespace, keycloakPod, realmFilePath, realmPodFilePath);
 
         String createImportRealm = String.format("%s create realms -s realm=%s -s enabled=true %s && " +
                 "%s create partialImport -r %s -s ifResourceExists=SKIP -o -f %s %s", getKcadmCmd(), realmName, tmpConfig, getKcadmCmd(), realmName, realmPodFilePath, tmpConfig);

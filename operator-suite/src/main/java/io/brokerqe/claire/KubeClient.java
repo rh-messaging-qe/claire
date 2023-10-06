@@ -318,7 +318,12 @@ public class KubeClient {
     }
 
     public void uploadFileToPod(String namespace, Pod pod, String localSourcePath, String podDestinationPath) {
-        getKubernetesClient().pods().inNamespace(namespace).withName(pod.getMetadata().getName()).file(podDestinationPath).upload(Paths.get(localSourcePath));
+        boolean success = getKubernetesClient().pods().inNamespace(namespace).withName(pod.getMetadata().getName()).file(podDestinationPath).upload(Paths.get(localSourcePath));
+        if (!success) {
+            LOGGER.debug("[{}][{}] Failed to upload file to pod. Trying bash method using cat & tee", namespace, pod.getMetadata().getName());
+            String fileContent = TestUtils.getFileContentAsBase64(localSourcePath);
+            executeCommandInPod(pod, "echo " + fileContent + " | base64 -d > " + podDestinationPath, Constants.DURATION_30_SECONDS);
+        }
     }
 
     // ==================================
