@@ -73,11 +73,10 @@ public abstract class ClaireExecutionListener implements TestExecutionListener {
         });
         String formattedTestPlan = String.join(",", testsList).replaceAll(",\\n,", "\n ").replaceFirst(",", " ");
         totalTestCount = testsList.size();
-        LOGGER.warn("Initial test count={}", totalTestCount);
+        LOGGER.debug("Initial test count={}", totalTestCount);
         totalTestCount = testsList.size() - Collections.frequency(testsList, "\n");
-        LOGGER.warn("Initial test count after removal of frequency={}", totalTestCount);
+        LOGGER.debug("Initial test count after removal of frequency={}", totalTestCount);
         LOGGER.info("[TestPlan] Will execute following {} tests: {}", testsList.size() - Collections.frequency(testsList, "\n"), formattedTestPlan);
-
     }
 
     protected static void setupLoggingLevel() {

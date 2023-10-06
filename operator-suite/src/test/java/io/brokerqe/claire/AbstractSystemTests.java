@@ -105,6 +105,14 @@ public abstract class AbstractSystemTests implements TestSeparator {
         return prefix + "-" + TestUtils.getRandomString(randomLength);
     }
 
+    public String getExpectedVersion() {
+        if (testEnvironmentOperator.isOlmInstallation()) {
+            return operator.getOperatorOLMVersion(true);
+        } else {
+            return testEnvironmentOperator.getArtemisVersion();
+        }
+    }
+
     /******************************************************************************************************************
      *  Default setup and teardown methods
      ******************************************************************************************************************/

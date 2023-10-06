@@ -61,6 +61,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
+import java.lang.Runtime.Version;
 
 public final class TestUtils {
 
@@ -290,6 +291,14 @@ public final class TestUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // ========== String Operations ==========
+    public static String parseVersionMMM(String versionString) {
+        Version version = Version.parse(versionString);
+        String versionMMM = String.format("%d.%d.%d", version.feature(), version.interim(), version.update());
+        LOGGER.debug("Parsed version: {} from {}.", versionMMM, versionString);
+        return versionMMM;
     }
 
     // ========== File Operations ==========

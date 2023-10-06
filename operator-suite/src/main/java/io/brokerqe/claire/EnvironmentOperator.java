@@ -108,7 +108,7 @@ public class EnvironmentOperator extends Environment {
             envVarsSB.append(Constants.EV_ARTEMIS_TEST_VERSION).append("=").append(artemisTestVersion).append(Constants.LINE_SEPARATOR);
         }
 
-        envVarsSB.append("OLM").append("=").append(olmInstallation).append(Constants.LINE_SEPARATOR);
+        envVarsSB.append("OLM_INSTALLATION").append("=").append(olmInstallation).append(Constants.LINE_SEPARATOR);
         if (olmInstallation) {
             envVarsSB.append(Constants.EV_OLM_RELEASED).append("=").append(olmReleased).append(Constants.LINE_SEPARATOR);
         }

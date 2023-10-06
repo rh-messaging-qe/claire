@@ -9,7 +9,9 @@ import io.brokerqe.claire.EnvironmentOperator;
 import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +29,7 @@ public abstract class ArtemisCloudClusterOperator {
     protected final List<String> watchedNamespaces;
     protected final KubeClient kubeClient;
     protected String operatorName;
+    public String amqBrokerOperatorName = "amq-broker-operator";
     private final String operatorOldNameSuffix = "-operator";
     private final String operatorNewNameSuffix = "-controller-manager";
 
@@ -96,5 +99,20 @@ public abstract class ArtemisCloudClusterOperator {
     public static String getOperatorControllerManagerName(Path yamlFile) {
         Deployment operatorCODeployment = TestUtils.configFromYaml(yamlFile.toFile(), Deployment.class);
         return operatorCODeployment.getMetadata().getName();
+    }
+
+    public String getOperatorOLMVersion(boolean returnMMM) {
+        if (environmentOperator.isOlmInstallation()) {
+//            String channel = ((ArtemisCloudClusterOperatorOlm) this).getOlmChannel();
+            ClusterServiceVersion csv = kubeClient.getClusterServiceVersion(deploymentNamespace, amqBrokerOperatorName);
+            String version = csv.getSpec().getVersion();
+            if (returnMMM) {
+                return TestUtils.parseVersionMMM(version);
+            } else {
+                return version;
+            }
+        } else {
+            throw new ClaireRuntimeException("Operator is not installed using OLM!");
+        }
     }
 }

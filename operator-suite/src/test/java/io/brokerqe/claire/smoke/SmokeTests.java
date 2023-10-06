@@ -304,7 +304,7 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     @Tag(Constants.TAG_SMOKE)
     void testDefaultBrokerVersion() {
-        String expectedVersion = testEnvironmentOperator.getArtemisVersion();
+        String expectedVersion = getExpectedVersion();
         assumeFalse(expectedVersion.equals("main"), "version supplied is \"main\", skipping test.");
 
         String expectedBrokerPattern = "Red Hat AMQ.*\\.GA";
@@ -328,7 +328,7 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     @Tag(Constants.TAG_SMOKE)
     void testDefaultOperatorVersion() {
-        String expectedVersion = testEnvironmentOperator.getArtemisVersion();
+        String expectedVersion = getExpectedVersion();
         assumeFalse(expectedVersion.equals("main"), "version supplied is \"main\", skipping test.");
         String expectedOperatorVersionPattern = "Version of the operator: .*\n";
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
