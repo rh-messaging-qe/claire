@@ -1,10 +1,7 @@
 name: Build and Push Image
 
 on:
-  workflow_run:
-    workflows: ["Java Maven build"]
-    types:
-      - completed
+  workflow_dispatch:
 
 env:
   IMAGE_NAME: claire
