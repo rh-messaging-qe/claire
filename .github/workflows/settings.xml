@@ -1,0 +1,17 @@
+<settings>
+    <profiles>
+        <profile>
+            <id>github</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>github</id>
+                    <name>GitHub Packages</name>
+                    <url>https://raw.githubusercontent.com/jiridanek/crd-jar-maker/main/</url>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+</settings>
