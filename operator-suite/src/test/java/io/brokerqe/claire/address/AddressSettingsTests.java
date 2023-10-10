@@ -207,7 +207,6 @@ public class AddressSettingsTests extends AbstractSystemTests {
             .build();
 
         ResourceManager.createArtemis(testNamespace, broker);
-
         String brokerName = broker.getMetadata().getName();
         String response = JolokiaHelper.getAddressSettings(getClient().getExternalAccessServiceUrl(testNamespace, brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX + "-0-svc-rte"), "someQueue");
         LOGGER.trace("Content: " + response);

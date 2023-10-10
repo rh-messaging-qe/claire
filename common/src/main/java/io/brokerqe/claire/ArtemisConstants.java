@@ -4,6 +4,8 @@
  */
 package io.brokerqe.claire;
 
+import java.net.URLEncoder;
+
 public interface ArtemisConstants {
     // Files
     String BIN_DIR = Constants.FILE_SEPARATOR + "bin";
@@ -22,6 +24,11 @@ public interface ArtemisConstants {
     String AUTH_STRING = "auth";
     String LOGIN_STRING = "login";
     String WEBCONSOLE_URI_PREFIX = "wconsj";
+    String JOLOKIA_CALL_ENDPOINT = "/console/jolokia/exec/org.apache.activemq.artemis";
+    String JOLOKIA_BROKER_PARAM = ":broker=" + URLEncoder.encode("\"amq-broker\"");
+    String JOLOKIA_ADDRESSETTINGS_ENDPOINT = "/getAddressSettingsAsJSON/";
+    String JOLOKIA_STATUS_ENDPOINT = "/Status";
+    String JOLOKIA_ORIGIN_HEADER = "http://localhost:8161";
 
     int CONSOLE_PORT = 8161;
     int DEFAULT_ALL_PROTOCOLS_PORT = 61616;
