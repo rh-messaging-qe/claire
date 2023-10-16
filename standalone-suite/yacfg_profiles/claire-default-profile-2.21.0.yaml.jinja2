@@ -8,6 +8,9 @@ _defaults:
     - name: artemis
       uri: http://0.0.0.0:8161
 
+  log_level_audit_base: INFO
+  log_level_audit_message: INFO
+
   user_address_settings:
   - match: activemq.management#
     dead_letter_address: DLQ
@@ -50,7 +53,7 @@ _defaults:
 render:
   generator_notice: true
   licenses: true
-  template: artemis/
+  template: artemis-2.26
 
 broker_xml:
   name: '{{ broker_name }}'
