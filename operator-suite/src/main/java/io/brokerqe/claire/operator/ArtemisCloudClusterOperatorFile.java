@@ -39,7 +39,6 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
             ArtemisFileProvider.getServiceAccountInstallFile(),
             ArtemisFileProvider.getElectionRoleInstallFile(),
             ArtemisFileProvider.getElectionRoleBindingInstallFile(),
-            ArtemisFileProvider.getOperatorConfigInstallFile(),
             ArtemisFileProvider.getOperatorInstallFile()
     );
     private List<Path> filesToDeploy;

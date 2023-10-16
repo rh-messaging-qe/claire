@@ -62,10 +62,6 @@ public class ArtemisFileProvider {
         return getPresentFile(ArtemisConstants.INSTALL_ARTEMIS_CO_090_ELECTION_ROLE_BINDING_PATH, ArtemisConstants.OLD_INSTALL_ARTEMIS_CO_090_ELECTION_ROLE_BINDING_PATH);
     }
 
-    public static Path getOperatorConfigInstallFile() {
-        return getPresentFile(ArtemisConstants.INSTALL_ARTEMIS_CO_100_OPERATOR_CONFIG_PATH, ArtemisConstants.OLD_INSTALL_ARTEMIS_CO_100_OPERATOR_CONFIG_PATH);
-    }
-
     public static Path getOperatorInstallFile() {
         return getPresentFile(ArtemisConstants.INSTALL_ARTEMIS_CO_110_OPERATOR_PATH, ArtemisConstants.OLD_INSTALL_ARTEMIS_CO_110_OPERATOR_PATH);
     }
