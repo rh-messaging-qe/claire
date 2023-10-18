@@ -6,6 +6,7 @@ package io.brokerqe.claire.logging.audit;
 
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
@@ -69,8 +70,13 @@ public class AuditLogTests extends AbstractSystemTests {
     @BeforeAll
     void setupEnv() {
         String artemisName = "artemis";
+        String tuneFile;
         LOGGER.info("Creating artemis instance: " + artemisName);
-        String tuneFile = generateYacfgProfilesContainerTestDir("tune.yaml.jinja2");
+        if (isMinimumTestVersion(ArtemisVersion.VERSION_2_28)) {
+            tuneFile = generateYacfgProfilesContainerTestDir("tune.yaml.jinja2");
+        } else {
+            tuneFile = generateYacfgProfilesContainerTestDir("tune-2.21.0.yaml.jinja2");
+        }
         artemis = getArtemisInstance(artemisName, tuneFile);
         artemisDeployableClient = new BundledClientDeployment();
         stDeployableClient = new StJavaClientDeployment();

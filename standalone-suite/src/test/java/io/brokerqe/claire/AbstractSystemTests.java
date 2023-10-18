@@ -79,6 +79,15 @@ public class AbstractSystemTests implements TestSeparator {
         this.testInfo = testInfo;
     }
 
+    /**
+     * Returns true, if actualTestVersion is equal or newer than provided versionValidSince.
+     * @param minimumTestVersion test code applicable from/for this given version
+     * @return true if is valid version (equal or newer to provided testVersionValidSince)
+     */
+    public boolean isMinimumTestVersion(ArtemisVersion minimumTestVersion) {
+        return getEnvironment().getArtemisTestVersion().getVersionNumber() >= minimumTestVersion.getVersionNumber();
+    }
+
     public boolean useArtemisWithDB() {
         database = getEnvironment().getDatabase();
         return database != null;
