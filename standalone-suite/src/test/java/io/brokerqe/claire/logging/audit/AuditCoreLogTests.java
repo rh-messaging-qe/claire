@@ -5,10 +5,12 @@
 package io.brokerqe.claire.logging.audit;
 
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
 import io.brokerqe.claire.clients.bundled.BundledClientOptions;
 import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
+import io.brokerqe.claire.junit.TestDisabledOn;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuditCoreLogTests extends AuditLogTests {
     @Test
+    @TestDisabledOn(ArtemisVersion.VERSION_2_21)
     void checkBundledCoreAuditLogsTest() {
         int msgsExpected = 5;
         LOGGER.info("Test Bundled Core Messaging. Starting test for {} user.", ArtemisConstants.ADMIN_NAME);

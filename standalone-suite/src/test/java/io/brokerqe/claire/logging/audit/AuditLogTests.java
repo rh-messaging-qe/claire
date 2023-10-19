@@ -22,6 +22,7 @@ import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
 import io.brokerqe.claire.helper.webconsole.MainPageHelper;
 import io.brokerqe.claire.helper.webconsole.WebConsoleHelper;
+import io.brokerqe.claire.junit.TestDisabledOn;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -142,6 +143,7 @@ public class AuditLogTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestDisabledOn(ArtemisVersion.VERSION_2_21)
     void checkBundledAmqpAuditLogsTest() {
         int msgsExpected = 5;
         LOGGER.info("Test Bundled AMQP Messaging. Starting test for admin user: {}", ArtemisConstants.ADMIN_NAME);
@@ -216,6 +218,7 @@ public class AuditLogTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestDisabledOn(ArtemisVersion.VERSION_2_21)
     void checkAmqpAuditLogsTest() {
         String fqqn = String.format("%s::%s", address, queue);
         int msgsExpected = 5;
