@@ -89,7 +89,6 @@ public class EnvironmentOperator extends Environment {
         keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
 
         printAllUsedTestVariables();
-        checkSetProvidedImages();
     }
 
     @SuppressWarnings("checkstyle:NPathComplexity")
@@ -198,7 +197,7 @@ public class EnvironmentOperator extends Environment {
         return null;
     }
 
-    private void checkSetProvidedImages() {
+    public void checkSetProvidedImages() {
         Path operatorFile = ArtemisFileProvider.getOperatorInstallFile();
 
         if (brokerImage != null && !brokerImage.equals("")) {

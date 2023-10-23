@@ -48,11 +48,6 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
     private Path operatorUpdatedFile;
     private Path clusterRoleBindingUpdatedFile;
 
-
-//    public FileInstallation(String deploymentNamespace, boolean isNamespaced, List<String> watchedNamespaces) {
-//        this(deploymentNamespace, isNamespaced, watchedNamespaces);
-//    }
-
     public ArtemisCloudClusterOperatorFile(String deploymentNamespace, boolean isNamespaced, List<String> watchedNamespaces) {
         super(deploymentNamespace, isNamespaced, watchedNamespaces);
 
@@ -64,7 +59,6 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
             updateClusterRoleBinding(deploymentNamespace);
         }
     }
-
 
     public static void deployOperatorCRDs() {
         DEFAULT_OPERATOR_INSTALL_CRD_FILES.forEach(fileName -> {
@@ -113,7 +107,6 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         LOGGER.info("[{}] Cluster operator {} successfully deployed!", deploymentNamespace, operatorName);
     }
 
-
     @Override
     public void undeployOperator(boolean waitForUndeployment) {
         getUsedOperatorInstallFilesReversed().forEach(fileName -> {
@@ -145,7 +138,6 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
             filesToDeploy.remove(clusterRoleBindingFile);
             filesToDeploy.add(updatedClusterRoleBindingFile);
             setArtemisClusterRoleBindingFile(updatedClusterRoleBindingFile);
-
         } else {
             LOGGER.error("[{}] Namespaced operator does not use ClusterRoleBinding!", namespace);
             throw new RuntimeException("Incorrect ClusterOperator operation!");
@@ -228,13 +220,19 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
     public static void updateImagesInOperatorFile(Path operatorFile, String imageType, String imageUrl, String version) {
         List<EnvVar> envVars;
         String imageTypeVersion = null;
-        if (version != null) {
-            imageTypeVersion = imageType + version.replace(".", "");
-        }
         Deployment operator = TestUtils.configFromYaml(operatorFile.toFile(), Deployment.class);
+
+        if (version != null) {
+            if (version.equals("main")) {
+                imageTypeVersion = imageType + getLastVersionFromOperatorFile(imageType, operator);
+            } else {
+                imageTypeVersion = imageType + version.replace(".", "");
+            }
+        }
 
         if (imageType.equals(ArtemisConstants.OPERATOR_IMAGE_OPERATOR_PREFIX)) {
             operator.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(imageUrl);
+            LOGGER.info("[Operator] Updating OperatorImage -> {}", imageUrl);
         }
 
         if (imageType.equals(ArtemisConstants.BROKER_IMAGE_OPERATOR_PREFIX) || imageType.equals(ArtemisConstants.BROKER_INIT_IMAGE_OPERATOR_PREFIX)) {
@@ -242,6 +240,7 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
             String finalImageTypeVersion = imageTypeVersion;
             EnvVar brokerImageEV = envVars.stream().filter(envVar -> envVar.getName().equals(finalImageTypeVersion)).findFirst().get();
             brokerImageEV.setValue(imageUrl);
+            LOGGER.info("[Operator] Updating {} -> {}", finalImageTypeVersion, imageUrl);
         }
 
         TestUtils.configToYaml(operatorFile.toFile(), operator);
@@ -280,6 +279,20 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
     public static String getOperatorControllerManagerName(Path yamlFile) {
         Deployment operatorCODeployment = TestUtils.configFromYaml(yamlFile.toFile(), Deployment.class);
         return operatorCODeployment.getMetadata().getName();
+    }
+
+    public static String getLastVersionFromOperatorFile(String imageType, Deployment operator) {
+        List<EnvVar> envVars1 = operator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        List<Integer> versions = new ArrayList<>();
+
+        for (EnvVar var : envVars1) {
+            if (var.getName().startsWith(imageType)) {
+                versions.add(Integer.valueOf(var.getName().substring(imageType.length())));
+            }
+        }
+        Collections.sort(versions);
+        LOGGER.trace("[Operator] Discovered latest version: {}{}", imageType, versions.get(versions.size() - 1));
+        return String.valueOf(versions.get(versions.size() - 1));
     }
 
 }

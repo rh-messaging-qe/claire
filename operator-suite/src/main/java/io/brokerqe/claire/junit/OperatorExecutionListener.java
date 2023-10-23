@@ -21,6 +21,7 @@ public class OperatorExecutionListener extends ClaireExecutionListener {
         if (!setupPerformed) {
             testEnvironmentOperator = ResourceManager.getEnvironment();
             setupLoggingLevel();
+            testEnvironmentOperator.checkSetProvidedImages();
             ResourceManager.getInstance(testEnvironmentOperator);
             // Following log is added for debugging purposes, when OkHttpClient leaks connection
             java.util.logging.Logger.getLogger(OkHttpClient.class.getName()).setLevel(java.util.logging.Level.FINE);
