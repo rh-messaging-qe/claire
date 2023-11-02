@@ -55,8 +55,10 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -755,6 +757,65 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         broker = ResourceManager.createArtemis(testNamespace, broker, false);
         // This is speculative expectation, to be fixed in future.
         ResourceManager.waitForArtemisStatusUpdate(testNamespace, broker, ArtemisConstants.CONDITION_TYPE_VALID, ArtemisConstants.CONDITION_FALSE, Constants.DURATION_5_MINUTES, false);
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+    @Test
+    void verifyMultipleLabels() {
+        Map<String, String> labels = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            labels.put("label" + i, "value" + i);
+        }
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(testBrokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                        .withLabels(labels)
+                    .endDeploymentPlan()
+                .endSpec().build();
+        ResourceManager.createArtemis(testNamespace, broker, false);
+
+        TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
+        String updateTime = broker.getMetadata().getManagedFields().get(1).getTime();
+
+        TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
+        ActiveMQArtemis newbroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
+        String newUpdateTime = newbroker.getMetadata().getManagedFields().get(1).getTime();
+        assertEquals(newUpdateTime, updateTime, "CR Status was updated when its not expected to be");
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+    @Test
+    void verifyLabels() {
+        Map<String, String> labels = new HashMap<>();
+        for (int i = 0; i < 5; i++) {
+            labels.put("label" + i, "value" + i);
+        }
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(testBrokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                        .withLabels(labels)
+                    .endDeploymentPlan()
+                .endSpec().build();
+        ResourceManager.createArtemis(testNamespace, broker, false);
+
+        TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
+
+        Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
+        for (String item: labels.keySet()) {
+            assertThat("Pod doesn't have expected label applied", brokerPod.getMetadata().getLabels(), hasEntry(item, labels.get(item)));
+        }
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 }
