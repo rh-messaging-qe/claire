@@ -25,25 +25,25 @@ Review `Makefile` for more details about the `make` targets
 
 ## List of available Configuration settings
 The configuration settings can be defined in the file named `standalone.properties`, located in the project directory. 
-It is possible to overwrite the value used in the properties file with a environment variable. If no definition is found
+It is possible to overwrite the value used in the properties file with an environment variable. If no definition is found
 in the properties file or in the environment variable, the default value is used.
 
 See the table below for more info.
 
-| Environment Variable          | Description                                     | Default                                                | Possible values     |
+| Environment Variable          | Description                                     | Default                                                | Possible values                                  |
 |-------------------------------|-------------------------------------------------|--------------------------------------------------------|--------------------------------------------------|
-| ARTEMIS_INSTALL_ZIP           | URL to download the Artemis binary distribution | not set                                                | \<url\>                                        |
+| ARTEMIS_INSTALL_ZIP           | URL to download the Artemis binary distribution | not set                                                | \<url\>                                          |
 | TEST_LOG_LEVEL                | Set logging level of test suite                 | `INFO` set in `logback.xml`                            | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
-| LOGS_LOCATION                 | Location where to generate collected logs       | `test-logs`                                            | \<directory\>                                  |
-| LOG_CONTAINERS                | Enable containers stdout/stderr log             | `false`                                                | `true`, `false`                                |
-| ARTEMIS_CONTAINER_IMAGE       | Artemis container image                         | `quay.io/rhmessagingqe/claire-standalone-artemis:ubi9` | Any RedHat based <image_registry>              |
-| ARTEMIS_CONTAINER_JAVA_HOME   | Java location inside artemis container          | `/opt/openjdk-java-11`                                 | \<directory\>                                  |
-| ZOOKEEPER_CONTAINER_IMAGE     | Zookeeper container image to use                | `zookeeper:latest`                                     | <image_registry>                               |
-| YACFG_ARTEMIS_CONTAINER_IMAGE | Yacfg container image to use                    | `quay.io/rhmessagingqe/yacfg_artemis:latest`           | <image_registry>                               |
-| USE_EXISTING_CONFIG           | Path to existing `etc` folder or artemis        | not set                                                | \<directory\>                                 |
+| LOGS_LOCATION                 | Location in which to generate collected logs    | `test-logs`                                            | \<directory\>                                    |
+| LOG_CONTAINERS                | Enable containers stdout/stderr log             | `false`                                                | `true`, `false`                                  |
+| ARTEMIS_CONTAINER_IMAGE       | Artemis container image to use                  | `quay.io/rhmessagingqe/claire-standalone-artemis:ubi9` | Any RedHat based <image_registry>                |
+| ARTEMIS_CONTAINER_JAVA_HOME   | Java location inside artemis container          | `/opt/openjdk-java-11`                                 | \<directory\>                                    |
+| ZOOKEEPER_CONTAINER_IMAGE     | Zookeeper container image to use                | `zookeeper:latest`                                     | <image_registry>                                 |
+| YACFG_ARTEMIS_CONTAINER_IMAGE | yacfg container image to use                    | `quay.io/rhmessagingqe/yacfg_artemis:latest`           | <image_registry>                                 |
+| USE_EXISTING_CONFIG           | Path to existing `etc` folder or artemis        | not set                                                | \<directory\>                                    |
 
 **_NOTE:_** `ARTEMIS_INSTALL_ZIP` is not set by default and build it without set the environment variable will fail.
-You must set the environment variable or provide it to `make` command. ie:
+You must set the environment variable or provide it to `make` command, i.e.:
 ```shell
 make build ARTEMIS_INSTALL_ZIP=https://archive.apache.org/dist/activemq/activemq-artemis/2.27.1/apache-artemis-2.27.1-bin.zip
 ```
@@ -74,6 +74,6 @@ section on testcontainers main page)
 - Use the `SingleInstanceSmokeTest` and `FailoverInstancesWithDataReplicationTests` as examples about how to implement
 the tests. These classes have some important comments on it
 - The `helper` package contains useful classes which helps to create tests specially the `ArtemisJmxHelper` class
-- The `client.jms` package contains the clients implementations (currently, in an early stage)
-- Don't forget to add the initial header on new files/classes otherwise build will fail on checkstyle checks (you may 
+- The `client.jms` package contains the client implementations (currently, in an early stage)
+- Remember to add the initial header on new files/classes, otherwise the build will fail on checkstyle checks (you may 
 configure your IDE to automatically add the header on new files)
