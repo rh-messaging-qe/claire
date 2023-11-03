@@ -218,12 +218,6 @@ public abstract class AbstractSystemTests implements TestSeparator {
     /**
      * We are looking for a log 'Drain pod my-broker-ss-1 finished.' which is present in ArtemisClusterOperator.
      * It has to be present N times (based on scaledown factor (from 3 brokers to 1 broker -> 2)
-     *
-     * @param namespace
-     * @param operatorName
-     * @param brokerName
-     * @param maxTimeout
-     * @param expectedDrainPodsCount
      */
     public void waitForScaleDownDrainer(String namespace, String operatorName, String brokerName, long maxTimeout, int previousSize, int newSize) {
         // Drain pod my-broker-ss-1 finished.
