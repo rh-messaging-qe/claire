@@ -761,6 +761,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     void verifyMultipleLabels() {
         Map<String, String> labels = new HashMap<>();
         for (int i = 0; i < 10; i++) {
@@ -777,7 +778,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                         .withLabels(labels)
                     .endDeploymentPlan()
                 .endSpec().build();
-        ResourceManager.createArtemis(testNamespace, broker, false);
+        ResourceManager.createArtemis(testNamespace, broker, true);
 
         TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
@@ -786,7 +787,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
         ActiveMQArtemis newbroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
         String newUpdateTime = newbroker.getMetadata().getManagedFields().get(1).getTime();
-        assertEquals(newUpdateTime, updateTime, "CR Status was updated when its not expected to be");
+        assertEquals(updateTime, newUpdateTime, "CR Status was updated when its not expected to be");
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
