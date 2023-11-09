@@ -213,13 +213,13 @@ public class ResourceManager {
         return createArtemis(namespace, name, 1);
     }
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size) {
-        return createArtemis(namespace, name, size, false, false, false);
+        return createArtemis(namespace, name, size, false, false, false, false);
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor) {
-        return createArtemis(namespace, name, size, upgradeEnabled, upgradeMinor, false);
+        return createArtemis(namespace, name, size, upgradeEnabled, upgradeMinor, false, false);
     }
-    public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor, boolean exposeConsole) {
+    public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor, boolean exposeConsole, boolean enableMigration) {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
                 .withName(name)
@@ -229,7 +229,7 @@ public class ResourceManager {
                 .withNewDeploymentPlan()
                     .withSize(size)
                     .withPersistenceEnabled()
-                    .withMessageMigration()
+                    .withMessageMigration(enableMigration)
                 .endDeploymentPlan()
                 .editOrNewUpgrades()
                     .withEnabled(upgradeEnabled)

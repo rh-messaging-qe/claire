@@ -121,6 +121,7 @@ public class SmokeTests extends AbstractSystemTests {
     }
 
     @Test
+    @Disabled("MQTT Output Parsing is broken")
     @Tag(Constants.TAG_SMOKE)
     void sendReceiveSystemTestsClientMessageTest() {
         Deployment clients = ResourceManager.deployClientsContainer(testNamespace);

@@ -203,7 +203,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
         broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
         long waitTime = Math.abs(previousSize - newSize) * Constants.DURATION_2_MINUTES;
 
-        if (previousSize > newSize && newSize != 0) {
+        if (previousSize > newSize && newSize != 0 && broker.getSpec().getDeploymentPlan().getMessageMigration()) {
             waitForScaleDownDrainer(namespace, operator.getOperatorName(),
                     broker.getMetadata().getName(), waitTime, previousSize, newSize);
         } else {

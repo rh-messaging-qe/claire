@@ -30,7 +30,7 @@ public class ScalabilityTests extends AbstractSystemTests {
 
     @Test
     void simpleScalabilityTest() {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "scale-artemis", 1, true, false, true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "scale-artemis", 1, true, false, true, false);
 
         LOGGER.info("[{}] ScaleUp from 1 to 3", testNamespace);
         broker = doArtemisScale(testNamespace, broker, 1, 3);

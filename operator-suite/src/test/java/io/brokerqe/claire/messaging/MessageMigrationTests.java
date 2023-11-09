@@ -46,9 +46,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int initialSize = 3;
         int scaledDownSize = 1;
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-scd", "migration-scd");
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
-        broker.getSpec().getConsole().setExpose(true);
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, false, Constants.DURATION_5_MINUTES);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, true, true);
 
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -102,7 +100,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int initialSize = 4;
         int msgExpected = 100;
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, true, true);
 //        @Disabled("ENTMQBR-8195")
 //        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-queue", "migration-queue");
@@ -143,8 +141,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int msgExpected = 100;
 
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
-        broker.getSpec().getDeploymentPlan().setMessageMigration(false);
-        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-prt", "migration-prt");
 
         String brokerName = broker.getMetadata().getName();
@@ -193,7 +189,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int targetSize = 2;
         int msgExpected = 100;
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
-        broker.getSpec().getDeploymentPlan().setMessageMigration(false);
         doArtemisScale(testNamespace, broker, initialSize, targetSize);
 
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-runtime", "migration-runtime");
@@ -240,7 +235,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int initialSize = 2;
         int msgExpected = 100;
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, false, true);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-runtime-dis", "migration-runtime-dis");
 
         String brokerName = broker.getMetadata().getName();
@@ -276,8 +271,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int initialSize = 2;
         int msgExpected = 100;
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
-        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, false, true);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-non-pers", "migration-non-pers");
 
         String brokerName = broker.getMetadata().getName();
@@ -321,7 +315,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int msgExpected = 100;
 
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
-        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "no-migration", "no-migration");
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
