@@ -28,7 +28,6 @@ public abstract class StClientDeployment implements KubernetesDeployableClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(StClientDeployment.class);
     private final String namespace;
     static KubeClient kubeClient = ResourceManager.getKubeClient();
-    private ExecutorOperator executor;
     private Pod pod;
     private Deployment deployment;
 
@@ -60,10 +59,7 @@ public abstract class StClientDeployment implements KubernetesDeployableClient {
 
     @Override
     public Executor getExecutor() {
-        if (this.executor == null) {
-            this.executor = new ExecutorOperator(getContainer());
-        }
-        return this.executor;
+        return new ExecutorOperator(getContainer());
     }
 
     @Override

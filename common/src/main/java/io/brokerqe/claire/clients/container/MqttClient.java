@@ -39,10 +39,11 @@ public abstract class MqttClient extends SystemtestClient {
     private String keystore;
     private String saslMechanism;
     private boolean secured;
-    private Executor subscriberExecWatch;
+    private Executor subscriberExecutor;
     private List<JSONObject> sentMessages;
     private List<JSONObject> receivedMessages;
-    private final String identifier = TestUtils.generateRandomName();
+    private final String identifierSender = TestUtils.generateRandomName();
+    private final String identifierReceiver = identifierSender + "receiver";
     private String randomContent = null;
 
     String getCliExecutableBase() {
@@ -117,16 +118,16 @@ public abstract class MqttClient extends SystemtestClient {
     @Override
     public int sendMessages() {
         String cmdOutput;
-        String[] command = constructClientCommand(MessagingClient.SENDER);
+        String[] command = constructClientCommand(SENDER);
         cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
         LOGGER.debug("[{}][TX] \n{}", deployableClient.getContainerName(), cmdOutput);
-        this.sentMessages = parseMessages(cmdOutput);
+        this.sentMessages = parseMessages(cmdOutput, SENDER);
         return sentMessages.size();
     }
 
     @Override
     public int receiveMessages() {
-        if (subscriberExecWatch != null) {
+        if (subscriberExecutor != null) {
             // executed client on background
             return getSubscribedMessages();
         } else {
@@ -135,7 +136,7 @@ public abstract class MqttClient extends SystemtestClient {
             String[] command = constructClientCommand(MessagingClient.RECEIVER);
             cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
             LOGGER.debug("[{}][RX] \n{}", deployableClient.getContainerName(), cmdOutput);
-            this.receivedMessages = parseMessages(cmdOutput);
+            this.receivedMessages = parseMessages(cmdOutput, RECEIVER);
             return receivedMessages.size();
         }
     }
@@ -148,10 +149,20 @@ public abstract class MqttClient extends SystemtestClient {
         } else {
             command = constructClientCommand(MessagingClient.RECEIVER, 60);
         }
-        subscriberExecWatch = deployableClient.getExecutor();
-        subscriberExecWatch.execBackgroundCommand(command);
+        subscriberExecutor = deployableClient.getExecutor();
+        subscriberExecutor.execBackgroundCommand(command);
         LOGGER.debug("[{}][SUBSCRIBE] Sleeping for while to ensure subscriber is connected before moving forward", deployableClient.getContainerName());
         TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
+    }
+
+    @Override
+    public void unsubscribe() {
+        String[] command = {"sh", "-c",
+                String.format("for proc in /proc/[0-9]*/cmdline; " +
+                        "do echo $(basename $(dirname $proc)) $(cat $proc | tr \"\\0\" \" \"); done | " +
+                        "grep %s | grep -v grep | cut -d ' ' -f 1 | xargs kill", identifierReceiver)};
+        deployableClient.getExecutor().executeCommand(command);
+        LOGGER.debug("[{}][UNSUBSCRIBE] MQTT Client with {}", deployableClient.getContainerName(), identifierReceiver);
     }
 
     public String testBroker() {
@@ -205,8 +216,8 @@ public abstract class MqttClient extends SystemtestClient {
     }
 
     public int getSubscribedMessages() {
-        String cmdOutput = subscriberExecWatch.getBackgroundCommandData(5);
-        this.receivedMessages = parseMessages(cmdOutput);
+        String cmdOutput = subscriberExecutor.getBackgroundCommandData(5);
+        this.receivedMessages = parseMessages(cmdOutput, RECEIVER);
         return receivedMessages.size();
     }
 
@@ -225,11 +236,11 @@ public abstract class MqttClient extends SystemtestClient {
         // we need to use debug mode, to be able to parse sent/received message
         if (clientType.equals(SENDER)) {
             options = senderOptions;
-            options.put("identifier", identifier);
+            options.put("identifier", identifierSender);
             commandBuild.append("publish -d --userProperty id=" + TestUtils.getRandomString(6) + "");
         } else if (clientType.equals(RECEIVER)) {
             options = receiverOptions;
-            options.put("identifier", identifier);
+            options.put("identifier", identifierReceiver);
             commandBuild.append("subscribe -d");
         } else if (clientType.equals("test")) {
             options = testOptions;
@@ -255,6 +266,7 @@ public abstract class MqttClient extends SystemtestClient {
         // cli-hivemq-mqtt-subscribe -t test  -h 10.128.3.9 -p 1883 --mqttVersion=5 -d -i=tralal --qos=2
         String command;
         String client;
+        String identifier;
         if (!destinationAddress.equals(destinationQueue)) {
             LOGGER.warn("[{}] MQTT client does not support FQQN (!?) Using provided address instead {}", deployableClient.getContainerName(), destinationAddress);
         }
@@ -262,8 +274,10 @@ public abstract class MqttClient extends SystemtestClient {
         if (clientType.equals(SENDER)) {
             client = getCliExecutableBase() + "-publish";
             randomContent = TestUtils.getRandomString(26);
+            identifier = identifierSender;
         } else if (clientType.equals(RECEIVER)) {
             client = getCliExecutableBase() + "-subscribe";
+            identifier = identifierReceiver;
         } else {
             throw new ClaireRuntimeException("Unsupported client type!" + clientType);
         }
@@ -297,16 +311,15 @@ public abstract class MqttClient extends SystemtestClient {
         return command.split(" ");
     }
 
-    private List<JSONObject> parseMessages(String output) {
+    private List<JSONObject> parseMessages(String output, String clientType) {
         if (output == null) {
             throw new ClaireRuntimeException("Provided unexpected empty/null command output!");
         }
         List<JSONObject> jsonMessages = new ArrayList<>();
-        List<String> lines = List.of(output.split("\n"));
+        List<String> lines = List.of(output.replaceAll("\\s+", " ").split("Client "));
         Map<String, String> data = new HashMap<>();
-        Map<String, String> userProperties = new HashMap<>();
         for (String line : lines) {
-            if (line.contains("sending PUBLISH") || line.contains("received PUBLISH")) {
+            if (clientType.equals(SENDER) && line.contains("sending PUBLISH") || clientType.equals(RECEIVER) && line.contains("received PUBLISH")) {
                 String workLine = line.substring(line.indexOf("MqttPublish{") + "MqttPublish{".length(), line.length() - 1);
                 if (workLine.contains("userProperties=[(")) {
                     String userProps = workLine.substring(workLine.indexOf("userProperties=[") + "userProperties=[".length(), workLine.lastIndexOf(")]") + 1);
@@ -322,8 +335,10 @@ public abstract class MqttClient extends SystemtestClient {
                     String[] splitted = item.split("=");
                     data.put(splitted[0].trim(), splitted[1].trim());
                 }
-                String content = line.substring(line.indexOf("('") + 2, line.indexOf("')"));
-                data.put("content", content);
+                if (line.contains("content")) {
+                    String content = line.substring(line.indexOf("('") + 2, line.indexOf("')"));
+                    data.put("content", content);
+                }
                 jsonMessages.add(new JSONObject(data));
                 break;
             }

@@ -121,7 +121,6 @@ public class SmokeTests extends AbstractSystemTests {
     }
 
     @Test
-    @Disabled("MQTT Output Parsing is broken")
     @Tag(Constants.TAG_SMOKE)
     void sendReceiveSystemTestsClientMessageTest() {
         Deployment clients = ResourceManager.deployClientsContainer(testNamespace);
@@ -147,18 +146,20 @@ public class SmokeTests extends AbstractSystemTests {
         assertThat(messagingClient.compareMessages(), is(true));
 
         // Subscriber - Publisher
-        LOGGER.info("[{}] Starting AMQP subscriber - publisher test", testNamespace);
+        LOGGER.info("[{}] Starting Bundled AMQP subscriber - publisher test", testNamespace);
         testMessaging(ClientType.BUNDLED_AMQP, testNamespace, brokerPod, myAddress, 10);
 
+        LOGGER.info("[{}] Starting SystemTest clients AMQP subscriber - publisher test", testNamespace);
+        testMessaging(ClientType.ST_AMQP_QPID_JMS, testNamespace, brokerPod, myAddress, 10);
 
         // MQTT Subscriber - Publisher
-        LOGGER.info("[{}] Starting MQTT subscriber - publisher test", testNamespace);
+        LOGGER.info("[{}] Starting SystemTest clients MQTT subscriber - publisher test", testNamespace);
         msgsExpected = 1;
-        // Subscriber - Publisher
         MessagingClient messagingMqttClient = ResourceManager.createMessagingClient(ClientType.ST_MQTT_V5, clientsPod,
                 brokerPod.getStatus().getPodIP(), "5672", myAddress, msgsExpected);
         messagingMqttClient.subscribe();
         sent = messagingMqttClient.sendMessages();
+        messagingMqttClient.unsubscribe();
         received = messagingMqttClient.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
         assertThat(sent, equalTo(received));

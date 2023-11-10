@@ -19,6 +19,7 @@ public abstract class SystemtestClient implements MessagingClient {
     protected DeployableClient deployableClient;
     protected Map<String, String> senderOptions = null;
     protected Map<String, String> receiverOptions = null;
+    Logger logger = LoggerFactory.getLogger(MessagingClient.class);
 
     public boolean compareMessages(Object sentMessagesObject, Object receivedMessagesObject) {
         if (sentMessagesObject == null || receivedMessagesObject == null) {
@@ -31,7 +32,6 @@ public abstract class SystemtestClient implements MessagingClient {
 
     public boolean compareMessages(List<JSONObject> sentMessages, List<JSONObject> receivedMessages) {
         // Method compares only number of sent and received messages and real comparison of messageIDs (if is present in other group)
-        Logger logger = LoggerFactory.getLogger(MessagingClient.class);
         if (sentMessages.size() != receivedMessages.size()) {
             logger.warn("[{}] Sent {} and received {} messages are not same!", deployableClient.getContainerName(), sentMessages.size(), receivedMessages.size());
             return false;
@@ -57,5 +57,11 @@ public abstract class SystemtestClient implements MessagingClient {
             logger.debug("[{}] All messages are same. Good.", deployableClient.getContainerName());
             return true;
         }
+    }
+
+    @Override
+    public void unsubscribe() {
+        logger.warn("[{}] Unsubscribe not supported for systemtests-clients (only mqtt client)", deployableClient.getContainerName());
+        throw new UnsupportedOperationException("[" + deployableClient.getContainerName() + "] Unsubscribe not supported on systemtest clients clients");
     }
 }

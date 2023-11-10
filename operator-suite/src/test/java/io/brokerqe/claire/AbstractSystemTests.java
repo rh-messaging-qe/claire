@@ -315,9 +315,12 @@ public abstract class AbstractSystemTests implements TestSeparator {
         } else if (clientType.equals(ClientType.BUNDLED_CORE)) {
             messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, "61616", address, messages, username, password);
         } else if (clientType.equals(ClientType.ST_AMQP_QPID_JMS)) {
-            clients = ResourceManager.deployClientsContainer(namespace);
             Pod clientsPod = getClient().getFirstPodByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
-            messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, clientsPod, brokerPod.getStatus().getPodIP(), "5672", address, messages, username, password);
+            if (clientsPod == null) {
+                clients = ResourceManager.deployClientsContainer(namespace);
+                clientsPod = getClient().getFirstPodByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
+            }
+            messagingClient = ResourceManager.createMessagingClient(ClientType.ST_AMQP_QPID_JMS, clientsPod, brokerPod.getStatus().getPodIP(), "5672", address, messages, username, password);
         } else {
             throw new ClaireRuntimeException("Unknown/Unsupported client type!" + clientType);
         }

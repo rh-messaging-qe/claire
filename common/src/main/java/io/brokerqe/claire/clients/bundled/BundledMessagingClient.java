@@ -168,6 +168,10 @@ public abstract class BundledMessagingClient implements MessagingClient {
         subscriberExecutor.execBackgroundCommand(command);
     }
 
+    public void unsubscribe() {
+        throw new UnsupportedOperationException("[" + deployableClient.getContainerName() + "] Unsubscribe not supported on bundled clients");
+    }
+
     public int getSubscribedMessages() {
         String cmdOutput = subscriberExecutor.getBackgroundCommandData(5);
         return parseMessageCount(cmdOutput, CONSUMER);

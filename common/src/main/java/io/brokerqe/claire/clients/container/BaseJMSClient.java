@@ -175,6 +175,7 @@ public abstract class BaseJMSClient extends SystemtestClient {
     public int getSubscribedMessages() {
         String cmdOutput = subscriberExecWatch.getBackgroundCommandData(5);
         this.receivedMessages = parseMessages(cmdOutput);
+        LOGGER.debug("[{}][RX] \n{}", deployableClient.getContainerName(), cmdOutput);
         return receivedMessages.size();
     }
 
