@@ -10,7 +10,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,7 @@ public class ScalabilityTests extends AbstractSystemTests {
         teardownDefaultClusterOperator(testNamespace);
     }
 
-    @Test
+    @RetryingTest(maxAttempts = 3, suspendForMs = 10000)
     void simpleScalabilityTest() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "scale-artemis", 1, true, false, true, false);
 

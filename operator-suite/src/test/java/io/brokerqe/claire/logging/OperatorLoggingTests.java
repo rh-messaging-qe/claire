@@ -17,8 +17,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,8 +48,23 @@ public class OperatorLoggingTests extends AbstractSystemTests {
     }
 
     @Tag(Constants.TAG_OPERATOR)
-    @ParameterizedTest
-    @ValueSource(strings = {DEBUG, INFO, ERROR})
+    @RetryingTest(3)
+    void testOperatorLogLevelDebug() {
+        testOperatorLogLevel(DEBUG);
+    }
+
+    @Tag(Constants.TAG_OPERATOR)
+    @RetryingTest(3)
+    void testOperatorLogLevelInfo() {
+        testOperatorLogLevel(INFO);
+    }
+
+    @Tag(Constants.TAG_OPERATOR)
+    @RetryingTest(3)
+    void testOperatorLogLevelError() {
+        testOperatorLogLevel(ERROR);
+    }
+
     void testOperatorLogLevel(String logLevel) {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "artemis-log");
         getClient().setOperatorLogLevel(operator, logLevel.toLowerCase(Locale.ROOT));

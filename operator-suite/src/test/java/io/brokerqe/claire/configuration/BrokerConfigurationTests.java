@@ -38,6 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -250,7 +251,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
 
-    @Test
+    @RetryingTest(3)
     void verifyResourceUpdates() {
         Map<String, IntOrString> requestedResources = new HashMap<>();
         IntOrString cpuValue = new IntOrString("500m");

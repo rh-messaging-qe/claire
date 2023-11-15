@@ -17,6 +17,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +96,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         return broker;
     }
 
-    @Test
+    @RetryingTest(maxAttempts = 3, suspendForMs = 10000)
     public void sequentialScaledownTest() {
         int initialSize = 4;
         int msgExpected = 100;

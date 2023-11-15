@@ -23,6 +23,7 @@
         <commons-compress.version>1.23.0</commons-compress.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
         <fabric8.version>6.8.1</fabric8.version>
         <hamcrest.version>2.2</hamcrest.version>
         <jackson-databind.version>2.15.1</jackson-databind.version>
@@ -30,6 +31,7 @@
         <mockito.version>5.3.1</mockito.version>
         <joda-time.version>2.12.4</joda-time.version>
         <junit-jupiter.version>5.9.2</junit-jupiter.version>
+        <junit-pioneer.version>2.0.1</junit-pioneer.version>
         <junit-platform.version>1.9.2</junit-platform.version>
         <logback.version>1.4.6</logback.version>
         <lombok.version>1.18.28</lombok.version>
@@ -75,6 +77,11 @@
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit-platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit-pioneer</groupId>
+                <artifactId>junit-pioneer</artifactId>
+                <version>${junit-pioneer.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -140,6 +147,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${commons-collections4.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
