@@ -18,6 +18,7 @@ import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
 import io.brokerqe.claire.junit.TestValidSince;
@@ -349,6 +350,9 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
         } catch (Exception exception) {
             // whatever happens here, move on
         }
+        // Intermittent failure - maybe broker protects itself of DoS attacks? Let's try wait few seconds after test
+        // Cannot invoke "jakarta.jms.Connection.createSession(boolean, int)" because "connection" is null
+        TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
     }
 
 }
