@@ -458,12 +458,24 @@ public class ResourceManager {
 
         if (reloadExisting) {
             LOGGER.info("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
-            TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
+            TestUtils.waitFor("Wait for next generation", Constants.DURATION_2_SECONDS, maxTimeout, () -> {
+                ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespace).resource(broker).get();
+//                return updatedArtemis.getMetadata().getGeneration().equals(broker.getMetadata().getGeneration());
+                // TODO kept for debugging purposes
+                if (updatedArtemis.getMetadata().getGeneration().equals(broker.getMetadata().getGeneration())) {
+                    LOGGER.warn("ActiveMQArtemisGeneration same, moving forward.");
+                    return true;
+                } else {
+                    LOGGER.warn("ActiveMQArtemisGeneration different, waiting: {} vs {}",
+                            updatedArtemis.getMetadata().getGeneration(), broker.getMetadata().getGeneration());
+                    return false;
+                }
+            });
         }
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
-            boolean toReturn = false;
+//            boolean toReturn = false;
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
-            toReturn = ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
+            boolean toReturn = ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
             if (reloadExisting && oldStatefulSet != null) {
                 LOGGER.warn("WAIT FOR RELOAD OF SS");
                 toReturn = toReturn && !oldStatefulSet.getMetadata().getUid().equals(ss.getMetadata().getUid());

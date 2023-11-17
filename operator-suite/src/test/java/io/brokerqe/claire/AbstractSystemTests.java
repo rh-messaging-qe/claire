@@ -227,7 +227,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
         Pod operatorPod = getClient().getFirstPodByPrefixName(namespace, operatorName);
         Pattern pattern = Pattern.compile("Drain pod " + brokerName + ".* finished");
 
-        TestUtils.waitFor("Drain pod to finish", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+        TestUtils.waitFor("Drain pod to finish", Constants.DURATION_2_SECONDS, maxTimeout, () -> {
             String log = getClient().getLogsFromPod(operatorPod, now);
             Matcher matcher = pattern.matcher(log);
             int count = 0;
