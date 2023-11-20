@@ -38,7 +38,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junitpioneer.jupiter.RetryingTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,6 +90,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         this.testInfo = testInfo;
         testBrokerName = CONFIG_BROKER_NAME + "-" + testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         testBrokerName = maybeStripBrokerName(testBrokerName, testNamespace);
+        cleanResourcesAfterTest(testNamespace);
     }
 
     private Env getEnvItem() {
@@ -119,8 +119,9 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         artemisBroker.setSpec(new ActiveMQArtemisSpecBuilder()
                 .withEnv(List.of(getEnvItem()))
                 .build());
+        Pod artemisPod = getClient().getFirstPodByPrefixName(testNamespace, artemisBroker.getMetadata().getName());
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(artemisBroker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, artemisBroker, true);
+        ResourceManager.waitForBrokerDeployment(testNamespace, artemisBroker, true, artemisPod);
         checkEnvVariables(artemisBroker);
         ResourceManager.deleteArtemis(testNamespace, artemisBroker);
     }
@@ -251,7 +252,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
 
-    @RetryingTest(3)
+    @Test
     void verifyResourceUpdates() {
         Map<String, IntOrString> requestedResources = new HashMap<>();
         IntOrString cpuValue = new IntOrString("500m");
@@ -286,8 +287,8 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         broker.getSpec().getDeploymentPlan().getResources().setLimits(requestedResources);
         broker.getSpec().getDeploymentPlan().getResources().setRequests(requestedResources);
 
-        ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true);
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod);
 
         brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
         limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
@@ -316,8 +317,8 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         resources.setLimits(requestedResources);
         resources.setRequests(requestedResources);
         broker.getSpec().getDeploymentPlan().setResources(resources);
-        ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true);
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod);
 
         brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
         limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
@@ -413,8 +414,9 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
         broker.getSpec().getDeploymentPlan().getStorage().setSize("3");
         broker.getSpec().getDeploymentPlan().setSize(2);
+        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod, Constants.DURATION_2_MINUTES);
         PersistentVolumeClaim pvc = getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace).withName(testBrokerName + "-" + testBrokerName + "-ss-0").get();
         Quantity pvcDefaultSize = pvc.getSpec().getResources().getRequests().get("storage");
         PersistentVolumeClaim bigPvc = getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace).withName(testBrokerName + "-" + testBrokerName + "-ss-1").get();
@@ -570,8 +572,9 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
         verifySingleRoute(brokerName, AMQ_ACCEPTOR_NAME);
         broker.getSpec().getAcceptors().clear();
+        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod, Constants.DURATION_2_MINUTES);
 
         List<Route> routes = getClient().getRouteByPrefixName(testNamespace, brokerName);
         assertThat("Route was not removed when expected", routes.size(), equalTo(0));
@@ -606,7 +609,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         verifySingleRoute(brokerName, AMQ_ACCEPTOR_NAME);
         broker.getSpec().getAcceptors().get(0).setName(brokerName);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, false, Constants.DURATION_2_MINUTES);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, false, null, Constants.DURATION_2_MINUTES);
         verifySingleRoute(brokerName, brokerName);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
@@ -635,8 +638,9 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .endSpec().build();
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
         broker.getSpec().setAcceptors(List.of(acceptor));
+        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod, Constants.DURATION_2_MINUTES);
 
         verifySingleRoute(brokerName, AMQ_ACCEPTOR_NAME);
         ResourceManager.deleteArtemis(testNamespace, broker);

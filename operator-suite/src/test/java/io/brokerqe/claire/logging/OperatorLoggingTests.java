@@ -15,6 +15,7 @@ import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.smoke.SmokeTests;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junitpioneer.jupiter.RetryingTest;
@@ -45,6 +46,11 @@ public class OperatorLoggingTests extends AbstractSystemTests {
     @AfterAll
     void teardownClusterOperator() {
         teardownDefaultClusterOperator(testNamespace);
+    }
+
+    @AfterEach
+    void cleanUp() {
+        cleanResourcesAfterTest(testNamespace);
     }
 
     @Tag(Constants.TAG_OPERATOR)

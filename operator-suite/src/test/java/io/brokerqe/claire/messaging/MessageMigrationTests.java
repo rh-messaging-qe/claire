@@ -14,10 +14,10 @@ import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.RetryingTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +39,11 @@ public class MessageMigrationTests extends AbstractSystemTests {
     @AfterAll
     void teardownClusterOperator() {
         teardownDefaultClusterOperator(testNamespace);
+    }
+
+    @AfterEach
+    void cleanResources() {
+        cleanResourcesAfterTest(testNamespace);
     }
 
     @Test
@@ -96,7 +101,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         return broker;
     }
 
-    @RetryingTest(maxAttempts = 3, suspendForMs = 10000)
+    @Test
     public void sequentialScaledownTest() {
         int initialSize = 4;
         int msgExpected = 100;
@@ -160,6 +165,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int sent1 = msgSender1.sendMessages();
         assertThat("Sent different amount of messages than expected", sent1, equalTo(msgExpected));
 
+        // LALA
         doArtemisScale(testNamespace, broker, initialSize, 0);
         LOGGER.info("[{}] Scaled down Broker to 0", testNamespace);
 
@@ -220,7 +226,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
 
         broker.getSpec().getDeploymentPlan().setSize(initialSize);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, Constants.DURATION_5_MINUTES);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, pod0, Constants.DURATION_5_MINUTES);
 
         MessagingClient receiver = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, pod0, allDefaultPort, myAddress, msgExpected * targetSize);
         int received = receiver.receiveMessages();
@@ -296,11 +302,8 @@ public class MessageMigrationTests extends AbstractSystemTests {
         assertThat("Sent different amount of messages than expected", sent1, equalTo(msgExpected));
         assertThat("Sent different amount of messages than expected", sentP, equalTo(msgExpected));
 
-
-        broker.getSpec().getDeploymentPlan().setSize(1);
-        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, Constants.DURATION_5_MINUTES);
-        LOGGER.info("[{}] Scaled down Broker to 1", testNamespace);
+        LOGGER.info("[{}] Scale down Broker to 1", testNamespace);
+        broker = doArtemisScale(testNamespace, broker, 2, 1);
         MessagingClient receiver = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, pod0, allDefaultPort, myAddress, 200);
         int received = receiver.receiveMessages();
 
@@ -334,7 +337,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         broker.getSpec().setEnv(new ArrayList<>());
         broker.getSpec().getEnv().add(envPair);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, Constants.DURATION_5_MINUTES);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, pod1, Constants.DURATION_5_MINUTES);
 
         brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         pod1 = brokerPods.get(1);

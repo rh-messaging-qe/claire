@@ -275,7 +275,7 @@ public class ResourceManager {
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
         LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
         if (waitForDeployment) {
-            waitForBrokerDeployment(namespace, artemisBroker, false, maxTimeout);
+            waitForBrokerDeployment(namespace, artemisBroker, false, null, maxTimeout);
         }
         ResourceManager.addArtemisBroker(artemisBroker);
         return artemisBroker;
@@ -406,6 +406,22 @@ public class ResourceManager {
         return foundCondition;
     }
 
+    public static void waitForArtemisGenerationUpdate(String namespace, ActiveMQArtemis artemis, long maxTimeout) {
+        TestUtils.waitFor("Wait for next generation", Constants.DURATION_2_SECONDS, maxTimeout, () -> {
+            ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespace).resource(artemis).get();
+//                return updatedArtemis.getMetadata().getGeneration().equals(broker.getMetadata().getGeneration());
+            // TODO kept for debugging purposes
+            if (updatedArtemis.getMetadata().getGeneration().equals(artemis.getMetadata().getGeneration())) {
+                LOGGER.debug("[{}] ActiveMQArtemis Generation is same, moving forward.", namespace);
+                return true;
+            } else {
+                LOGGER.debug("[{}] ActiveMQArtemis Generation is different, waiting: {} vs {}",
+                        namespace, updatedArtemis.getMetadata().getGeneration(), artemis.getMetadata().getGeneration());
+                return false;
+            }
+        });
+    }
+
     public static void waitForArtemisStatusUpdate(String namespace, ActiveMQArtemis initialArtemis, String updateType, String expectedReason, long timeoutMillis) {
         waitForArtemisStatusUpdate(namespace, initialArtemis, updateType, expectedReason, timeoutMillis, true);
     }
@@ -441,39 +457,30 @@ public class ResourceManager {
     }
 
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker) {
-        waitForBrokerDeployment(namespace, broker, false, Constants.DURATION_1_MINUTE);
+        waitForBrokerDeployment(namespace, broker, false, null, Constants.DURATION_1_MINUTE);
     }
 
-    public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting) {
-        waitForBrokerDeployment(namespace, broker, reloadExisting, Constants.DURATION_1_MINUTE);
+    public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, Pod existingPod) {
+        waitForBrokerDeployment(namespace, broker, reloadExisting, existingPod, Constants.DURATION_1_MINUTE);
     }
 
-    public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout) {
-        waitForBrokerDeployment(namespace, broker, reloadExisting, maxTimeout, null);
+    public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, Pod existingPod, long maxTimeout) {
+        waitForBrokerDeployment(namespace, broker, reloadExisting, existingPod, maxTimeout, null);
     }
 
-    public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, long maxTimeout, StatefulSet oldStatefulSet) {
+    public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, Pod brokerPod, long maxTimeout, StatefulSet oldStatefulSet) {
         LOGGER.info("[{}] Waiting {}s for creation of broker {}", namespace, Duration.ofMillis(maxTimeout).toSeconds(), broker.getMetadata().getName());
         String brokerName = broker.getMetadata().getName();
 
         if (reloadExisting) {
             LOGGER.info("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
-            TestUtils.waitFor("Wait for next generation", Constants.DURATION_2_SECONDS, maxTimeout, () -> {
-                ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespace).resource(broker).get();
-//                return updatedArtemis.getMetadata().getGeneration().equals(broker.getMetadata().getGeneration());
-                // TODO kept for debugging purposes
-                if (updatedArtemis.getMetadata().getGeneration().equals(broker.getMetadata().getGeneration())) {
-                    LOGGER.warn("ActiveMQArtemisGeneration same, moving forward.");
-                    return true;
-                } else {
-                    LOGGER.warn("ActiveMQArtemisGeneration different, waiting: {} vs {}",
-                            updatedArtemis.getMetadata().getGeneration(), broker.getMetadata().getGeneration());
-                    return false;
-                }
-            });
+            waitForArtemisGenerationUpdate(namespace, broker, maxTimeout);
+            if (brokerPod != null) {
+                getKubeClient().waitForPodReload(namespace, brokerPod, brokerPod.getMetadata().getName());
+            }
         }
+
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
-//            boolean toReturn = false;
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
             boolean toReturn = ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
             if (reloadExisting && oldStatefulSet != null) {

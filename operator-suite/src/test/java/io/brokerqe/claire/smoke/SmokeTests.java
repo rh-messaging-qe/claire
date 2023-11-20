@@ -56,8 +56,9 @@ public class SmokeTests extends AbstractSystemTests {
     void brokerErrorTest() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "my-broken-artemis");
         broker.getSpec().getDeploymentPlan().setSize(3);
+        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod);
         throw new RuntimeException("Throwing random exception, to trigger TestDataCollection.");
     }
 

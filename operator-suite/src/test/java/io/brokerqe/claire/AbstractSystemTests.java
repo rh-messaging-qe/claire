@@ -60,7 +60,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
     }
 
     protected void cleanResourcesAfterTest(String namespace) {
-        LOGGER.info("Cleaning environment between tests");
+        LOGGER.info("[{}] Cleaning environment between tests", namespace);
         for (ActiveMQArtemis broker : ResourceManager.getArtemisClient().inNamespace(namespace).list().getItems()) {
             LOGGER.warn("[{}] Undeploying broker {}", namespace, broker.getMetadata().getName());
             ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).delete();
@@ -207,12 +207,21 @@ public abstract class AbstractSystemTests implements TestSeparator {
             waitForScaleDownDrainer(namespace, operator.getOperatorName(),
                     broker.getMetadata().getName(), waitTime, previousSize, newSize);
         } else {
-            ResourceManager.waitForBrokerDeployment(namespace, broker, true, waitTime);
+            ResourceManager.waitForBrokerDeployment(namespace, broker, true, null, waitTime);
+            waitForBrokerPodsReloadExpectedCount(namespace, broker, newSize, waitTime);
         }
         List<Pod> brokers = getClient().listPodsByPrefixName(namespace, broker.getMetadata().getName());
         assertEquals(brokers.size(), newSize);
         LOGGER.info("[{}] Performed Broker scaledown {} -> {}", namespace, previousSize, newSize);
         return broker;
+    }
+
+    public void waitForBrokerPodsReloadExpectedCount(String namespace, ActiveMQArtemis broker, int expectedSize, long maxTimeout) {
+        LOGGER.info("[{}] Waiting for expected broker pods count: {}", namespace, expectedSize);
+        TestUtils.waitFor("Drain pod to finish", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+            List<Pod> brokers = getClient().listPodsByPrefixName(namespace, broker.getMetadata().getName());
+            return brokers.size() == expectedSize;
+        });
     }
 
     /**

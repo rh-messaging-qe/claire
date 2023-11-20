@@ -84,7 +84,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         // testNamespaceB - should fail
         LOGGER.info("[{}] Expecting FAIL: deploy broker in namespace {}", testNamespace, testNamespaceB);
         ActiveMQArtemis brokerB = ResourceManager.createArtemis(testNamespaceB, ArtemisFileProvider.getArtemisSingleExampleFile(), false);
-        assertThrows(WaitException.class, () -> ResourceManager.waitForBrokerDeployment(testNamespaceB, brokerB, false, Constants.DURATION_30_SECONDS));
+        assertThrows(WaitException.class, () -> ResourceManager.waitForBrokerDeployment(testNamespaceB, brokerB, false, null, Constants.DURATION_30_SECONDS));
         assertNull(getClient().getStatefulSet(testNamespaceB, brokerName + "-ss"));
         ResourceManager.deleteArtemis(testNamespaceB, brokerB);
     }
