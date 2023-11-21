@@ -492,7 +492,10 @@ public class ResourceManager {
             }
             return toReturn;
         });
-        int expectedPodCount = broker.getSpec() != null ? broker.getSpec().getDeploymentPlan().getSize() : 1;
+        int expectedPodCount = 1;
+        if (broker.getSpec() != null && broker.getSpec().getDeploymentPlan() != null) {
+            expectedPodCount = broker.getSpec().getDeploymentPlan().getSize();
+        }
         waitForBrokerPodsExpectedCount(namespace, broker, expectedPodCount, maxTimeout);
     }
 

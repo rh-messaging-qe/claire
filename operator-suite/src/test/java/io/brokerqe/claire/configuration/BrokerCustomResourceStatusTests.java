@@ -16,6 +16,7 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.junit.TestValidSince;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -47,7 +48,12 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     void teardownClusterOperator() {
         teardownDefaultClusterOperator(testNamespace);
     }
-    
+
+    @AfterEach
+    void init() {
+        cleanResourcesAfterTest(testNamespace);
+    }
+
     @Test
     void testBrokerPropertiesApplication() {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
