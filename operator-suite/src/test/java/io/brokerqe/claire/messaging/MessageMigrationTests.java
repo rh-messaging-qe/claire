@@ -165,15 +165,15 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int sent1 = msgSender1.sendMessages();
         assertThat("Sent different amount of messages than expected", sent1, equalTo(msgExpected));
 
-        // LALA
         doArtemisScale(testNamespace, broker, initialSize, 0);
         LOGGER.info("[{}] Scaled down Broker to 0", testNamespace);
 
         doArtemisScale(testNamespace, broker, 0, initialSize);
-        LOGGER.info("[{}] Scaled down Broker to {}", testNamespace, initialSize);
+        LOGGER.info("[{}] Scaled up Broker to {}", testNamespace, initialSize);
 
         // Refresh Pods after the rescale
         brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
+        LOGGER.debug("[{}] Found {} brokerPods", testNamespace, brokerPods.size());
         pod0 = brokerPods.get(0);
         pod1 = brokerPods.get(1);
 

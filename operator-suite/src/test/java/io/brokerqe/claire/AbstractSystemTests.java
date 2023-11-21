@@ -207,21 +207,14 @@ public abstract class AbstractSystemTests implements TestSeparator {
             waitForScaleDownDrainer(namespace, operator.getOperatorName(),
                     broker.getMetadata().getName(), waitTime, previousSize, newSize);
         } else {
-            ResourceManager.waitForBrokerDeployment(namespace, broker, true, null, waitTime);
-            waitForBrokerPodsReloadExpectedCount(namespace, broker, newSize, waitTime);
+            boolean reload = previousSize != 0;
+            ResourceManager.waitForBrokerDeployment(namespace, broker, reload, null, waitTime);
+            ResourceManager.waitForBrokerPodsExpectedCount(namespace, broker, newSize, waitTime);
         }
         List<Pod> brokers = getClient().listPodsByPrefixName(namespace, broker.getMetadata().getName());
         assertEquals(brokers.size(), newSize);
         LOGGER.info("[{}] Performed Broker scaledown {} -> {}", namespace, previousSize, newSize);
         return broker;
-    }
-
-    public void waitForBrokerPodsReloadExpectedCount(String namespace, ActiveMQArtemis broker, int expectedSize, long maxTimeout) {
-        LOGGER.info("[{}] Waiting for expected broker pods count: {}", namespace, expectedSize);
-        TestUtils.waitFor("Drain pod to finish", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
-            List<Pod> brokers = getClient().listPodsByPrefixName(namespace, broker.getMetadata().getName());
-            return brokers.size() == expectedSize;
-        });
     }
 
     /**

@@ -492,6 +492,22 @@ public class ResourceManager {
             }
             return toReturn;
         });
+        int expectedPodCount = broker.getSpec() != null ? broker.getSpec().getDeploymentPlan().getSize() : 1;
+        waitForBrokerPodsExpectedCount(namespace, broker, expectedPodCount, maxTimeout);
+    }
+
+    public static void waitForBrokerPodsExpectedCount(String namespace, ActiveMQArtemis broker, int expectedSize, long maxTimeout) {
+        LOGGER.debug("[{}] Waiting for expected broker pods count: {}", namespace, expectedSize);
+        TestUtils.waitFor("all broker pods to start", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+            List<Pod> brokers = kubeClient.listPodsByPrefixName(namespace, broker.getMetadata().getName());
+            boolean isExpectedSize = brokers.size() == expectedSize;
+            if (isExpectedSize) {
+                for (Pod brokerPod : brokers) {
+                    kubeClient.waitUntilPodIsReady(namespace, brokerPod);
+                }
+            }
+            return isExpectedSize;
+        });
     }
 
     public static void waitForBrokerDeletion(String namespace, String brokerName, long maxTimeout) {
