@@ -287,7 +287,6 @@ public class KubeClient {
         String originalUid = pod.getMetadata().getUid();
 
         LOGGER.info("[{}] Waiting for pod {} reload", namespace, podName);
-
         TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             Pod newPod = getFirstPodByPrefixName(namespace, podName);
             return newPod != null && !newPod.getMetadata().getUid().equals(originalUid);

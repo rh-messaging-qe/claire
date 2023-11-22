@@ -476,7 +476,7 @@ public class ResourceManager {
             LOGGER.info("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
             waitForArtemisGenerationUpdate(namespace, broker, maxTimeout);
             if (brokerPod != null) {
-                getKubeClient().waitForPodReload(namespace, brokerPod, brokerPod.getMetadata().getName());
+                getKubeClient().waitForPodReload(namespace, brokerPod, brokerPod.getMetadata().getName(), maxTimeout);
             }
         }
 
