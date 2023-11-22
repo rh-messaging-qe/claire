@@ -289,6 +289,7 @@ public class KubeClient {
         LOGGER.info("[{}] Waiting for pod {} reload", namespace, podName);
         TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             Pod newPod = getFirstPodByPrefixName(namespace, podName);
+            LOGGER.debug("[{}] OriginalPodUid {} vs currentPodUid {}", namespace, originalUid, newPod.getMetadata().getUid());
             return newPod != null && !newPod.getMetadata().getUid().equals(originalUid);
         });
 
