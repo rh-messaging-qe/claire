@@ -695,43 +695,69 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
+    private ActiveMQArtemis validateAcceptorClash(Acceptors amq1, Acceptors amq2) {
+
+
+        List<Acceptors> acceptors = List.of(amq1, amq2);
+        String brokerName = "tralala";
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+            .editOrNewMetadata()
+                .withName(brokerName)
+                .withNamespace(testNamespace)
+            .endMetadata()
+            .editOrNewSpec()
+                .editOrNewDeploymentPlan()
+                    .withPersistenceEnabled()
+                    .withSize(1)
+                .endDeploymentPlan()
+                .withAcceptors(acceptors)
+            .endSpec().build();
+        broker = ResourceManager.createArtemis(testNamespace, broker, false);
+        ResourceManager.waitForArtemisStatusUpdate(testNamespace, broker, ArtemisConstants.CONDITION_TYPE_VALID, ArtemisConstants.CONDITION_REASON_ACCEPTOR_DUPLICATE, Constants.DURATION_5_MINUTES, false);
+        StatefulSet amqss = getClient().getDefaultArtemisStatefulSet(broker.getMetadata().getName());
+        assertNull(amqss, "Statefulset was unexpectedly created");
+        return broker;
+    }
+
     @Test
     @Disabled
-    //To be re-enabled to verify status of the CR in this case once ENTMQBR-8068 is fixed
-    void portClashTest() {
-        Acceptors amqAcceptor1 = createAcceptor(AMQ_ACCEPTOR_NAME + "-original",
+    //see ENTMQBR-8586
+    void acceptorNameClashTest() {
+        Acceptors acceptor1 = createAcceptor(AMQ_ACCEPTOR_NAME + "-original",
                 "amqp",
                 5672,
                 true,
                 false,
                 null,
                 false);
-        Acceptors amqAcceptor2 = createAcceptor(AMQ_ACCEPTOR_NAME + "-original",
+        Acceptors acceptor2 = createAcceptor(AMQ_ACCEPTOR_NAME + "-original",
                 "amqp",
                 5673,
                 true,
                 false,
                 null,
                 false);
-
-        List<Acceptors> acceptors = List.of(amqAcceptor1, amqAcceptor2);
-        String brokerName = "tralala";
-        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
-                .editOrNewMetadata()
-                    .withName(brokerName)
-                    .withNamespace(testNamespace)
-                .endMetadata()
-                .editOrNewSpec()
-                    .editOrNewDeploymentPlan()
-                        .withPersistenceEnabled()
-                        .withSize(1)
-                    .endDeploymentPlan()
-                    .withAcceptors(acceptors)
-                .endSpec().build();
-        broker = ResourceManager.createArtemis(testNamespace, broker, true);
-
-        verifySingleRoute(brokerName, amqAcceptor1.getName());
-        verifySingleRoute(brokerName, amqAcceptor2.getName());
+        ActiveMQArtemis broker = validateAcceptorClash(acceptor1, acceptor2);
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+    @Test
+    void acceptorPortClashTest() {
+        Acceptors acceptor1 = createAcceptor(AMQ_ACCEPTOR_NAME + "-original",
+                "amqp1",
+                5672,
+                true,
+                false,
+                null,
+                false);
+        Acceptors acceptor2 = createAcceptor(AMQ_ACCEPTOR_NAME + "-original",
+                "amqp2",
+                5672,
+                true,
+                false,
+                null,
+                false);
+        ActiveMQArtemis broker = validateAcceptorClash(acceptor1, acceptor2);
+        ResourceManager.deleteArtemis(testNamespace, broker);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 

@@ -123,7 +123,7 @@ public interface ArtemisConstants {
     String CONDITION_REASON_INVALID_EXTRA_MOUNT = "InvalidExtraMount";
     String CONDITION_REASON_RESOURCE_ERROR = "ResourceError";
     String CONDITION_REASON_WAITING_FOR_ALL_CONDITIONS = "WaitingForAllConditions";
-
+    String CONDITION_REASON_ACCEPTOR_DUPLICATE = "DuplicateAcceptorPort";
 
     // New naming style
     String INSTALL_ARTEMIS_CO_010_CRD_ARTEMIS_PATH = Constants.OPERATOR_CRDS_DIR_PATH + "crd_artemis.yaml";
