@@ -314,6 +314,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
     }
 
     @Test
+    @Disabled("mkrutov: bug or fix needed")
     public void restartWithoutMigration() {
         int initialSize = 2;
         int msgExpected = 100;

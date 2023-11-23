@@ -79,7 +79,7 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     }
 
 
-    private void testBrokerProperty(ActiveMQArtemis broker, String brokerProperty, String conditionReason, String conditionType, String failureMessage) {
+    private void checkBrokerProperty(ActiveMQArtemis broker, String brokerProperty, String conditionReason, String conditionType, String failureMessage) {
         ActiveMQArtemisSpec spec = new ActiveMQArtemisSpec();
         spec.setBrokerProperties(List.of(brokerProperty));
 
@@ -107,7 +107,7 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     @Test
     void testBrokerPropertiesWrongProperty() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, CONFIG_BROKER_NAME);
-        testBrokerProperty(broker, "emptyProperty=emptyValue",
+        checkBrokerProperty(broker, "emptyProperty=emptyValue",
             ArtemisConstants.CONDITION_REASON_APPLIED_WITH_ERROR,
             ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
             "Broker properties didn't error out as expected");
@@ -117,7 +117,7 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     @Test
     void testBrokerPropertyInvalidValue() {
         ActiveMQArtemis broker =  ResourceManager.createArtemis(testNamespace, CONFIG_BROKER_NAME);
-        testBrokerProperty(broker, "networkCheckPeriod=somestring",
+        checkBrokerProperty(broker, "networkCheckPeriod=somestring",
             ArtemisConstants.CONDITION_REASON_APPLIED_WITH_ERROR,
             ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
             "Broker properties didn't error out as expected");
@@ -127,7 +127,7 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
     @Test
     void testBrokerPropertiesValidProperty() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, CONFIG_BROKER_NAME);
-        testBrokerProperty(broker, "networkCheckPeriod=20000",
+        checkBrokerProperty(broker, "networkCheckPeriod=20000",
             ArtemisConstants.CONDITION_REASON_APPLIED,
             ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED,
             "Broker property was not applied as expected");

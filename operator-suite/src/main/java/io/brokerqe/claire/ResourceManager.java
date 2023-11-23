@@ -471,20 +471,16 @@ public class ResourceManager {
     public static void waitForBrokerDeployment(String namespace, ActiveMQArtemis broker, boolean reloadExisting, Pod brokerPod, long maxTimeout, StatefulSet oldStatefulSet) {
         LOGGER.info("[{}] Waiting {}s for creation of broker {}", namespace, Duration.ofMillis(maxTimeout).toSeconds(), broker.getMetadata().getName());
         String brokerName = broker.getMetadata().getName();
-
-        if (reloadExisting) {
-            LOGGER.info("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
-            waitForArtemisGenerationUpdate(namespace, broker, maxTimeout);
-            if (brokerPod != null) {
-                getKubeClient().waitForPodReload(namespace, brokerPod, brokerPod.getMetadata().getName(), maxTimeout);
-            }
+        int expectedPodCount = 1;
+        if (broker.getSpec() != null && broker.getSpec().getDeploymentPlan() != null) {
+            expectedPodCount = broker.getSpec().getDeploymentPlan().getSize();
         }
 
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
             boolean toReturn = ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
             if (reloadExisting && oldStatefulSet != null) {
-                LOGGER.warn("WAIT FOR RELOAD OF SS");
+                LOGGER.debug("[{}] Wait for reload & readiness of older Statefulset", namespace);
                 toReturn = toReturn && !oldStatefulSet.getMetadata().getUid().equals(ss.getMetadata().getUid());
             }
             if (ss != null && ss.getSpec().getReplicas() == 0 && ss.getStatus().getReadyReplicas() == null) {
@@ -492,9 +488,17 @@ public class ResourceManager {
             }
             return toReturn;
         });
-        int expectedPodCount = 1;
-        if (broker.getSpec() != null && broker.getSpec().getDeploymentPlan() != null) {
-            expectedPodCount = broker.getSpec().getDeploymentPlan().getSize();
+
+        if (reloadExisting) {
+            LOGGER.info("[{}] Reloading existing broker {}, sleeping for some time", namespace, broker.getMetadata().getName());
+            waitForArtemisGenerationUpdate(namespace, broker, maxTimeout);
+            if (brokerPod != null) {
+                long timeout = maxTimeout;
+                if (expectedPodCount > 1) {
+                    timeout += Constants.DURATION_30_SECONDS + Constants.DURATION_1_MINUTE * expectedPodCount;
+                }
+                getKubeClient().waitForPodReload(namespace, brokerPod, brokerPod.getMetadata().getName(), timeout);
+            }
         }
         waitForBrokerPodsExpectedCount(namespace, broker, expectedPodCount, maxTimeout);
     }

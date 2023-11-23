@@ -412,11 +412,12 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .endDeploymentPlan()
             .endSpec().build();
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
+        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
+        StatefulSet ss = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
         broker.getSpec().getDeploymentPlan().getStorage().setSize("3");
         broker.getSpec().getDeploymentPlan().setSize(2);
-        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod, Constants.DURATION_2_MINUTES);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod, Constants.DURATION_2_MINUTES, ss);
         PersistentVolumeClaim pvc = getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace).withName(testBrokerName + "-" + testBrokerName + "-ss-0").get();
         Quantity pvcDefaultSize = pvc.getSpec().getResources().getRequests().get("storage");
         PersistentVolumeClaim bigPvc = getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace).withName(testBrokerName + "-" + testBrokerName + "-ss-1").get();
