@@ -697,8 +697,6 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     private ActiveMQArtemis validateAcceptorClash(Acceptors amq1, Acceptors amq2) {
-
-
         List<Acceptors> acceptors = List.of(amq1, amq2);
         String brokerName = "tralala";
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
@@ -742,6 +740,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
     void acceptorPortClashTest() {
         Acceptors acceptor1 = createAcceptor(AMQ_ACCEPTOR_NAME + "-original",
                 "amqp1",
