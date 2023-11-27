@@ -54,6 +54,9 @@ If you would want to try your own OLM operator, you would need to specify only f
 | CUSTOM_EXTRA_DELAY        | Prolonged all internal waitFor calls (seconds)                      | `0`                         | \<number of seconds\>                            |
 | OPERATOR_INSTALL_ZIP      | Url to zip file with install/examples (Makefile)                    | 7.10.2 url                  | \<url\>                                          |
 | OPERATOR_VERSION_UPSTREAM | Version/branch of repository (Makefile)                             | main                        | \<branch\>                                       |
+| DUMP_ENABLED              | Enabled serialization of deployed resources                         | `false`                     | `true`, `false`                                      |
+| DUMP_FORMAT               | Format of serialized deployed resources                             | `yaml`                      | `yaml`, `json`                                   |
+| DUMP_LOCATION             | Location to dump serialized deployed resources                      | `serialization-dump`        | \<directory\>                                    |
 
 ## Setting log level
 Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.

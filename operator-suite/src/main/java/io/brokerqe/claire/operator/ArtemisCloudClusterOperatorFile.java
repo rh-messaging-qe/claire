@@ -7,7 +7,9 @@ package io.brokerqe.claire.operator;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.helpers.DataSerialization;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -64,7 +66,8 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         DEFAULT_OPERATOR_INSTALL_CRD_FILES.forEach(fileName -> {
             try {
                 ArtemisCloudClusterOperator.LOGGER.debug("[Operator] Deploying CRD file {}", fileName);
-                ResourceManager.getKubeClient().getKubernetesClient().load(new FileInputStream(fileName.toFile())).createOrReplace();
+                List<HasMetadata> resources = ResourceManager.getKubeClient().getKubernetesClient().load(new FileInputStream(fileName.toFile())).createOrReplace();
+                DataSerialization.dumpResourceToFile(resources);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -95,7 +98,8 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         filesToDeploy.forEach(fileName -> {
             try {
                 LOGGER.debug("[{}] Deploying file {}", deploymentNamespace, fileName);
-                kubeClient.getKubernetesClient().load(new FileInputStream(fileName.toFile())).inNamespace(deploymentNamespace).createOrReplace();
+                List<HasMetadata> resources = kubeClient.getKubernetesClient().load(new FileInputStream(fileName.toFile())).inNamespace(deploymentNamespace).createOrReplace();
+                DataSerialization.dumpResourceToFile(resources);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }

@@ -36,6 +36,9 @@ public interface Constants {
     String EV_UPGRADE_PLAN = "UPGRADE_PLAN";
     String EV_LOGS_LOCATION = "LOGS_LOCATION";
     String EV_TMP_LOCATION = "TMP_LOCATION";
+    String EV_DUMP_ENABLED = "DUMP_ENABLED";
+    String EV_DUMP_LOCATION = "DUMP_LOCATION";
+    String EV_DUMP_FORMAT = "DUMP_FORMAT";
     String EV_CLUSTER_OPERATOR_MANAGED = "CLUSTER_OPERATOR_MANAGED";
     String EV_COLLECT_TEST_DATA = "COLLECT_TEST_DATA";
     String EV_JDBC_DATA = "JDBC_DATA";
@@ -78,9 +81,11 @@ public interface Constants {
     long DURATION_5_MINUTES = Duration.ofMinutes(5).toMillis();
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
-    String PROJECT_TEST_DIR = PROJECT_USER_DIR + "/src/test/";
+    String PROJECT_TEST_DIR = PROJECT_USER_DIR + "/src/test";
     String LOGS_DEFAULT_DIR = PROJECT_USER_DIR + "/test-logs";
     String TMP_DEFAULT_DIR = PROJECT_USER_DIR + "/test-tmp";
+    String DUMP_DEFAULT_DIR = PROJECT_USER_DIR + "/serialization-dump";
+    String DUMP_DEFAULT_TYPE = "yaml";
     String CERTS_GENERATION_DIR = PROJECT_USER_DIR + "/certificates/";
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";

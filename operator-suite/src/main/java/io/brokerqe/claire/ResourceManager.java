@@ -35,6 +35,7 @@ import io.brokerqe.claire.clients.container.MqttV5Client;
 import io.brokerqe.claire.db.Postgres;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.helpers.DataSerialization;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorFile;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorOlm;
@@ -54,6 +55,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +89,7 @@ public class ResourceManager {
     private static ResourceManager resourceManager = null;
     private static KubeClient kubeClient;
     private static EnvironmentOperator environmentOperator;
+    private static TestInfo testInfo;
 
     private ResourceManager(EnvironmentOperator env) {
         kubeClient = env.getKubeClient();
@@ -406,17 +409,20 @@ public class ResourceManager {
         return foundCondition;
     }
 
-    public static void waitForArtemisGenerationUpdate(String namespace, ActiveMQArtemis artemis, long maxTimeout) {
+    public static void waitForArtemisGenerationUpdate(String namespace, ActiveMQArtemis expectedBroker, long maxTimeout) {
         TestUtils.waitFor("Wait for next generation", Constants.DURATION_2_SECONDS, maxTimeout, () -> {
-            ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespace).resource(artemis).get();
+            ActiveMQArtemis updatedArtemis = getArtemisClient().inNamespace(namespace).resource(expectedBroker).get();
 //                return updatedArtemis.getMetadata().getGeneration().equals(broker.getMetadata().getGeneration());
             // TODO kept for debugging purposes
-            if (updatedArtemis.getMetadata().getGeneration().equals(artemis.getMetadata().getGeneration())) {
+            if (updatedArtemis.getMetadata().getGeneration().equals(expectedBroker.getMetadata().getGeneration())) {
                 LOGGER.debug("[{}] ActiveMQArtemis Generation is same, moving forward.", namespace);
                 return true;
+            } else if (updatedArtemis.getMetadata().getGeneration() > (expectedBroker.getMetadata().getGeneration())) {
+                LOGGER.error("[{}] Unexpected generation number {} is too high! Possible issue with Artemis CR /Operator.", namespace, updatedArtemis.getMetadata().getGeneration());
+                throw new ClaireRuntimeException("Unexpectedly high generation number in ActiveMQArtemis CR!");
             } else {
                 LOGGER.debug("[{}] ActiveMQArtemis Generation is different, waiting: {} vs {}",
-                        namespace, updatedArtemis.getMetadata().getGeneration(), artemis.getMetadata().getGeneration());
+                        namespace, updatedArtemis.getMetadata().getGeneration(), expectedBroker.getMetadata().getGeneration());
                 return false;
             }
         });
@@ -528,6 +534,7 @@ public class ResourceManager {
     // Deployed Artemis Broker CRs
     protected static void addArtemisBroker(ActiveMQArtemis broker) {
         deployedBrokers.add(broker);
+        DataSerialization.dumpResourceToFile(broker);
     }
 
     protected static void removeArtemisBroker(ActiveMQArtemis broker) {
@@ -540,6 +547,7 @@ public class ResourceManager {
 
     protected static void addArtemisAddress(ActiveMQArtemisAddress address) {
         deployedAddresses.add(address);
+        DataSerialization.dumpResourceToFile(address);
     }
 
     protected static void removeArtemisAddress(ActiveMQArtemisAddress address) {
@@ -552,6 +560,7 @@ public class ResourceManager {
 
     protected static void addArtemisSecurity(ActiveMQArtemisSecurity security) {
         deployedSecurity.add(security);
+        DataSerialization.dumpResourceToFile(security);
     }
 
     protected static void removeArtemisSecurity(ActiveMQArtemisSecurity security) {
@@ -588,6 +597,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliJavaDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer();
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -595,6 +605,7 @@ public class ResourceManager {
         DeployableClient<Deployment, Pod> deployableClient = new CliJavaDeployment(testNamespace);
         Deployment deployment = deployableClient.deployContainer(true, secrets);
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -613,6 +624,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliProtonDotnetDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer();
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -620,6 +632,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliProtonDotnetDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer(true, secrets);
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -627,6 +640,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliCppDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer();
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -634,6 +648,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliCppDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer(true, secrets);
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -641,6 +656,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliProtonPythonDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer();
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -648,6 +664,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliProtonPythonDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer(true, secrets);
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -655,6 +672,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliRheaDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer();
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -662,6 +680,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new CliRheaDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer(true, secrets);
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -669,6 +688,7 @@ public class ResourceManager {
         DeployableClient deployableClient = new MqttDeployment(testNamespace);
         Deployment deployment = (Deployment) deployableClient.deployContainer();
         deployedContainers.put(deployment, testNamespace);
+        DataSerialization.dumpResourceToFile(deployment);
         return deployment;
     }
 
@@ -940,4 +960,11 @@ public class ResourceManager {
                 getKubeClient().getKubernetesClient().getMasterUrl().getHost().replace("api", "*");
     }
 
+    public static void setTestInfo(TestInfo testInfoNew) {
+        testInfo = testInfoNew;
+    }
+
+    public static TestInfo getTestInfo() {
+        return testInfo;
+    }
 }

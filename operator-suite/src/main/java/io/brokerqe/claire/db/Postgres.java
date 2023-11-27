@@ -6,6 +6,7 @@ package io.brokerqe.claire.db;
 
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
+import io.brokerqe.claire.helpers.DataSerialization;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
@@ -124,8 +125,10 @@ public class Postgres {
         .build();
 
         postgresStatefulset = kubeClient.getKubernetesClient().resource(postgresStatefulset).inNamespace(namespace).createOrReplace();
+        DataSerialization.dumpResourceToFile(postgresStatefulset);
         kubeClient.getKubernetesClient().resource(postgresStatefulset).waitUntilReady(60, TimeUnit.SECONDS);
         service = kubeClient.getKubernetesClient().services().inNamespace(namespace).resource(service).createOrReplace();
+        DataSerialization.dumpResourceToFile(service);
     }
 
     public void undeployPostgres() {

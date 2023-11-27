@@ -6,6 +6,7 @@ package io.brokerqe.claire;
 
 import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
+import io.brokerqe.claire.helpers.SerializationFormat;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorFile;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 import org.slf4j.Logger;
@@ -43,14 +44,20 @@ public class EnvironmentOperator extends Environment {
     private final KubeClient kubeClient;
     private final boolean collectTestData;
     private final int customExtraDelay;
+    private final boolean serializationEnabled;
+    private final String serializationDirectory;
+    private final String serializationFormat;
 
     public EnvironmentOperator() {
         this.set(this);
         artemisVersion = System.getenv(Constants.EV_ARTEMIS_VERSION);
         testLogLevel = System.getenv(Constants.EV_TEST_LOG_LEVEL);
-        logsDirLocation = System.getProperty(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
-        tmpDirLocation = System.getProperty(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
+        logsDirLocation = System.getenv().getOrDefault(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
+        tmpDirLocation = System.getenv().getOrDefault(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
+        serializationEnabled = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_DUMP_ENABLED, "false"));
+        serializationDirectory = System.getenv().getOrDefault(Constants.EV_DUMP_LOCATION, Constants.DUMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
+        serializationFormat = System.getenv().getOrDefault(Constants.EV_DUMP_FORMAT, Constants.DUMP_DEFAULT_TYPE);
 
         kubeClient = new KubeClient("default");
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
@@ -97,6 +104,8 @@ public class EnvironmentOperator extends Environment {
         envVarsSB.append(Constants.EV_DISABLE_RANDOM_NAMESPACES).append("=").append(disabledRandomNs).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_CLUSTER_OPERATOR_MANAGED).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_COLLECT_TEST_DATA).append("=").append(collectTestData).append(Constants.LINE_SEPARATOR);
+        envVarsSB.append(Constants.EV_DUMP_ENABLED).append("=").append(serializationEnabled).append(Constants.LINE_SEPARATOR);
+
         if (testLogLevel != null) {
             envVarsSB.append(Constants.EV_TEST_LOG_LEVEL).append("=").append(testLogLevel).append(Constants.LINE_SEPARATOR);
         }
@@ -142,6 +151,11 @@ public class EnvironmentOperator extends Environment {
         if (customExtraDelay != 0) {
             envVarsSB.append(Constants.EV_CUSTOM_EXTRA_DELAY).append("=").append(customExtraDelay).append(Constants.LINE_SEPARATOR);
             LOGGER.warn("Detected {}. All non-kubernetes default waits will be prolonged by {}s", Constants.EV_CUSTOM_EXTRA_DELAY, customExtraDelay);
+        }
+        if (serializationEnabled) {
+            envVarsSB.append(Constants.EV_DUMP_LOCATION).append("=").append(serializationDirectory).append(Constants.LINE_SEPARATOR);
+            envVarsSB.append(Constants.EV_DUMP_FORMAT).append("=").append(serializationFormat).append(Constants.LINE_SEPARATOR);
+
         }
 
         LOGGER.info(envVarsSB.toString());
@@ -283,5 +297,24 @@ public class EnvironmentOperator extends Environment {
     }
     public void setupDatabase() {
         throw new ClaireNotImplementedException("Databases on Operator are not yet supported!");
+    }
+
+    public boolean isSerializationEnabled() {
+        return serializationEnabled;
+    }
+
+    public String getSerializationDirectory() {
+        return serializationDirectory;
+    }
+
+    public SerializationFormat getSerializationFormat() {
+        if (serializationFormat.equals(Constants.DUMP_DEFAULT_TYPE)) {
+            return SerializationFormat.YAML;
+        } else if (serializationFormat.equals("json")) {
+            return SerializationFormat.JSON;
+        } else {
+            LOGGER.warn("Unknown serialization type! Defaulting to YAML format.");
+            return SerializationFormat.YAML;
+        }
     }
 }

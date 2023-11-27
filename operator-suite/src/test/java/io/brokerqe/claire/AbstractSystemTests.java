@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
@@ -55,7 +56,9 @@ public abstract class AbstractSystemTests implements TestSeparator {
     protected EnvironmentOperator testEnvironmentOperator;
     protected TestInfo testInfo;
     @BeforeEach
+    @BeforeAll
     void init(TestInfo testInfo) {
+        ResourceManager.setTestInfo(testInfo);
         this.testInfo = testInfo;
     }
 
@@ -284,11 +287,11 @@ public abstract class AbstractSystemTests implements TestSeparator {
     }
 
     // Messaging methods
-    public void checkMessageCount(String namespace, Pod brokerPod) {
-        checkMessageCount(namespace, brokerPod, null);
+    public Map<String, Map<String, String>> checkMessageCount(String namespace, Pod brokerPod) {
+        return checkMessageCount(namespace, brokerPod, null);
     }
 
-    public void checkMessageCount(String namespace, Pod brokerPod, Map<String, String> queueStatOptions) {
+    public Map<String, Map<String, String>> checkMessageCount(String namespace, Pod brokerPod, Map<String, String> queueStatOptions) {
         if (queueStatOptions == null) {
             queueStatOptions = new HashMap<>(Map.of(
                     "maxColumnSize", "-1",
@@ -298,7 +301,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
         }
         BundledArtemisClient bac = new BundledArtemisClient(new BundledClientDeployment(namespace, brokerPod), ArtemisCommand.QUEUE_STAT, queueStatOptions);
         Map<String, Map<String, String>> queueStats = (Map<String, Map<String, String>>) bac.executeCommand();
-        //TODO some checks possibly?
+        return queueStats;
     }
 
     public void testMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages) {

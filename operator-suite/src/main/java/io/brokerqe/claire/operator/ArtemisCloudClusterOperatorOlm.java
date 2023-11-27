@@ -8,6 +8,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.exception.WaitException;
+import io.brokerqe.claire.helpers.DataSerialization;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
@@ -135,7 +136,9 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
 
     private void deployOlmResource(String yamlStringConfig) {
         LOGGER.debug("[{}] [OLM] \n{} ", deploymentNamespace, yamlStringConfig);
-        olmResources.add(kubeClient.getKubernetesClient().resource(yamlStringConfig).createOrReplace());
+        HasMetadata resource = kubeClient.getKubernetesClient().resource(yamlStringConfig).createOrReplace();
+        olmResources.add(resource);
+        DataSerialization.dumpResourceToFile(resource);
     }
 
     public void deployOlmInstallation() {
