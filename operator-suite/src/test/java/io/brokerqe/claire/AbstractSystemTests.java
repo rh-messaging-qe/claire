@@ -69,6 +69,11 @@ public abstract class AbstractSystemTests implements TestSeparator {
             ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).delete();
         }
 
+        for (ActiveMQArtemisAddress address : ResourceManager.getArtemisAddressClient().inNamespace(namespace).list().getItems()) {
+            LOGGER.warn("[{}] Removing address {}", namespace, address.getMetadata().getName());
+            ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(address).delete();
+        }
+
         List<Deployment> clientDeployments = getClient().getDeploymentByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
         for (Deployment clientDeployment : clientDeployments) {
             LOGGER.warn("[{}] Undeploying forgotten clients deployment {}", namespace, clientDeployment.getMetadata().getName());

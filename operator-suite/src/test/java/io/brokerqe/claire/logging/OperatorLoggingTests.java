@@ -18,7 +18,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junitpioneer.jupiter.RetryingTest;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
+@Tag(Constants.TAG_OPERATOR)
 @TestValidSince(ArtemisVersion.VERSION_2_28)
 public class OperatorLoggingTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
@@ -53,32 +54,32 @@ public class OperatorLoggingTests extends AbstractSystemTests {
         cleanResourcesAfterTest(testNamespace);
     }
 
-    @Tag(Constants.TAG_OPERATOR)
-    @RetryingTest(3)
+    @Test
     void testOperatorLogLevelDebug() {
         testOperatorLogLevel(DEBUG);
     }
 
-    @Tag(Constants.TAG_OPERATOR)
-    @RetryingTest(3)
+    @Test
     void testOperatorLogLevelInfo() {
         testOperatorLogLevel(INFO);
     }
 
-    @Tag(Constants.TAG_OPERATOR)
-    @RetryingTest(3)
+    @Test
     void testOperatorLogLevelError() {
         testOperatorLogLevel(ERROR);
     }
 
     void testOperatorLogLevel(String logLevel) {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "artemis-log");
         getClient().setOperatorLogLevel(operator, logLevel.toLowerCase(Locale.ROOT));
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "artemis-log");
 
         LOGGER.info("[{}] Deploying wrongly defined ActiveMQArtemisAddress", testNamespace);
         ActiveMQArtemisAddress wrongAddress = ResourceManager.createArtemisAddress(testNamespace, "lala", "lala", "wrongRoutingType");
-        LOGGER.info("[{}] Waiting 15secs for logs to populate", testNamespace);
-        TestUtils.threadSleep(15000);
+        TestUtils.waitFor(logLevel + " message to show up in logs", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
+            Pod pod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
+            String log = getClient().getLogsFromPod(pod);
+            return log.contains(logLevel);
+        });
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         String operatorLog = getClient().getLogsFromPod(operatorPod);
         logContainsLevel(operatorLog, logLevel);
