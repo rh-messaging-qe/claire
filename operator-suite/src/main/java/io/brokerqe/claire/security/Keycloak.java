@@ -12,7 +12,7 @@ import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.db.Postgres;
-import io.brokerqe.claire.helpers.DataSerialization;
+import io.brokerqe.claire.helpers.DataStorer;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -212,7 +212,7 @@ public class Keycloak {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        DataSerialization.dumpResourceToFile(keycloakResources);
+        DataStorer.dumpResourceToFile(keycloakResources);
     }
 
     protected void waitForKeycloakDeployment(String keycloakPodName, String keycloakDbPodName) {

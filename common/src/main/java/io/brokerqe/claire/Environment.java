@@ -15,8 +15,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -58,13 +56,6 @@ public abstract class Environment {
 
     public String getJdbcDatabaseFile() {
         return databaseFile;
-    }
-
-    public String generateTimestamp() {
-        LocalDateTime date = LocalDateTime.now();
-        String timestamp = date.format(DateTimeFormatter.ofPattern(Constants.DATE_FORMAT));
-        LOGGER.debug(timestamp);
-        return timestamp;
     }
 
     protected ArtemisVersion convertArtemisVersion(String version) {

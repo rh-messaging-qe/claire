@@ -7,6 +7,7 @@ package io.brokerqe.claire.executor;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.helpers.DataStorer;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
@@ -74,6 +75,7 @@ public class ExecutorOperator implements AutoCloseable, Executor {
 
     @Override
     public String executeCommand(long maxExecMs, String... cmd) {
+        storeCommand(cmd);
         LOGGER.debug("[{}] {} Running command: {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(),
                 String.join(" ", cmd));
 
@@ -88,6 +90,7 @@ public class ExecutorOperator implements AutoCloseable, Executor {
 
     @Override
     public void execBackgroundCommand(String... cmd) {
+        storeCommand(cmd);
         LOGGER.info("[{}] {} Running background command: {}", pod.getMetadata().getNamespace(),
                 pod.getMetadata().getName(), Arrays.toString(cmd).replaceAll(",", ""));
         CompletableFuture<String> data = new CompletableFuture<>();
@@ -129,6 +132,13 @@ public class ExecutorOperator implements AutoCloseable, Executor {
                 .writingError(baos)
                 .usingListener(listener)
                 .exec(command);
+    }
+
+    private void storeCommand(String[] cmd) {
+        if (ResourceManager.getEnvironment().isSerializationEnabled()) {
+            String commandToLog = String.format("%s [%s]-[%s]: %s", TestUtils.generateTimestamp(), pod.getMetadata().getNamespace(), pod.getMetadata().getName(), String.join(" ", cmd));
+            DataStorer.storeCommand(commandToLog);
+        }
     }
 
     static class SimpleListener implements ExecListener {

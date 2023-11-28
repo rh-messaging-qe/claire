@@ -5,7 +5,7 @@
 package io.brokerqe.claire;
 
 import io.brokerqe.claire.executor.ExecutorOperator;
-import io.brokerqe.claire.helpers.DataSerialization;
+import io.brokerqe.claire.helpers.DataStorer;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.claire.security.CertificateManager;
 import io.brokerqe.claire.security.KeyStoreData;
@@ -390,7 +390,7 @@ public class KubeClient {
 
     public void setDeployment(String namespaceName, Deployment deployment, boolean waitForDeployment) {
         deployment = getKubernetesClient().apps().deployments().inNamespace(namespaceName).resource(deployment).createOrReplace();
-        DataSerialization.dumpResourceToFile(deployment);
+        DataStorer.dumpResourceToFile(deployment);
         if (waitForDeployment) {
             LOGGER.info("[{}] Waiting for deployment {} to be ready", namespaceName, deployment.getMetadata().getName());
             TestUtils.threadSleep(5000);
@@ -471,7 +471,7 @@ public class KubeClient {
         route = ((OpenShiftClient) client).routes().inNamespace(namespaceName).resource(route).create();
         TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
         LOGGER.debug("[{}] Created route {}", namespaceName, route.getMetadata().getName());
-        DataSerialization.dumpResourceToFile(route);
+        DataStorer.dumpResourceToFile(route);
         return route;
     }
 
@@ -508,7 +508,7 @@ public class KubeClient {
         LOGGER.info("[OLM][{}] Creating OperatorGroup", namespaceName);
         LOGGER.debug("[OLM][{}] {}", namespaceName, operatorGroupString);
         HasMetadata operatorGroup = getKubernetesClient().resource(operatorGroupString).inNamespace(namespace).createOrReplace();
-        DataSerialization.dumpResourceToFile(operatorGroup);
+        DataStorer.dumpResourceToFile(operatorGroup);
         return operatorGroup;
     }
 
@@ -730,7 +730,7 @@ public class KubeClient {
 
     public void createConfigMap(String namespaceName, ConfigMap configMap) {
         configMap = client.configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
-        DataSerialization.dumpResourceToFile(configMap);
+        DataStorer.dumpResourceToFile(configMap);
     }
     
     public StatefulSet getDefaultArtemisStatefulSet(String brokerName) {
@@ -760,7 +760,7 @@ public class KubeClient {
         if (waitForCreation) {
             waitForSecretCreation(namespaceName, secretName);
         }
-        DataSerialization.dumpResourceToFile(secret);
+        DataStorer.dumpResourceToFile(secret);
         return secret;
     }
 
@@ -777,7 +777,7 @@ public class KubeClient {
         if (waitForCreation) {
             waitForSecretCreation(namespaceName, secretName);
         }
-        DataSerialization.dumpResourceToFile(secret);
+        DataStorer.dumpResourceToFile(secret);
         return secret;
     }
 
@@ -863,7 +863,7 @@ public class KubeClient {
         if (waitForCreation) {
             waitForConfigmapCreation(namespaceName, configmapName);
         }
-        DataSerialization.dumpResourceToFile(configMap);
+        DataStorer.dumpResourceToFile(configMap);
         return configMap;
     }
 
@@ -883,7 +883,7 @@ public class KubeClient {
             waitForConfigmapCreation(namespaceName, configmapName);
         }
         configMap = getKubernetesClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
-        DataSerialization.dumpResourceToFile(configMap);
+        DataStorer.dumpResourceToFile(configMap);
         return configMap;
     }
 

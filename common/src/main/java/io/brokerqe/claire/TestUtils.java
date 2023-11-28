@@ -51,10 +51,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.Map;
@@ -195,6 +198,12 @@ public final class TestUtils {
         }
     }
 
+    public static String generateTimestamp() {
+        LocalDateTime date = LocalDateTime.now();
+        String timestamp = date.format(DateTimeFormatter.ofPattern(Constants.DATE_FORMAT));
+        return timestamp;
+    }
+
     // ========== YAML Operations ==========
     public static <T> T configFromYaml(String yamlPath, Class<T> c) {
         return configFromYaml(new File(yamlPath), c);
@@ -322,6 +331,26 @@ public final class TestUtils {
         try {
             LOGGER.trace("Creating file: {}", fileName);
             Files.write(Paths.get(fileName), content.getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Append content to file. If fileName does not exist, it will be created.
+     * User has to provide line separators if needed.
+     * @param fileName name of file to append to
+     * @param content to be appended
+     */
+    public static void appendToFile(String fileName, String content) {
+        Path path = Paths.get(fileName);
+        try {
+            if (!Files.exists(path)) {
+                createFile(fileName, content);
+            } else {
+                LOGGER.trace("Appending content to file: {}", fileName);
+                Files.write(path, content.getBytes(), StandardOpenOption.APPEND);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

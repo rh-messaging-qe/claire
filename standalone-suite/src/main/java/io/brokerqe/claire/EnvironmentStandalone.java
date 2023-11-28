@@ -56,9 +56,9 @@ public class EnvironmentStandalone extends Environment {
         logLevel = getConfigurationValue(Constants.EV_TEST_LOG_LEVEL, Constants.PROP_LOG_LEVEL, ArtemisConstants.DEFAULT_LOG_LEVEL);
 
         logsDirLocation = getConfigurationValue(Constants.EV_LOGS_LOCATION, Constants.PROP_LOG_DIR, Constants.LOGS_DEFAULT_DIR)
-                + Constants.FILE_SEPARATOR + generateTimestamp();
+                + Constants.FILE_SEPARATOR + TestUtils.generateTimestamp();
         tmpDirLocation = System.getProperty(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR)
-                + Constants.FILE_SEPARATOR + generateTimestamp();
+                + Constants.FILE_SEPARATOR + TestUtils.generateTimestamp();
         logContainers = Boolean.parseBoolean(getConfigurationValue(Constants.EV_LOG_CONTAINERS, Constants.PROP_LOG_CONTAINERS,
                 String.valueOf(Constants.DEFAULT_LOG_CONTAINERS)));
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));

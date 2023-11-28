@@ -17,9 +17,9 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Locale;
 
-public class DataSerialization {
+public class DataStorer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DataSerialization.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataStorer.class);
     private static String yamlDirectory = null;
     private static EnvironmentOperator environmentOperator = null;
     private static SerializationFormat dumpFormat;
@@ -45,17 +45,10 @@ public class DataSerialization {
         if (!environmentOperator.isSerializationEnabled()) {
             return;
         }
-        TestInfo testInfo = ResourceManager.getTestInfo();
-        String testDirName = yamlDirectory;
-        if (testInfo != null) {
-            testDirName += Constants.FILE_SEPARATOR + testInfo.getTestClass().orElseThrow().getName();
-            if (testInfo.getTestMethod().isPresent()) {
-                testDirName += Constants.FILE_SEPARATOR + testInfo.getTestMethod().orElseThrow().getName();
-            }
-        }
+        String testDirName = getTestDirName();
         TestUtils.createDirectory(testDirName);
         String objectFilename = testDirName + Constants.FILE_SEPARATOR + object.getKind() + "_" + object.getMetadata().getName() + "_" +
-                environmentOperator.generateTimestamp() + "." + dumpFormat.toString().toLowerCase(Locale.ROOT);
+                TestUtils.generateTimestamp() + "." + dumpFormat.toString().toLowerCase(Locale.ROOT);
         LOGGER.debug("Dumping object {} to {}", object.getMetadata().getName(), objectFilename);
 
         if (dumpFormat.equals(SerializationFormat.YAML)) {
@@ -75,5 +68,26 @@ public class DataSerialization {
     protected static void dumpResourceAsJson(HasMetadata object, String objectFilename) {
         String data = Serialization.asJson(object);
         TestUtils.createFile(objectFilename, data);
+    }
+
+    public static void storeCommand(String commandContent) {
+        String testDirName = getTestDirName();
+        TestUtils.createDirectory(testDirName);
+        String commandFilename = testDirName + Constants.FILE_SEPARATOR + "commands.log";
+        TestUtils.createDirectory(testDirName);
+        TestUtils.appendToFile(commandFilename, commandContent + Constants.LINE_SEPARATOR);
+        LOGGER.debug("Storing command {} to {}", commandContent, commandFilename);
+    }
+
+    private static String getTestDirName() {
+        TestInfo testInfo = ResourceManager.getTestInfo();
+        String testDirName = yamlDirectory;
+        if (testInfo != null) {
+            testDirName += Constants.FILE_SEPARATOR + testInfo.getTestClass().orElseThrow().getName();
+            if (testInfo.getTestMethod().isPresent()) {
+                testDirName += Constants.FILE_SEPARATOR + testInfo.getTestMethod().orElseThrow().getName();
+            }
+        }
+        return testDirName;
     }
 }

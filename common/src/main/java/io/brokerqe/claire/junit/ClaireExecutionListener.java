@@ -6,6 +6,7 @@ package io.brokerqe.claire.junit;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import org.junit.platform.launcher.TestExecutionListener;
@@ -63,7 +64,7 @@ public abstract class ClaireExecutionListener implements TestExecutionListener {
                 .orElseThrow(() -> new ClaireRuntimeException("No test root found"));
         Set<TestIdentifier> testClasses = testPlan.getChildren(junit5Root);
         testClasses.forEach(testClass -> {
-            testsList.add("\n");
+            testsList.add(Constants.LINE_SEPARATOR);
             Set<TestIdentifier> tests = testPlan.getChildren(testClass);
             tests.stream().map(test -> {
                 String fqtn = testClass.getDisplayName() + "." + test.getDisplayName();
@@ -74,9 +75,9 @@ public abstract class ClaireExecutionListener implements TestExecutionListener {
         String formattedTestPlan = String.join(",", testsList).replaceAll(",\\n,", "\n ").replaceFirst(",", " ");
         totalTestCount = testsList.size();
         LOGGER.debug("Initial test count={}", totalTestCount);
-        totalTestCount = testsList.size() - Collections.frequency(testsList, "\n");
+        totalTestCount = testsList.size() - Collections.frequency(testsList, Constants.LINE_SEPARATOR);
         LOGGER.debug("Initial test count after removal of frequency={}", totalTestCount);
-        LOGGER.info("[TestPlan] Will execute following {} tests: {}", testsList.size() - Collections.frequency(testsList, "\n"), formattedTestPlan);
+        LOGGER.info("[TestPlan] Will execute following {} tests: {}", testsList.size() - Collections.frequency(testsList, Constants.LINE_SEPARATOR), formattedTestPlan);
     }
 
     protected static void setupLoggingLevel() {

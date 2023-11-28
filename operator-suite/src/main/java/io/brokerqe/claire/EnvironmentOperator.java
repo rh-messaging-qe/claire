@@ -52,11 +52,11 @@ public class EnvironmentOperator extends Environment {
         this.set(this);
         artemisVersion = System.getenv(Constants.EV_ARTEMIS_VERSION);
         testLogLevel = System.getenv(Constants.EV_TEST_LOG_LEVEL);
-        logsDirLocation = System.getenv().getOrDefault(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
-        tmpDirLocation = System.getenv().getOrDefault(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
+        logsDirLocation = System.getenv().getOrDefault(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + TestUtils.generateTimestamp();
+        tmpDirLocation = System.getenv().getOrDefault(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + TestUtils.generateTimestamp();
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
         serializationEnabled = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_DUMP_ENABLED, "false"));
-        serializationDirectory = System.getenv().getOrDefault(Constants.EV_DUMP_LOCATION, Constants.DUMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + generateTimestamp();
+        serializationDirectory = System.getenv().getOrDefault(Constants.EV_DUMP_LOCATION, Constants.DUMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + TestUtils.generateTimestamp();
         serializationFormat = System.getenv().getOrDefault(Constants.EV_DUMP_FORMAT, Constants.DUMP_DEFAULT_TYPE);
 
         kubeClient = new KubeClient("default");
