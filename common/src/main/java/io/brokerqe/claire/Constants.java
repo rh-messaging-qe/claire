@@ -56,8 +56,8 @@ public interface Constants {
     String KEY_KEYSTORE_PASSWORD = "keyStorePassword";
 
     // Test related strings
-    String DEFAULT_KEYCLOAK_VERSION = "22.0.4";
-    String DEFAULT_RHSSO_VERSION = "rhsso-operator.7.6.5-opr-002";
+    String DEFAULT_KEYCLOAK_VERSION = "22.0.5";
+    String DEFAULT_RHSSO_VERSION = "rhbk-operator.v22.0.6-opr.1";
 
     // Networking
     String AMQP = "amqp";

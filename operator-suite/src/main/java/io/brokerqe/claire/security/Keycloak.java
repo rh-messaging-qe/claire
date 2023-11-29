@@ -119,8 +119,7 @@ public class Keycloak {
 
     public void deployOperator() {
         setupKeycloakOperator();
-        postgres = ResourceManager.getPostgresInstance(namespace);
-        postgres.deployPostgres("keycloak");
+        deployPostgres();
         applyKeycloakResources();
         setupAdminLogin();
     }
@@ -134,7 +133,12 @@ public class Keycloak {
         postgres.undeployPostgres();
     }
 
-    private void applyKeycloakResources() {
+    protected void deployPostgres() {
+        postgres = ResourceManager.getPostgresInstance(namespace);
+        postgres.deployPostgres("keycloak");
+    }
+
+    protected void applyKeycloakResources() {
         // Create self-signed certificate
         Secret routerSecret = kubeClient.getRouterDefaultSecret(); // or generate self-signed cert when on nonOCP
         kubeClient.createSecretEncodedData(namespace, routerSecret.getMetadata().getName(),
