@@ -76,6 +76,8 @@ public class KubeClient {
     public KubeClient(String namespace) {
         LOGGER.debug("Creating client in namespace: {}", namespace);
         Config config = Config.autoConfigure(System.getenv().getOrDefault("KUBE_CONTEXT", null));
+        config.setConnectionTimeout(60000); // default 10000ms
+        config.setRequestTimeout(30000); // default 10000ms
         KubernetesClient tmpClient = new KubernetesClientBuilder().withConfig(config).build().adapt(OpenShiftClient.class);
         KubernetesPlatform tmpPlatform;
         try {
