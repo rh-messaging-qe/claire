@@ -17,8 +17,11 @@ import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +35,7 @@ import static org.hamcrest.Matchers.not;
 
 @Tag(Constants.TAG_OPERATOR)
 @TestValidSince(ArtemisVersion.VERSION_2_28)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class OperatorLoggingTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
     private final String testNamespace = getRandomNamespaceName("log-tests", 3);
@@ -55,16 +59,19 @@ public class OperatorLoggingTests extends AbstractSystemTests {
     }
 
     @Test
+    @Order(1)
     void testOperatorLogLevelDebug() {
         testOperatorLogLevel(DEBUG);
     }
 
     @Test
+    @Order(2)
     void testOperatorLogLevelInfo() {
         testOperatorLogLevel(INFO);
     }
 
     @Test
+    @Order(3)
     void testOperatorLogLevelError() {
         testOperatorLogLevel(ERROR);
     }

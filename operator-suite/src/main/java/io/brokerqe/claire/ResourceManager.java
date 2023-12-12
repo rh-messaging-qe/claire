@@ -484,7 +484,10 @@ public class ResourceManager {
 
         TestUtils.waitFor("StatefulSet to be ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             StatefulSet ss = kubeClient.getStatefulSet(namespace, brokerName + "-ss");
-            boolean toReturn = ss != null && ss.getStatus().getReadyReplicas() != null && ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas());
+            boolean toReturn = ss != null && ss.getStatus().getReadyReplicas() != null &&
+                    ss.getStatus().getReadyReplicas().equals(ss.getSpec().getReplicas()) &&
+                    ss.getStatus().getAvailableReplicas().equals(ss.getSpec().getReplicas()
+                    );
             if (reloadExisting && oldStatefulSet != null) {
                 LOGGER.debug("[{}] Wait for reload & readiness of older Statefulset", namespace);
                 toReturn = toReturn && !oldStatefulSet.getMetadata().getUid().equals(ss.getMetadata().getUid());
