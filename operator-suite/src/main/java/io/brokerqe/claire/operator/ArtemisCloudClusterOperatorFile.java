@@ -10,6 +10,7 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.helpers.DataStorer;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator {
@@ -283,6 +285,35 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
     public static String getOperatorControllerManagerName(Path yamlFile) {
         Deployment operatorCODeployment = TestUtils.configFromYaml(yamlFile.toFile(), Deployment.class);
         return operatorCODeployment.getMetadata().getName();
+    }
+
+    @Override
+    public void setOperatorLogLevel(String logLevel) {
+        if (ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
+            Deployment deployment = kubeClient.getDeployment(getDeploymentNamespace(), getOperatorName());
+            Pod podOld = kubeClient.getFirstPodByPrefixName(getDeploymentNamespace(), getOperatorName());
+            List<String> args = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getArgs();
+            List<String> argsUpdated = new ArrayList<>();
+
+            for (String arg : args) {
+                if (arg.contains(ZAP_LOG_LEVEL_OPTION)) {
+                    argsUpdated.add(ZAP_LOG_LEVEL_OPTION + "=" + logLevel.toLowerCase(Locale.ROOT));
+                } else {
+                    argsUpdated.add(arg);
+                }
+            }
+
+            if (!args.equals(argsUpdated)) {
+                deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setArgs(argsUpdated);
+                kubeClient.setDeployment(getDeploymentNamespace(), deployment);
+                kubeClient.waitForPodReload(getDeploymentNamespace(), podOld, getOperatorName());
+                LOGGER.info("[{}] Changed operator {} log level to {}", getDeploymentNamespace(), getOperatorName(), logLevel);
+            } else {
+                LOGGER.debug("[{}] Reload is not needed, zap-log-level is {} as expected", getDeploymentNamespace(), logLevel);
+            }
+        } else {
+            LOGGER.error("[{}] Unable to set provided log level to operator {}", getDeploymentNamespace(), getOperatorName());
+        }
     }
 
     public static String getLastVersionFromOperatorFile(String imageType, Deployment operator) {

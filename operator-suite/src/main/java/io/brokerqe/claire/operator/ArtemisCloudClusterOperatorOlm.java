@@ -9,12 +9,16 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.exception.WaitException;
 import io.brokerqe.claire.helpers.DataStorer;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionConfig;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionConfigBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,6 +183,44 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         LOGGER.debug("[{}] Going to undeploy {}", deploymentNamespace, olmResources.stream().map(resource -> resource.getMetadata().getName()).toList());
         kubeClient.getKubernetesClient().resourceList(olmResources).delete();
         LOGGER.info("[{}] [OLM] Successfully undeployed ArtemisCloudOperator", deploymentNamespace);
+    }
+
+    @Override
+    public void setOperatorLogLevel(String logLevel) {
+        LOGGER.debug("[{}] Updating subscription {} with log level {}", getDeploymentNamespace(), subscriptionName, logLevel);
+        Subscription subscription = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).withName(subscriptionName).get();
+        SubscriptionConfig subscriptionConfig = subscription.getSpec().getConfig();
+        if (subscriptionConfig == null) {
+            // Create new SubscriptionConfig
+            subscriptionConfig = new SubscriptionConfigBuilder()
+                .withEnv(List.of(
+                    new EnvVarBuilder()
+                        .withName("ARGS")
+                        .withValue(ZAP_LOG_LEVEL_OPTION + "=" + logLevel)
+                        .build()
+                )).build();
+        } else {
+            // Update existing EnvVars
+            List<EnvVar> envVars = subscriptionConfig.getEnv();
+            for (EnvVar envVar : envVars) {
+                if (envVar.getName().equals("ARGS")) {
+                    if (envVar.getValue().contains(ZAP_LOG_LEVEL_OPTION)) {
+                        String newValue = envVar.getValue().replaceFirst(ZAP_LOG_LEVEL_OPTION + "=\\w+",
+                                ZAP_LOG_LEVEL_OPTION + "=" + logLevel);
+                        envVar.setValue(newValue);
+                    } else {
+                        envVar.setValue(envVar.getValue() + " " + ZAP_LOG_LEVEL_OPTION + "=" + logLevel);
+                    }
+                    subscriptionConfig.setEnv(envVars);
+                }
+            }
+        }
+        subscription.getSpec().setConfig(subscriptionConfig);
+        ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().resource(subscription).createOrReplace();
+    }
+
+    protected void updateSubscription(Subscription updatedSubscription) {
+
     }
 
     public void deleteClusterServiceVersion() {

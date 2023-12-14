@@ -6,7 +6,6 @@ package io.brokerqe.claire;
 
 import io.brokerqe.claire.executor.ExecutorOperator;
 import io.brokerqe.claire.helpers.DataStorer;
-import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.claire.security.CertificateManager;
 import io.brokerqe.claire.security.KeyStoreData;
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -54,7 +53,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -699,34 +697,6 @@ public class KubeClient {
                     .sinceTime(sinceInstant.atOffset(ZoneOffset.UTC).toString()).getLog();
         } else {
             return getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).resource(pod).sinceSeconds(sinceSeconds).getLog();
-        }
-    }
-
-    public void setOperatorLogLevel(ArtemisCloudClusterOperator operator, String logLevel) {
-        if (ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
-            Deployment deployment = getDeployment(namespace, operator.getOperatorName());
-            Pod podOld = getFirstPodByPrefixName(operator.getDeploymentNamespace(), operator.getOperatorName());
-            List<String> args = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getArgs();
-            List<String> argsUpdated = new ArrayList<>();
-
-            for (String arg : args) {
-                if (arg.contains("zap-log-level")) {
-                    argsUpdated.add("--zap-log-level=" + logLevel.toLowerCase(Locale.ROOT));
-                } else {
-                    argsUpdated.add(arg);
-                }
-            }
-
-            if (!args.equals(argsUpdated)) {
-                deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setArgs(argsUpdated);
-                setDeployment(operator.getDeploymentNamespace(), deployment);
-                waitForPodReload(operator.getDeploymentNamespace(), podOld, operator.getOperatorName());
-                LOGGER.info("[{}] Changed operator {} log level to {}", operator.getDeploymentNamespace(), operator.getOperatorName(), logLevel);
-            } else {
-                LOGGER.debug("[{}] Reload is not needed, zap-log-level is {} as expected", namespace, logLevel);
-            }
-        } else {
-            LOGGER.error("[{}] Unable to set provided log level to operator {}", operator.getDeploymentNamespace(), operator.getOperatorName());
         }
     }
 

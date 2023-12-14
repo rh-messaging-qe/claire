@@ -23,6 +23,7 @@ public abstract class ArtemisCloudClusterOperator {
 
     final static Logger LOGGER = LoggerFactory.getLogger(ArtemisCloudClusterOperator.class);
     public static final List<String> ZAP_LOG_LEVELS = List.of("debug", "info", "error");
+    public static final String ZAP_LOG_LEVEL_OPTION = "--zap-log-level";
     protected final String deploymentNamespace;
     protected final boolean isNamespaced;
     protected final EnvironmentOperator environmentOperator;
@@ -115,4 +116,6 @@ public abstract class ArtemisCloudClusterOperator {
             throw new ClaireRuntimeException("Operator is not installed using OLM!");
         }
     }
+    abstract public void setOperatorLogLevel(String logLevel);
+
 }

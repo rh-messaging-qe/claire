@@ -77,15 +77,15 @@ public class OperatorLoggingTests extends AbstractSystemTests {
     }
 
     void testOperatorLogLevel(String logLevel) {
-        getClient().setOperatorLogLevel(operator, logLevel.toLowerCase(Locale.ROOT));
+        operator.setOperatorLogLevel(logLevel.toLowerCase(Locale.ROOT));
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "artemis-log");
 
         LOGGER.info("[{}] Deploying wrongly defined ActiveMQArtemisAddress", testNamespace);
         ActiveMQArtemisAddress wrongAddress = ResourceManager.createArtemisAddress(testNamespace, "lala", "lala", "wrongRoutingType");
-        TestUtils.waitFor(logLevel + " message to show up in logs", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
+        TestUtils.waitFor(ERROR + " message to show up in logs", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
             Pod pod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
             String log = getClient().getLogsFromPod(pod);
-            return log.contains(logLevel);
+            return log.contains(ERROR);
         });
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         String operatorLog = getClient().getLogsFromPod(operatorPod);
