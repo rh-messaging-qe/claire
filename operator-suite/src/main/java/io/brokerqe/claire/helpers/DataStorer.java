@@ -21,7 +21,7 @@ public class DataStorer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataStorer.class);
     private static String yamlDirectory = null;
-    private static EnvironmentOperator environmentOperator = null;
+    private static EnvironmentOperator environmentOperator = ResourceManager.getEnvironment();
     private static SerializationFormat dumpFormat;
 
     private static void initializeDumper() {
@@ -39,11 +39,11 @@ public class DataStorer {
         }
     }
     public static void dumpResourceToFile(HasMetadata object) {
-        if (yamlDirectory == null || environmentOperator == null) {
-            initializeDumper();
-        }
         if (!environmentOperator.isSerializationEnabled()) {
             return;
+        }
+        if (yamlDirectory == null) {
+            initializeDumper();
         }
         String testDirName = getTestDirName();
         TestUtils.createDirectory(testDirName);
