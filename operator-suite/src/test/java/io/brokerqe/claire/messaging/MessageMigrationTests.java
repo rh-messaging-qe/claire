@@ -35,6 +35,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
     @BeforeAll
     void setupClusterOperator() {
         setupDefaultClusterOperator(testNamespace);
+        operator.setOperatorLogLevel("debug");
     }
 
     @AfterAll
