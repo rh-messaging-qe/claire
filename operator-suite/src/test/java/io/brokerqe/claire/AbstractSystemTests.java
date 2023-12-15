@@ -16,12 +16,13 @@ import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestSeparator;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
+import io.brokerqe.claire.security.CertificateManager;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -55,11 +57,19 @@ public abstract class AbstractSystemTests implements TestSeparator {
 
     protected EnvironmentOperator testEnvironmentOperator;
     protected TestInfo testInfo;
+
     @BeforeEach
-    @BeforeAll
     void init(TestInfo testInfo) {
-        ResourceManager.setTestInfo(testInfo);
         this.testInfo = testInfo;
+        ResourceManager.setTestInfo(testInfo);
+        CertificateManager.setCertificateTestDirectory(TestUtils.getTestName(testInfo));
+    }
+
+    @AfterEach
+    void cleanAfterTest() {
+        if (TestUtils.isEmptyDirectory(CertificateManager.getCurrentTestDirectory())) {
+            TestUtils.deleteFile(Path.of(CertificateManager.getCurrentTestDirectory()));
+        }
     }
 
     protected void cleanResourcesAfterTest(String namespace) {

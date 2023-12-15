@@ -48,6 +48,7 @@ public class EnvironmentStandalone extends Environment {
     private final ArtemisVersion artemisVersion;
 
     private EnvironmentStandalone() {
+        String initialTimestamp = TestUtils.generateTimestamp();
         loadProjectProperties(Constants.STANDALONE_MODULE_PROPERTIES_FILE);
         this.set(this);
         databaseFile = getConfigurationValue(Constants.EV_JDBC_DATA, Constants.PROP_JDBC_DATA, null);
@@ -56,9 +57,9 @@ public class EnvironmentStandalone extends Environment {
         logLevel = getConfigurationValue(Constants.EV_TEST_LOG_LEVEL, Constants.PROP_LOG_LEVEL, ArtemisConstants.DEFAULT_LOG_LEVEL);
 
         logsDirLocation = getConfigurationValue(Constants.EV_LOGS_LOCATION, Constants.PROP_LOG_DIR, Constants.LOGS_DEFAULT_DIR)
-                + Constants.FILE_SEPARATOR + TestUtils.generateTimestamp();
-        tmpDirLocation = System.getProperty(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR)
-                + Constants.FILE_SEPARATOR + TestUtils.generateTimestamp();
+                + Constants.FILE_SEPARATOR + initialTimestamp;
+        tmpDirLocation =  System.getenv().getOrDefault(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR)
+                + Constants.FILE_SEPARATOR + initialTimestamp;
         logContainers = Boolean.parseBoolean(getConfigurationValue(Constants.EV_LOG_CONTAINERS, Constants.PROP_LOG_CONTAINERS,
                 String.valueOf(Constants.DEFAULT_LOG_CONTAINERS)));
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));

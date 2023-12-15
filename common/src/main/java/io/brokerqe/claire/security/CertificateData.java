@@ -4,7 +4,6 @@
  */
 package io.brokerqe.claire.security;
 
-import io.brokerqe.claire.Constants;
 import org.bouncycastle.asn1.x509.Extension;
 
 import javax.security.auth.x500.X500PrivateCredential;
@@ -45,7 +44,7 @@ public class CertificateData {
         this.distinguishedName = distinguishedName;
         this.certificate = CertificateManager.generate(keyPair, CertificateManager.SIGNATURE_ALGORITHM, distinguishedName, validNotBefore, validNotAfter, extensions, issuer);
         this.privateCredential = CertificateManager.createPrivateCredential(certificate, keyPair, alias);
-        this.fileName = Constants.CERTS_GENERATION_DIR + alias + ".crt";
+        this.fileName = CertificateManager.getCurrentTestDirectory() + alias + ".crt";
         CertificateManager.writeCertificateToFile(certificate, fileName);
     }
 
@@ -61,7 +60,7 @@ public class CertificateData {
         this.distinguishedName = distinguishedName;
         this.certificate = CertificateManager.generateCA(keyPair, CertificateManager.SIGNATURE_ALGORITHM, distinguishedName, validNotBefore, validNotAfter, issuer);
         this.privateCredential = CertificateManager.createPrivateCredential(certificate, keyPair, alias);
-        this.fileName = Constants.CERTS_GENERATION_DIR + alias + ".crt";
+        this.fileName = CertificateManager.getCurrentTestDirectory() + alias + ".crt";
         CertificateManager.writeCertificateToFile(certificate, fileName);
     }
 

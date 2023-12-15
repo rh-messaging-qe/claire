@@ -5,6 +5,7 @@
 package io.brokerqe.claire.security;
 
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -74,8 +75,18 @@ public class CertificateManager {
     public static final String DEFAULT_CLIENT_ALIAS = "clientUser";
     public static final String DEFAULT_CLIENT_PASSWORD = "clientPass";
 
+    private static String currentTestDirectory = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR;
     static {
-        TestUtils.createDirectory(Constants.CERTS_GENERATION_DIR);
+        TestUtils.createDirectory(currentTestDirectory);
+    }
+
+    public static void setCertificateTestDirectory(String testDirectory) {
+        currentTestDirectory = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR + testDirectory + Constants.FILE_SEPARATOR;
+        TestUtils.createDirectory(currentTestDirectory);
+    }
+
+    public static String getCurrentTestDirectory() {
+        return currentTestDirectory;
     }
 
     public static TrustManager[] trustAllCertificates = new TrustManager[]{
@@ -261,8 +272,8 @@ public class CertificateManager {
      */
     public static Map<String, KeyStoreData> createEntityKeystores(CertificateData certificateData, String keystorePassword) {
         Map<String, KeyStoreData> keystores = new HashMap<>();
-        String keyStoreFileName = Constants.CERTS_GENERATION_DIR + certificateData.getAlias() + "_keystore.jks";
-        String trustStoreFileName = Constants.CERTS_GENERATION_DIR + certificateData.getAlias() + "_truststore.jks";
+        String keyStoreFileName = currentTestDirectory + certificateData.getAlias() + "_keystore.jks";
+        String trustStoreFileName = currentTestDirectory + certificateData.getAlias() + "_truststore.jks";
         String keyStoreDataName = certificateData.getAlias() + ".ks";
         String trustStoreDataName = certificateData.getAlias() + ".ts";
 
@@ -294,10 +305,10 @@ public class CertificateManager {
     public static Map<String, KeyStoreData> createKeystores(CertificateData brokerCertificateData, CertificateData clientCertificateData,
                                                             String brokerAlias, String brokerPassword, String clientAlias, String clientPassword) {
         Map<String, KeyStoreData> keystores = new HashMap<>();
-        String brokerKeyStoreFileName = Constants.CERTS_GENERATION_DIR + brokerAlias + "_keystore.jks";
-        String brokerTrustStoreFileName = Constants.CERTS_GENERATION_DIR + brokerAlias + "_truststore.jks";
-        String clientKeyStoreFileName = Constants.CERTS_GENERATION_DIR + clientAlias + "_keystore.jks";
-        String clientTrustStoreFileName = Constants.CERTS_GENERATION_DIR + clientAlias + "_truststore.jks";
+        String brokerKeyStoreFileName = currentTestDirectory + brokerAlias + "_keystore.jks";
+        String brokerTrustStoreFileName = currentTestDirectory + brokerAlias + "_truststore.jks";
+        String clientKeyStoreFileName = currentTestDirectory + clientAlias + "_keystore.jks";
+        String clientTrustStoreFileName = currentTestDirectory + clientAlias + "_truststore.jks";
 
         try {
             LOGGER.info("[TLS] Creating Broker keystore");
@@ -376,12 +387,12 @@ public class CertificateManager {
     public static Map<String, KeyStoreData> generateDefaultCertificateKeystores(String brokerDN, String clientDN, List<Extension> extensions, CertificateData issuer) {
         LOGGER.info("[TLS] Generating Broker KeyPair, Certificates");
         CertificateData brokerCertData = new CertificateData(DEFAULT_BROKER_ALIAS, brokerDN, extensions, 30, issuer);
-        writeCertificateToFile(brokerCertData.getCertificate(), Constants.CERTS_GENERATION_DIR + DEFAULT_BROKER_ALIAS + ".crt");
+        writeCertificateToFile(brokerCertData.getCertificate(), currentTestDirectory + DEFAULT_BROKER_ALIAS + ".crt");
 
         // Client cert + keypair
         LOGGER.info("[TLS] Generating Client KeyPair, Certificates");
         CertificateData clientCertData = new CertificateData(DEFAULT_CLIENT_ALIAS, clientDN);
-        writeCertificateToFile(clientCertData.getCertificate(), Constants.CERTS_GENERATION_DIR + DEFAULT_CLIENT_ALIAS + ".crt");
+        writeCertificateToFile(clientCertData.getCertificate(), currentTestDirectory + DEFAULT_CLIENT_ALIAS + ".crt");
 
         return CertificateManager.createKeystores(brokerCertData, clientCertData,
                 DEFAULT_BROKER_ALIAS, DEFAULT_BROKER_PASSWORD, DEFAULT_CLIENT_ALIAS, DEFAULT_CLIENT_PASSWORD);
@@ -474,11 +485,11 @@ public class CertificateManager {
      */
     public static Map<String, KeyStoreData> reuseDefaultGeneratedKeystoresFromFiles() {
         Map<String, KeyStoreData> keystores = new HashMap<>();
-        if (TestUtils.directoryExists(Constants.CERTS_GENERATION_DIR)) {
-            String brokerKeyStoreFileName = Constants.CERTS_GENERATION_DIR + DEFAULT_BROKER_ALIAS + "_keystore.jks";
-            String brokerTrustStoreFileName = Constants.CERTS_GENERATION_DIR + DEFAULT_BROKER_ALIAS + "_truststore.jks";
-            String clientKeyStoreFileName = Constants.CERTS_GENERATION_DIR + DEFAULT_CLIENT_ALIAS + "_keystore.jks";
-            String clientTrustStoreFileName = Constants.CERTS_GENERATION_DIR + DEFAULT_CLIENT_ALIAS + "_truststore.jks";
+        if (TestUtils.directoryExists(currentTestDirectory)) {
+            String brokerKeyStoreFileName = currentTestDirectory + DEFAULT_BROKER_ALIAS + "_keystore.jks";
+            String brokerTrustStoreFileName = currentTestDirectory + DEFAULT_BROKER_ALIAS + "_truststore.jks";
+            String clientKeyStoreFileName = currentTestDirectory + DEFAULT_CLIENT_ALIAS + "_keystore.jks";
+            String clientTrustStoreFileName = currentTestDirectory + DEFAULT_CLIENT_ALIAS + "_truststore.jks";
 
             try {
                 Security.addProvider(new BouncyCastleProvider());
@@ -503,7 +514,7 @@ public class CertificateManager {
                 throw new RuntimeException(e);
             }
         } else {
-            LOGGER.error("[TLS] {} does not exist! Can not reuse it!", Constants.CERTS_GENERATION_DIR);
+            LOGGER.error("[TLS] {} does not exist! Can not reuse it!", currentTestDirectory);
             throw new RuntimeException("Can not find expected directory and load certificates!");
         }
     }

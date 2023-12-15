@@ -48,6 +48,7 @@ import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -287,7 +288,7 @@ public class KubeClient {
     public Pod waitForPodReload(String namespace, Pod pod, String podName, long maxTimeout) {
         String originalUid = pod.getMetadata().getUid();
 
-        LOGGER.info("[{}] Waiting for pod {} reload", namespace, podName);
+        LOGGER.info("[{}] Waiting {}s for pod {} reload", namespace, Duration.ofMillis(maxTimeout).toSeconds(), podName);
         TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             Pod newPod = getFirstPodByPrefixName(namespace, podName);
             LOGGER.debug("[{}] OriginalPodUid {} vs currentPodUid {}", namespace, originalUid, newPod.getMetadata().getUid());

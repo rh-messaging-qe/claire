@@ -34,7 +34,6 @@ public class KeycloakLdapTests extends LdapTests {
     String secretConfigName = "keycloak-jaas-config";
     String consoleSecretName = brokerName + "-console-secret";
     String brokerTruststoreSecretName = "broker-truststore";
-    String brokerTruststoreFileName = Constants.CERTS_GENERATION_DIR + "brk_truststore.jks";
     final boolean jwtTokenSupported = true;
 
     @BeforeAll
@@ -129,6 +128,7 @@ public class KeycloakLdapTests extends LdapTests {
     }
 
     public void setupEnvironment() {
+        String brokerTruststoreFileName = CertificateManager.getCurrentTestDirectory() + "brk_truststore.jks";
         getClient().createBrokerTruststoreSecretWithOpenshiftRouter(getClient(), testNamespace, brokerTruststoreSecretName, brokerTruststoreFileName);
         keycloak.importRealm(keycloakRealm, keycloak.realmArtemisLdap);
         keycloak.setupLdapModule(keycloakRealm);

@@ -26,6 +26,9 @@ public abstract class Environment {
     public abstract ArtemisVersion getArtemisTestVersion();
     public abstract String getLogsDirLocation();
     public abstract String getTmpDirLocation();
+    public String getCertificatesLocation() {
+        return getTmpDirLocation() + Constants.FILE_SEPARATOR + Constants.CERTS_GENERATION_DIR;
+    }
     public abstract String getKeycloakVersion();
     public abstract boolean isCollectTestData();
     public abstract int getCustomExtraDelay();

@@ -4,6 +4,9 @@
  */
 package io.brokerqe.claire.junit;
 
+import io.brokerqe.claire.Environment;
+import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.security.CertificateManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,6 +27,7 @@ public interface TestSeparator {
     static void beforeAllTests(ExtensionContext testContext) {
         LOGGER.info((char) 27 + "[34m" + String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + (char) 27 + "[0m");
         LOGGER.info((char) 27 + "[33m" + String.format("Started Class: %s", testContext.getRequiredTestClass().getName()) + (char) 27 + "[0m");
+        CertificateManager.setCertificateTestDirectory(TestUtils.getTestName(testContext));
     }
     @BeforeEach
     default void beforeEachTest(ExtensionContext testContext) {
@@ -31,6 +35,7 @@ public interface TestSeparator {
         LOGGER.info((char) 27 + "[33m" + String.format("[%s/%s] Started: %s.%s",
                 ClaireExecutionListener.getCurrentTestCounter(), ClaireExecutionListener.getTotalTestCount(),
                 testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()) + (char) 27 + "[0m");
+        CertificateManager.setCertificateTestDirectory(TestUtils.getTestName(testContext));
     }
 
     @AfterEach
@@ -44,5 +49,6 @@ public interface TestSeparator {
     static void afterAllTests(ExtensionContext testContext) {
         LOGGER.info((char) 27 + "[33m" + String.format("Finished Class: %s", testContext.getRequiredTestClass().getName()) + (char) 27 + "[0m");
         LOGGER.info((char) 27 + "[34m" + String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + (char) 27 + "[0m");
+        TestUtils.deleteEmptyDirectories(Environment.get().getCertificatesLocation());
     }
 }

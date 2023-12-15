@@ -19,6 +19,9 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.PreconditionViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -61,11 +64,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 import java.lang.Runtime.Version;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public final class TestUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
@@ -76,6 +81,49 @@ public final class TestUtils {
 
     public static Path getProjectRelativeFilePath(String projectRelativeFile) {
         return  Paths.get(Constants.PROJECT_USER_DIR, projectRelativeFile).toAbsolutePath();
+    }
+
+    // ========== Junit Test Operations ==========
+    public static String getClassName(ExtensionContext extensionContext) {
+        return extensionContext.getRequiredTestClass().getName();
+    }
+    public static String getClassName(TestInfo testInfo) {
+        return testInfo.getTestClass().orElseThrow().getName();
+    }
+
+    public static String getTestName(ExtensionContext extensionContext) {
+        String testClass = extensionContext.getRequiredTestClass().getName();
+        String testMethod = null;
+        try {
+            testMethod = extensionContext.getRequiredTestMethod().getName();
+        } catch (PreconditionViolationException e) {
+            LOGGER.trace("No testMethod in extensionContext, skipping methodName usage");
+        }
+        return createTestName(extensionContext.getDisplayName(), testClass, testMethod);
+    }
+
+    public static String getTestName(TestInfo testInfo) {
+        String testClass = testInfo.getTestClass().orElseThrow().getName();
+        String testMethod = null;
+        try {
+            testMethod = testInfo.getTestMethod().orElseThrow().getName();
+        } catch (NoSuchElementException e) {
+            LOGGER.trace("No testMethod in testInfo, skipping methodName usage");
+        }
+        return createTestName(testInfo.getDisplayName(), testClass, testMethod);
+    }
+
+    private static String createTestName(String displayName, String testClass, String testMethod) {
+        String sameTestCounter = "";
+        String testFullName = testClass;
+        if (testMethod != null) {
+            testFullName += "." + testMethod;
+        }
+        if (displayName.startsWith("[")) {
+            sameTestCounter = displayName.substring(displayName.indexOf("[") + 1, displayName.indexOf("]"));
+            testFullName += "#" + sameTestCounter;
+        }
+        return testFullName;
     }
 
     // ========== Random Operations ==========
@@ -313,6 +361,7 @@ public final class TestUtils {
     // ========== File Operations ==========
     public static void deleteFile(Path fileName) {
         try {
+            LOGGER.trace("Deleting {}", fileName);
             Files.delete(fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -359,6 +408,24 @@ public final class TestUtils {
     public static boolean directoryExists(String directoryName) {
         Path path = Paths.get(directoryName);
         return Files.exists(path) && Files.isDirectory(path);
+    }
+
+    public static boolean isEmptyDirectory(String directoryName) {
+        Path path = Paths.get(directoryName);
+        try {
+            return Files.exists(path) && Files.isDirectory(path) && Files.list(path).findAny().isEmpty();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteEmptyDirectories(String directoryName) {
+        for (String filename : new File(directoryName).list()) {
+            String fileToDelete = new File(Environment.get().getCertificatesLocation()).getAbsolutePath() + Constants.FILE_SEPARATOR + filename;
+            if (TestUtils.isEmptyDirectory(fileToDelete)) {
+                TestUtils.deleteFile(Path.of(fileToDelete));
+            }
+        }
     }
 
     public static void createDirectory(String directoryName) {

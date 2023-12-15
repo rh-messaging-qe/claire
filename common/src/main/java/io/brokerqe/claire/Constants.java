@@ -10,7 +10,7 @@ public interface Constants {
     // Platform related strings
     String LINE_SEPARATOR = System.getProperty("line.separator");
     String FILE_SEPARATOR = System.getProperty("file.separator");
-    String DATE_FORMAT = "yyyy-MM-dd_HH:mm:ss";
+    String DATE_FORMAT = "yyyy-MM-dd_HH-mm-ss";
 
     // Test tags
     String TAG_JAAS = "jaas";
@@ -57,7 +57,7 @@ public interface Constants {
 
     // Test related strings
     String DEFAULT_KEYCLOAK_VERSION = "22.0.5";
-    String DEFAULT_RHSSO_VERSION = "rhbk-operator.v22.0.6-opr.1";
+    String DEFAULT_RHSSO_VERSION = "rhbk-operator.v22.0.7-opr.1";
 
     // Networking
     String AMQP = "amqp";
@@ -79,6 +79,7 @@ public interface Constants {
     long DURATION_2_MINUTES = Duration.ofMinutes(2).toMillis();
     long DURATION_3_MINUTES = Duration.ofMinutes(3).toMillis();
     long DURATION_5_MINUTES = Duration.ofMinutes(5).toMillis();
+
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
     String PROJECT_TEST_DIR = PROJECT_USER_DIR + "/src/test";
@@ -86,7 +87,7 @@ public interface Constants {
     String TMP_DEFAULT_DIR = PROJECT_USER_DIR + "/test-tmp";
     String DUMP_DEFAULT_DIR = PROJECT_USER_DIR + "/serialization-dump";
     String DUMP_DEFAULT_TYPE = "yaml";
-    String CERTS_GENERATION_DIR = PROJECT_USER_DIR + "/certificates/";
+    String CERTS_GENERATION_DIR = "certificates";
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";
@@ -135,7 +136,7 @@ public interface Constants {
     String PROP_YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR = "yacfg.artemis.templates_override_dir";
 
     String ARTEMIS_DEFAULT_CFG_DIR = "artemis/artemis_default_cfg";
-    String ARTEMIS_TEST_CFG_DIR = "test_cfg";
+    String ARTEMIS_TEST_CFG_DIR = "test-cfg";
     String ARTEMIS_DEFAULT_CFG_BIN_DIR = ARTEMIS_DEFAULT_CFG_DIR + FILE_SEPARATOR + ArtemisConstants.BIN_DIR;
     String ARTEMIS_DEFAULT_CFG_LIB_DIR = ARTEMIS_DEFAULT_CFG_DIR + FILE_SEPARATOR + ArtemisConstants.LIB_DIR;
 

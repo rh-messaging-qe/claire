@@ -34,15 +34,20 @@ public abstract class TestDataCollector implements TestWatcher, TestExecutionExc
             throw throwable;
         }
 
-        archiveDir = environment.getLogsDirLocation() + Constants.FILE_SEPARATOR + testClass + "." + testMethod;
+        String classDir = TestUtils.getClassName(extensionContext);
+        String testDir = TestUtils.getTestName(extensionContext);
+        archiveDir = environment.getLogsDirLocation() + Constants.FILE_SEPARATOR + testDir;
+        String certificatesDir = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR + testDir;
+        String certificatesDirClass = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR + classDir;
 
         TestUtils.createDirectory(archiveDir);
-        String certificatesDirectory = archiveDir + Constants.FILE_SEPARATOR + "certificates";
-        if (TestUtils.directoryExists(Constants.CERTS_GENERATION_DIR)) {
-            if (TestUtils.directoryExists(certificatesDirectory)) {
-                LOGGER.info("[TDC] Skipping duplicated copying of certificates into {}", certificatesDirectory);
+        String certificatesArchiveDirectory = archiveDir + Constants.FILE_SEPARATOR + "certificates";
+        if (!TestUtils.isEmptyDirectory(certificatesDirClass) || !TestUtils.isEmptyDirectory(certificatesDir)) {
+            if (TestUtils.directoryExists(certificatesArchiveDirectory)) {
+                LOGGER.warn("[TDC] Skipping duplicated copying of certificates into {}", certificatesArchiveDirectory);
             } else {
-                TestUtils.copyDirectoryFlat(Constants.CERTS_GENERATION_DIR, certificatesDirectory);
+                TestUtils.copyDirectoryFlat(certificatesDir, certificatesArchiveDirectory);
+                TestUtils.copyDirectoryFlat(certificatesDirClass, certificatesArchiveDirectory);
             }
         }
         collectTestData();
