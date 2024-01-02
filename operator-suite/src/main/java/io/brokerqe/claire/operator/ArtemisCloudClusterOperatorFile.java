@@ -5,6 +5,7 @@
 package io.brokerqe.claire.operator;
 
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.helpers.DataStorer;
@@ -65,32 +66,36 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
     }
 
     public static void deployOperatorCRDs() {
-        DEFAULT_OPERATOR_INSTALL_CRD_FILES.forEach(fileName -> {
-            try {
-                ArtemisCloudClusterOperator.LOGGER.debug("[Operator] Deploying CRD file {}", fileName);
-                List<HasMetadata> resources = ResourceManager.getKubeClient().getKubernetesClient().load(new FileInputStream(fileName.toFile())).createOrReplace();
-                DataStorer.dumpResourceToFile(resources);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        ArtemisCloudClusterOperator.LOGGER.info("[Operator] Deployed Cluster operator CRDs");
+        for (KubeClient kubeclient : ResourceManager.getKubeClients()) {
+            DEFAULT_OPERATOR_INSTALL_CRD_FILES.forEach(fileName -> {
+                try {
+                    ArtemisCloudClusterOperator.LOGGER.debug("[Operator] Deploying CRD file {}", fileName);
+                    List<HasMetadata> resources = kubeclient.getKubernetesClient().load(new FileInputStream(fileName.toFile())).createOrReplace();
+                    DataStorer.dumpResourceToFile(resources);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            ArtemisCloudClusterOperator.LOGGER.info("[Operator] Deployed Cluster operator CRDs");
+        }
     }
 
     public static void undeployOperatorCRDs(boolean waitForUndeployment) {
-        DEFAULT_OPERATOR_INSTALL_CRD_FILES.forEach(fileName -> {
-            try {
-                LOGGER.debug("[Operator] Undeploying CRD file {}", fileName);
-                List<StatusDetails> result = ResourceManager.getKubeClient().getKubernetesClient().load(new FileInputStream(fileName.toFile())).delete();
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
+        for (KubeClient kubeclient : ResourceManager.getKubeClients()) {
+            DEFAULT_OPERATOR_INSTALL_CRD_FILES.forEach(fileName -> {
+                try {
+                    LOGGER.debug("[Operator] Undeploying CRD file {}", fileName);
+                    List<StatusDetails> result = kubeclient.getKubernetesClient().load(new FileInputStream(fileName.toFile())).delete();
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            if (waitForUndeployment) {
+                // todo
+                LOGGER.warn("!!wait for undeployment not implemented yet!!");
             }
-        });
-        if (waitForUndeployment) {
-            // todo
-            LOGGER.warn("!!wait for undeployment not implemented yet!!");
+            LOGGER.info("[Operator] Undeployed Cluster operator CRDs");
         }
-        LOGGER.info("[Operator] Undeployed Cluster operator CRDs");
     }
 
     @Override

@@ -13,15 +13,22 @@ import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
+import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestSeparator;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.claire.security.CertificateManager;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.TLSConfigBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -30,17 +37,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URLConnection;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,12 +111,16 @@ public abstract class AbstractSystemTests implements TestSeparator {
     }
 
     public KubeClient getClient() {
-        // client?
         if (ResourceManager.getKubeClient() == null) {
             ResourceManager.getInstance(testEnvironmentOperator);
         }
         client = ResourceManager.getKubeClient();
         return client;
+    }
+
+    public void setClient(KubeClient kubeClient) {
+        ResourceManager.setKubeClient(kubeClient);
+        client = kubeClient;
     }
 
     public KubernetesClient getKubernetesClient() {
@@ -301,6 +318,38 @@ public abstract class AbstractSystemTests implements TestSeparator {
         return testBrokerName;
     }
 
+    public void checkHttpResponse(URLConnection connection, int expectedCode, String expectedString) {
+        InputStream response = null;
+        try {
+            response = connection.getInputStream();
+            assertThat(((HttpURLConnection) connection).getResponseCode(), equalTo(expectedCode));
+            Scanner scanner = new Scanner(response);
+            String responseBody = scanner.useDelimiter("\\A").next();
+            assertThat(responseBody, containsString(expectedString));
+            response.close();
+        } catch (IOException e) {
+            // carry on with execution, we've got expected exception
+            if (e.getMessage().contains(String.valueOf(expectedCode))) {
+                assertThat(e.getMessage(), containsString(String.valueOf(expectedCode)));
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    protected void patchRouteTls(HasMetadata service, String edgeTerminationPolicy, String termination) {
+        if (getClient().getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
+            Route route = (Route) service;
+            route.getSpec().setTls(new TLSConfigBuilder().withInsecureEdgeTerminationPolicy(edgeTerminationPolicy).withTermination(termination).build());
+            route.getMetadata().setManagedFields(null);
+            ((OpenShiftClient) getKubernetesClient()).routes().withName(route.getMetadata().getName()).patch(PatchContext.of(PatchType.SERVER_SIDE_APPLY), route);
+            TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
+        } else {
+            // Once supported, remove Openshift limitation
+            throw new ClaireNotImplementedException("Ingress is not supported yet!");
+        }
+    }
+
     // Messaging methods
     public Map<String, Map<String, String>> checkMessageCount(String namespace, Pod brokerPod) {
         return checkMessageCount(namespace, brokerPod, null);
@@ -357,14 +406,14 @@ public abstract class AbstractSystemTests implements TestSeparator {
         }
     }
 
-    public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address,
+    public void testTlsMessaging(String namespace, ActiveMQArtemisAddress address,
                                  String externalBrokerUri, String saslMechanism, String secretName,
                                  String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
-        testTlsMessaging(namespace, brokerPod, address, externalBrokerUri, saslMechanism, secretName,
+        testTlsMessaging(namespace, address, externalBrokerUri, saslMechanism, secretName,
                 null, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
     }
 
-    public void testTlsMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address,
+    public void testTlsMessaging(String namespace, ActiveMQArtemisAddress address,
                                  String externalBrokerUri, String saslMechanism, String secretName, Pod clientsPod,
                                  String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
         Deployment clients = null;

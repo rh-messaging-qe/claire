@@ -4,7 +4,6 @@
  */
 package io.brokerqe.claire.clients;
 
-import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.executor.Executor;
@@ -27,7 +26,6 @@ public abstract class StClientDeployment implements KubernetesDeployableClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StClientDeployment.class);
     private final String namespace;
-    static KubeClient kubeClient = ResourceManager.getKubeClient();
     private Pod pod;
     private Deployment deployment;
 
@@ -41,7 +39,7 @@ public abstract class StClientDeployment implements KubernetesDeployableClient {
     @Override
     public Pod getContainer() {
         if (pod == null) {
-            pod = kubeClient.getFirstPodByPrefixName(namespace, getPodName());
+            pod = ResourceManager.getKubeClient().getFirstPodByPrefixName(namespace, getPodName());
             LOGGER.debug("[{}] [STClient] Using first found container {}", namespace, pod.getMetadata().getName());
         }
         return pod;
@@ -73,7 +71,7 @@ public abstract class StClientDeployment implements KubernetesDeployableClient {
 
     @Override
     public void undeployContainer() {
-        kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).resource(deployment).delete();
+        ResourceManager.getKubeClient().getKubernetesClient().apps().deployments().inNamespace(namespace).resource(deployment).delete();
     }
 
     @Override
@@ -105,10 +103,10 @@ public abstract class StClientDeployment implements KubernetesDeployableClient {
             }
         }
 
-        deployment = kubeClient.getKubernetesClient().apps().deployments().inNamespace(namespace).resource(
+        deployment = ResourceManager.getKubeClient().getKubernetesClient().apps().deployments().inNamespace(namespace).resource(
                 createSystemTestsDeployment(namespace, secured, secretVolumes, secretVolumeMounts)).createOrReplace();
         LOGGER.debug("[{}] Wait 30s for systemtest-clients deployment to be ready", namespace);
-        kubeClient.getKubernetesClient().resource(deployment).inNamespace(namespace).waitUntilReady(30, TimeUnit.SECONDS);
+        ResourceManager.getKubeClient().getKubernetesClient().resource(deployment).inNamespace(namespace).waitUntilReady(30, TimeUnit.SECONDS);
         this.deployment = deployment;
         return deployment;
     }
@@ -208,7 +206,7 @@ public abstract class StClientDeployment implements KubernetesDeployableClient {
             .endSpec()
             .build();
         }
-        if (kubeClient.isKubernetesPlatform()) {
+        if (ResourceManager.getKubeClient().isKubernetesPlatform()) {
             // add userId
             systemtestClients.getSpec().getTemplate().getSpec().getSecurityContext().setRunAsUser(defaultUserId);
         }

@@ -25,7 +25,6 @@ public abstract class TestDataCollector implements TestWatcher, TestExecutionExc
     @Override
     public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         testClass = extensionContext.getRequiredTestClass().getName();
-//        .replaceAll(Constants.CLAIRE_TEST_PKG_REGEX, "");
         testMethod = extensionContext.getRequiredTestMethod().getName();
         testInstance = extensionContext.getRequiredTestInstance();
         environment = Environment.get();
@@ -36,24 +35,31 @@ public abstract class TestDataCollector implements TestWatcher, TestExecutionExc
 
         String classDir = TestUtils.getClassName(extensionContext);
         String testDir = TestUtils.getTestName(extensionContext);
-        archiveDir = environment.getLogsDirLocation() + Constants.FILE_SEPARATOR + testDir;
+        archiveDir = environment.getLogsDirLocation() + Constants.FILE_SEPARATOR + testDir.replaceFirst("io.brokerqe.claire.", "");
         String certificatesDir = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR + testDir;
         String certificatesDirClass = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR + classDir;
 
         TestUtils.createDirectory(archiveDir);
         String certificatesArchiveDirectory = archiveDir + Constants.FILE_SEPARATOR + "certificates";
+        String certificatesArchiveDirectoryClass = archiveDir + Constants.FILE_SEPARATOR + "class_certificates";
         if (!TestUtils.isEmptyDirectory(certificatesDirClass) || !TestUtils.isEmptyDirectory(certificatesDir)) {
             if (TestUtils.directoryExists(certificatesArchiveDirectory)) {
                 LOGGER.warn("[TDC] Skipping duplicated copying of certificates into {}", certificatesArchiveDirectory);
             } else {
                 TestUtils.copyDirectoryFlat(certificatesDir, certificatesArchiveDirectory);
-                TestUtils.copyDirectoryFlat(certificatesDirClass, certificatesArchiveDirectory);
+                TestUtils.copyDirectoryFlat(certificatesDirClass, certificatesArchiveDirectoryClass);
             }
         }
         collectTestData();
         throw throwable;
     }
 
+    /**
+     * Method is currently not used, but might be useful in future (getting variable from class by name)
+     * @param testInstance
+     * @param fieldName
+     * @return
+     */
     public Object getTestInstanceDeclaredField(Object testInstance, String fieldName) {
         Field field = null;
         Class<?> clazz = testInstance.getClass();

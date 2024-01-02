@@ -16,6 +16,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 public class EnvironmentOperator extends Environment {
@@ -29,6 +32,7 @@ public class EnvironmentOperator extends Environment {
     private final boolean olmInstallation;
     private final String artemisOperatorName;
     private final String artemisOperatorType;
+    private List<String> kubeContexts;
     private String artemisVersion;
     private final ArtemisVersion artemisTestVersion;
     private final String brokerImage;
@@ -41,7 +45,7 @@ public class EnvironmentOperator extends Environment {
     private final String tmpDirLocation;
     private final String keycloakVersion;
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
-    private final KubeClient kubeClient;
+    private Map<String, KubeClient> kubeClients;
     private final boolean collectTestData;
     private final int customExtraDelay;
     private final boolean serializationEnabled;
@@ -51,6 +55,7 @@ public class EnvironmentOperator extends Environment {
     public EnvironmentOperator() {
         this.set(this);
         String initialTimestamp = TestUtils.generateTimestamp();
+        initializeKubeContexts(System.getenv().getOrDefault(Constants.EV_KUBE_CONTEXT, null));
         artemisVersion = System.getenv(Constants.EV_ARTEMIS_VERSION);
         testLogLevel = System.getenv(Constants.EV_TEST_LOG_LEVEL);
         logsDirLocation = System.getenv().getOrDefault(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + initialTimestamp;
@@ -60,7 +65,6 @@ public class EnvironmentOperator extends Environment {
         serializationDirectory = System.getenv().getOrDefault(Constants.EV_DUMP_LOCATION, Constants.DUMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + initialTimestamp;
         serializationFormat = System.getenv().getOrDefault(Constants.EV_DUMP_FORMAT, Constants.DUMP_DEFAULT_TYPE);
 
-        kubeClient = new KubeClient("default");
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
         customExtraDelay = Integer.parseInt(System.getenv().getOrDefault(Constants.EV_CUSTOM_EXTRA_DELAY, "0"));
 
@@ -102,6 +106,7 @@ public class EnvironmentOperator extends Environment {
     @SuppressWarnings("checkstyle:NPathComplexity")
     private void printAllUsedTestVariables() {
         StringBuilder envVarsSB = new StringBuilder("List of all used Claire related variables:").append(Constants.LINE_SEPARATOR);
+        envVarsSB.append(Constants.EV_KUBE_CONTEXT).append("=").append(String.join(" ", kubeContexts)).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_DISABLE_RANDOM_NAMESPACES).append("=").append(disabledRandomNs).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_CLUSTER_OPERATOR_MANAGED).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_COLLECT_TEST_DATA).append("=").append(collectTestData).append(Constants.LINE_SEPARATOR);
@@ -212,6 +217,39 @@ public class EnvironmentOperator extends Environment {
         return null;
     }
 
+    private void initializeKubeContexts(String contexts) {
+        kubeClients = new LinkedHashMap<>(1);
+        if (contexts == null) {
+            // return default
+            kubeContexts = List.of("default");
+            kubeClients.put("default", new KubeClient(null));
+            return;
+        }
+        if (!contexts.contains(",")) {
+            // single context
+            kubeContexts = List.of(contexts);
+        } else {
+            // multiple contexts
+            kubeContexts = List.of(contexts.split(","));
+        }
+        kubeClients = new LinkedHashMap<>(kubeContexts.size());
+        for (String context : kubeContexts) {
+            kubeClients.put(context, new KubeClient(context));
+        }
+    }
+
+    public KubeClient getDefaultKubeClient() {
+        return kubeClients.get(kubeContexts.get(0));
+    }
+
+    public KubeClient getKubeClient(String context) {
+        return kubeClients.get(context);
+    }
+
+    public Map<String, KubeClient> getKubeClients() {
+        return kubeClients;
+    }
+
     public void checkSetProvidedImages() {
         Path operatorFile = ArtemisFileProvider.getOperatorInstallFile();
 
@@ -272,10 +310,6 @@ public class EnvironmentOperator extends Environment {
         } else {
             return Constants.DEFAULT_RHSSO_VERSION;
         }
-    }
-
-    public KubeClient getKubeClient() {
-        return kubeClient;
     }
 
     public String getOlmIndexImageBundle() {

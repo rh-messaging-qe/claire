@@ -9,13 +9,10 @@ import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
-import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubernetesPlatform;
-import io.brokerqe.claire.exception.ClaireNotImplementedException;
-import io.brokerqe.claire.junit.TestSupportedPlatform;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
-
+import io.brokerqe.claire.junit.TestSupportedPlatform;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.junit.TestValidUntil;
 import io.brokerqe.claire.security.CertificateManager;
@@ -23,29 +20,20 @@ import io.brokerqe.claire.security.KeyStoreData;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.dsl.base.PatchContext;
-import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.api.model.TLSConfigBuilder;
-import io.fabric8.openshift.client.OpenShiftClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 
 public class WebConsoleTests extends AbstractSystemTests {
@@ -60,26 +48,6 @@ public class WebConsoleTests extends AbstractSystemTests {
     @AfterAll
     void teardownClusterOperator() {
         teardownDefaultClusterOperator(testNamespace);
-    }
-
-
-    public void checkHttpResponse(URLConnection connection, int expectedCode, String expectedString) {
-        InputStream response = null;
-        try {
-            response = connection.getInputStream();
-            assertThat(((HttpURLConnection) connection).getResponseCode(), equalTo(expectedCode));
-            Scanner scanner = new Scanner(response);
-            String responseBody = scanner.useDelimiter("\\A").next();
-            assertThat(responseBody, containsString(expectedString));
-            response.close();
-        } catch (IOException e) {
-            // carry on with execution, we've got expected exception
-            if (e.getMessage().contains(String.valueOf(expectedCode))) {
-                assertThat(e.getMessage(), containsString(String.valueOf(expectedCode)));
-            } else {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     @Test
@@ -118,16 +86,7 @@ public class WebConsoleTests extends AbstractSystemTests {
             LOGGER.info("[{}] Probing https request on console should fail.", testNamespace);
             checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_UNAVAILABLE, "Application is not available");
 
-            if (getClient().getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
-                Route route = (Route) service;
-                route.getSpec().setTls(new TLSConfigBuilder().withInsecureEdgeTerminationPolicy("Redirect").withTermination("edge").build());
-                route.getMetadata().setManagedFields(null);
-                ((OpenShiftClient) getKubernetesClient()).routes().withName(route.getMetadata().getName()).patch(PatchContext.of(PatchType.SERVER_SIDE_APPLY), route);
-                TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
-            } else {
-                // Once supported, remove Openshift limitation
-                throw new ClaireNotImplementedException("Ingress is not supported yet!");
-            }
+            patchRouteTls(service, "Redirect", "edge");
             LOGGER.info("[{}] Probing https request on console should pass", testNamespace);
             checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login");
         }
@@ -182,8 +141,13 @@ public class WebConsoleTests extends AbstractSystemTests {
 
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         ResourceManager.createArtemis(testNamespace, artemis, true);
-        List<HasMetadata> webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace, brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX);
-        LOGGER.info("[{}] webservice url {}", testNamespace, webserviceUrl);
+        HasMetadata webservice = getClient().getExternalAccessServicePrefixName(testNamespace, brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX).get(0);
+        if (getClient().getKubernetesPlatform().equals(KubernetesPlatform.OPENSHIFT)) {
+            Route route = (Route) webservice;
+            LOGGER.debug("[{}] webservice url https://{}", testNamespace, route.getSpec().getHost());
+        } else {
+            LOGGER.debug("[{}] webservice url in details of {}", testNamespace, webservice.getMetadata().getName());
+        }
 
         if (checkLogForSecret) {
             LOGGER.info("[{}] Checking for 'Failed to create new Secret error' in CO log", testNamespace);

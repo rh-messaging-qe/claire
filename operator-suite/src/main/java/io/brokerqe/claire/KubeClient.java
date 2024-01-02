@@ -41,6 +41,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
@@ -62,19 +63,31 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class KubeClient {
-    protected final KubernetesClient client;
+    private final KubernetesClient client;
     private final KubernetesPlatform platform;
     protected String namespace;
+    private final String kubeContext;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KubeClient.class);
 
     // ============================
     // ---------> CLIENT <---------
     // ============================
+    public KubeClient(String context) {
+        this(context, "default");
+    }
 
-    public KubeClient(String namespace) {
-        LOGGER.debug("Creating client in namespace: {}", namespace);
-        Config config = Config.autoConfigure(System.getenv().getOrDefault("KUBE_CONTEXT", null));
+    public KubeClient(String context, String namespace) {
+        Config config = Config.autoConfigure(context);
+        String contextMessage = "Using context {}";
+        if (context == null) {
+            contextMessage = "Using context null/default - as none was provided";
+            kubeContext = "default";
+        } else {
+            kubeContext = context;
+        }
+        LOGGER.debug(contextMessage, context);
+        LOGGER.debug("[{}] Creating client in namespace: {}", context, namespace);
         config.setConnectionTimeout(60000); // default 10000ms
         config.setRequestTimeout(30000); // default 10000ms
         KubernetesClient tmpClient = new KubernetesClientBuilder().withConfig(config).build().adapt(OpenShiftClient.class);
@@ -95,6 +108,7 @@ public class KubeClient {
     }
 
     public KubernetesClient getKubernetesClient() {
+        MDC.put("kubecontext", kubeContext);
         return client;
     }
 

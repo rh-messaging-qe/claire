@@ -64,6 +64,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,12 +74,6 @@ import java.util.Optional;
 public class ResourceManager {
 
     final static Logger LOGGER = LoggerFactory.getLogger(ResourceManager.class);
-
-    private static MixedOperation<ActiveMQArtemis, KubernetesResourceList<ActiveMQArtemis>, Resource<ActiveMQArtemis>> artemisClient;
-    private static MixedOperation<ActiveMQArtemisAddress, KubernetesResourceList<ActiveMQArtemisAddress>, Resource<ActiveMQArtemisAddress>> artemisAddressClient;
-    private static MixedOperation<ActiveMQArtemisSecurity, KubernetesResourceList<ActiveMQArtemisSecurity>, Resource<ActiveMQArtemisSecurity>> artemisSecurityClient;
-    private static MixedOperation<ActiveMQArtemisScaledown, KubernetesResourceList<ActiveMQArtemisScaledown>, Resource<ActiveMQArtemisScaledown>> artemisScaledownClient;
-
     private static List<ArtemisCloudClusterOperator> deployedOperators = new ArrayList<>();
     private static Map<Deployment, String> deployedContainers = new HashMap<>();
     private static List<String> deployedNamespaces = new ArrayList<>();
@@ -92,11 +87,7 @@ public class ResourceManager {
     private static TestInfo testInfo;
 
     private ResourceManager(EnvironmentOperator env) {
-        kubeClient = env.getKubeClient();
-        artemisClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemis.class);
-        artemisAddressClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisAddress.class);
-        artemisSecurityClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisSecurity.class);
-        artemisScaledownClient = kubeClient.getKubernetesClient().resources(ActiveMQArtemisScaledown.class);
+        kubeClient = env.getDefaultKubeClient();
         projectCODeploy = env.isProjectManagedClusterOperator();
         environmentOperator = env;
     }
@@ -111,20 +102,40 @@ public class ResourceManager {
         return kubeClient;
     }
 
+    public static KubeClient getKubeClient(String context) {
+        return environmentOperator.getKubeClient(context);
+    }
+
+    public static KubeClient getKubeClient(int position) {
+        return environmentOperator.getKubeClients().values().stream().toList().get(position);
+    }
+
+    public static Collection<KubeClient> getKubeClients() {
+        return environmentOperator.getKubeClients().values();
+    }
+
+    public static void setKubeClient(String context) {
+        kubeClient = getKubeClient(context);
+    }
+
+    public static void setKubeClient(KubeClient client) {
+        kubeClient = client;
+    }
+
     public static MixedOperation<ActiveMQArtemis, KubernetesResourceList<ActiveMQArtemis>, Resource<ActiveMQArtemis>> getArtemisClient() {
-        return artemisClient;
+        return getKubeClient().getKubernetesClient().resources(ActiveMQArtemis.class);
     }
 
     public static MixedOperation<ActiveMQArtemisAddress, KubernetesResourceList<ActiveMQArtemisAddress>, Resource<ActiveMQArtemisAddress>> getArtemisAddressClient() {
-        return artemisAddressClient;
+        return getKubeClient().getKubernetesClient().resources(ActiveMQArtemisAddress.class);
     }
 
     public static MixedOperation<ActiveMQArtemisSecurity, KubernetesResourceList<ActiveMQArtemisSecurity>, Resource<ActiveMQArtemisSecurity>> getArtemisSecurityClient() {
-        return artemisSecurityClient;
+        return getKubeClient().getKubernetesClient().resources(ActiveMQArtemisSecurity.class);
     }
 
     public static MixedOperation<ActiveMQArtemisScaledown, KubernetesResourceList<ActiveMQArtemisScaledown>, Resource<ActiveMQArtemisScaledown>> getArtemisScaledownClient() {
-        return artemisScaledownClient;
+        return getKubeClient().getKubernetesClient().resources(ActiveMQArtemisScaledown.class);
     }
 
     // Artemis ClusterOperator

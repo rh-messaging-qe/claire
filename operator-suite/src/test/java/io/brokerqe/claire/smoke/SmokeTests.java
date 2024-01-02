@@ -13,6 +13,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
@@ -59,7 +60,7 @@ public class SmokeTests extends AbstractSystemTests {
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
         ResourceManager.waitForBrokerDeployment(testNamespace, broker, false, brokerPod);
-        throw new RuntimeException("Throwing random exception, to trigger TestDataCollection.");
+        throw new ClaireRuntimeException("Throwing random exception, to trigger TestDataCollection.");
     }
 
     @Test

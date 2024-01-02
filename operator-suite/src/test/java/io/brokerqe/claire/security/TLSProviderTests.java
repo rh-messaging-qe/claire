@@ -132,7 +132,7 @@ public class TLSProviderTests extends AbstractSystemTests {
         assertBrokerConfigHasSslProvider(brokerPod, sslProvider);
         Deployment clients = ResourceManager.deploySecuredClientsContainer(testNamespace, List.of(clientSecret));
         Pod clientsPod = getClient().getFirstPodByPrefixName(testNamespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
-        testTlsMessaging(testNamespace, brokerPod, tlsAddress, brokerUris.get(0), null, clientSecret, clientsPod,
+        testTlsMessaging(testNamespace, tlsAddress, brokerUris.get(0), null, clientSecret, clientsPod,
                 Constants.CLIENT_KEYSTORE_ID, keystores.get(Constants.CLIENT_KEYSTORE_ID).getPassword(),
                 Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getPassword());
         ResourceManager.undeployClientsContainer(testNamespace, clients);

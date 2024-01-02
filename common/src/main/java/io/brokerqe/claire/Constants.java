@@ -21,6 +21,7 @@ public interface Constants {
     String TAG_TLS = "tls";
 
     // Environment Variables
+    String EV_KUBE_CONTEXT = "KUBE_CONTEXT";
     String EV_ARTEMIS_VERSION = "ARTEMIS_VERSION";
     String EV_ARTEMIS_TEST_VERSION = "ARTEMIS_TEST_VERSION";
     String EV_DISABLE_RANDOM_NAMESPACES = "DISABLE_RANDOM_NAMESPACES";

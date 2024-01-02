@@ -14,7 +14,6 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.junit.TestValidUntil;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
-import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -90,12 +89,11 @@ public class TLSSecurityTests extends AbstractSystemTests {
 
         broker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors, owireAcceptors), broker);
         String brokerName = broker.getMetadata().getName();
-        Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         List<String> brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
         LOGGER.info("[{}] Broker {} is up and running with TLS", testNamespace, brokerName);
 
         // TLS Authentication for netty, but for Artemis as Guest due to JAAS settings
-        testTlsMessaging(testNamespace, brokerPod, tlsAddress, brokerUris.get(0), null, clientSecret,
+        testTlsMessaging(testNamespace, tlsAddress, brokerUris.get(0), null, clientSecret,
                 Constants.CLIENT_KEYSTORE_ID, keystores.get(Constants.CLIENT_KEYSTORE_ID).getPassword(),
                 Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getPassword());
 

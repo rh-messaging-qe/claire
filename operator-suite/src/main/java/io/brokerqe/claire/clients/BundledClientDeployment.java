@@ -4,7 +4,6 @@
  */
 package io.brokerqe.claire.clients;
 
-import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.executor.Executor;
@@ -20,7 +19,6 @@ public class BundledClientDeployment implements KubernetesDeployableClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BundledClientDeployment.class);
     private final String namespace;
-    static KubeClient kubeClient = ResourceManager.getKubeClient();
     private Pod pod;
 
     public BundledClientDeployment(String namespace) {
@@ -36,7 +34,7 @@ public class BundledClientDeployment implements KubernetesDeployableClient {
     public Pod getContainer() {
         if (pod == null) {
             LOGGER.debug("[{}] [BundledClient] Using default first found artemis pod", namespace);
-            pod = kubeClient.getArtemisPodByLabel(namespace);
+            pod = ResourceManager.getKubeClient().getArtemisPodByLabel(namespace);
         }
         return pod;
     }
@@ -91,7 +89,7 @@ public class BundledClientDeployment implements KubernetesDeployableClient {
     @Override
     public Deployment getDeployment() {
         // TODO ??!
-        return kubeClient.getDeployment(namespace, pod.getMetadata().getGenerateName());
+        return ResourceManager.getKubeClient().getDeployment(namespace, pod.getMetadata().getGenerateName());
 //        throw new UnsupportedOperationException("Statefulset of broker pod is not needed for clients pod");
     }
 }

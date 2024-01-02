@@ -50,5 +50,6 @@ public interface TestSeparator {
         LOGGER.info((char) 27 + "[33m" + String.format("Finished Class: %s", testContext.getRequiredTestClass().getName()) + (char) 27 + "[0m");
         LOGGER.info((char) 27 + "[34m" + String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + (char) 27 + "[0m");
         TestUtils.deleteEmptyDirectories(Environment.get().getCertificatesLocation());
+        TestUtils.deleteEmptyDirectories(Environment.get().getTmpDirLocation());
     }
 }

@@ -47,42 +47,55 @@ public class OperatorTestDataCollector extends TestDataCollector {
     @Override
     protected void collectTestData() {
         List<String> testNamespaces = getTestNamespaces();
-        LOGGER.info("Error detected will gather! data from namespace: {}", String.join(" ", testNamespaces));
-        kubeClient = (KubeClient) getTestInstanceDeclaredField(testInstance, "client");
-        for (String testNamespace : testNamespaces) {
-            String archiveDirTmp = archiveDir + Constants.FILE_SEPARATOR + testNamespace;
-            TestUtils.createDirectory(archiveDirTmp);
-            LOGGER.debug("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirTmp);
+        boolean useClusterDir = ResourceManager.getKubeClients().size() > 1;
+        for (KubeClient kubeClientTmp : ResourceManager.getKubeClients()) {
+            this.kubeClient = kubeClientTmp;
+            ResourceManager.setKubeClient(kubeClientTmp);
+            String archiveDirTmp = archiveDir + Constants.FILE_SEPARATOR;
+//        kubeClient = (KubeClient) getTestInstanceDeclaredField(testInstance, "client");
+            if (useClusterDir) {
+                String clusterName = kubeClient.getKubernetesClient().getMasterUrl().getHost();
+                archiveDirTmp += clusterName;
+                LOGGER.info("[{}] Error detected! Will gather data from namespace: {}", clusterName, String.join(" ", testNamespaces));
+            } else {
+                LOGGER.info("Error detected! Will gather data from namespace: {}", String.join(" ", testNamespaces));
+            }
 
-            List<Deployment> deployments = kubeClient.getKubernetesClient().apps().deployments().inNamespace(testNamespace).list().getItems();
-            List<StatefulSet> statefulSets = kubeClient.getKubernetesClient().apps().statefulSets().inNamespace(testNamespace).list().getItems();
-            List<ReplicaSet> replicaSets = kubeClient.getKubernetesClient().apps().replicaSets().inNamespace(testNamespace).list().getItems();
-            List<ConfigMap> configMaps = kubeClient.getKubernetesClient().configMaps().inNamespace(testNamespace).list().getItems();
-            List<PersistentVolumeClaim> persistentVolumeClaims = kubeClient.getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace).list().getItems();
-            List<PersistentVolume> persistentVolumes = kubeClient.getKubernetesClient().persistentVolumes().list().getItems();
-            List<Service> services = kubeClient.getKubernetesClient().services().inNamespace(testNamespace).list().getItems();
-            List<Secret> secrets = kubeClient.getKubernetesClient().secrets().inNamespace(testNamespace).list().getItems();
-            List<Event> events = kubeClient.getKubernetesClient().v1().events().inNamespace(testNamespace).list().getItems();
-            List<Pod> pods = kubeClient.getKubernetesClient().pods().inNamespace(testNamespace).list().getItems();
-            List<ActiveMQArtemis> artemises = ResourceManager.getArtemisClient().inNamespace(testNamespace).list().getItems();
-            List<ActiveMQArtemisAddress> artemisAddresses = ResourceManager.getArtemisAddressClient().inNamespace(testNamespace).list().getItems();
-            List<ActiveMQArtemisSecurity> artemisSecurities = ResourceManager.getArtemisSecurityClient().inNamespace(testNamespace).list().getItems();
+            for (String testNamespace : testNamespaces) {
+                archiveDirTmp += Constants.FILE_SEPARATOR + testNamespace;
+                TestUtils.createDirectory(archiveDirTmp);
+                LOGGER.debug("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirTmp);
 
-            writeHasMetadataObject(deployments, archiveDirTmp);
-            writeHasMetadataObject(statefulSets, archiveDirTmp);
-            writeHasMetadataObject(replicaSets, archiveDirTmp);
-            writeHasMetadataObject(configMaps, archiveDirTmp);
-            writeHasMetadataObject(persistentVolumeClaims, archiveDirTmp);
-            writeHasMetadataObject(persistentVolumes, archiveDirTmp);
-            writeHasMetadataObject(services, archiveDirTmp);
-            writeHasMetadataObject(secrets, archiveDirTmp);
-            writeHasMetadataObject(pods, archiveDirTmp);
-            writeHasMetadataObject(artemises, archiveDirTmp);
-            writeHasMetadataObject(artemisAddresses, archiveDirTmp);
-            writeHasMetadataObject(artemisSecurities, archiveDirTmp);
-            writeEvents(events, archiveDirTmp);
-            collectPodLogs(pods, archiveDirTmp);
-            collectBrokerPodFiles(pods, archiveDirTmp);
+                List<Deployment> deployments = kubeClient.getKubernetesClient().apps().deployments().inNamespace(testNamespace).list().getItems();
+                List<StatefulSet> statefulSets = kubeClient.getKubernetesClient().apps().statefulSets().inNamespace(testNamespace).list().getItems();
+                List<ReplicaSet> replicaSets = kubeClient.getKubernetesClient().apps().replicaSets().inNamespace(testNamespace).list().getItems();
+                List<ConfigMap> configMaps = kubeClient.getKubernetesClient().configMaps().inNamespace(testNamespace).list().getItems();
+                List<PersistentVolumeClaim> persistentVolumeClaims = kubeClient.getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace).list().getItems();
+                List<PersistentVolume> persistentVolumes = kubeClient.getKubernetesClient().persistentVolumes().list().getItems();
+                List<Service> services = kubeClient.getKubernetesClient().services().inNamespace(testNamespace).list().getItems();
+                List<Secret> secrets = kubeClient.getKubernetesClient().secrets().inNamespace(testNamespace).list().getItems();
+                List<Event> events = kubeClient.getKubernetesClient().v1().events().inNamespace(testNamespace).list().getItems();
+                List<Pod> pods = kubeClient.getKubernetesClient().pods().inNamespace(testNamespace).list().getItems();
+                List<ActiveMQArtemis> artemises = ResourceManager.getArtemisClient().inNamespace(testNamespace).list().getItems();
+                List<ActiveMQArtemisAddress> artemisAddresses = ResourceManager.getArtemisAddressClient().inNamespace(testNamespace).list().getItems();
+                List<ActiveMQArtemisSecurity> artemisSecurities = ResourceManager.getArtemisSecurityClient().inNamespace(testNamespace).list().getItems();
+
+                writeHasMetadataObject(deployments, archiveDirTmp);
+                writeHasMetadataObject(statefulSets, archiveDirTmp);
+                writeHasMetadataObject(replicaSets, archiveDirTmp);
+                writeHasMetadataObject(configMaps, archiveDirTmp);
+                writeHasMetadataObject(persistentVolumeClaims, archiveDirTmp);
+                writeHasMetadataObject(persistentVolumes, archiveDirTmp);
+                writeHasMetadataObject(services, archiveDirTmp);
+                writeHasMetadataObject(secrets, archiveDirTmp);
+                writeHasMetadataObject(pods, archiveDirTmp);
+                writeHasMetadataObject(artemises, archiveDirTmp);
+                writeHasMetadataObject(artemisAddresses, archiveDirTmp);
+                writeHasMetadataObject(artemisSecurities, archiveDirTmp);
+                writeEvents(events, archiveDirTmp);
+                collectPodLogs(pods, archiveDirTmp);
+                collectBrokerPodFiles(pods, archiveDirTmp);
+            }
         }
     }
 
