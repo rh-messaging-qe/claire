@@ -147,7 +147,8 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
             hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_VALID)),
             hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED)),
             hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_READY)),
-            hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_DEPLOYED))
+            hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_DEPLOYED)),
+            hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_BROKER_VERSION_ALIGNED))
         ));
         ResourceManager.deleteArtemis(testNamespace, broker);
     }

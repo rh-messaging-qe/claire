@@ -112,6 +112,7 @@ public interface ArtemisConstants {
     String CONDITION_TYPE_DEPLOYED = "Deployed";
     String CONDITION_TYPE_READY = "Ready";
     String CONDITION_TYPE_VALID = "Valid";
+    String CONDITION_TYPE_BROKER_VERSION_ALIGNED = "BrokerVersionAligned";
     String CONDITION_STATUS_READY = "AllPodsReady";
     String CONDITION_REASON_VALIDATION = "ValidationSucceded";
     String CONDITION_REASON_ALL_PODS_READY = "AllPodsReady";
