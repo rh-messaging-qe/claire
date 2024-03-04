@@ -27,16 +27,17 @@ cache:
   stage: build
   script:
     - 'microdnf install -y java-17-openjdk-headless make wget unzip tar gzip'
-    - 'curl -sSL https://archive.apache.org/dist/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz | tar xz -C /opt && ln -s /opt/apache-maven-3.9.1/bin/mvn /usr/local/bin/mvn'
     - |
       pushd /etc/pki/ca-trust/source/anchors
-      curl -O https://password.corp.redhat.com/legacy.crt
-      curl -O https://password.corp.redhat.com/RH-IT-Root-CA.crt
-      curl -O https://certs.corp.redhat.com/certs/2015-IT-Root-CA.pem
-      curl -O https://certs.corp.redhat.com/certs/2022-IT-Root-CA.pem
+      curl --insecure -O https://password.corp.redhat.com/legacy.crt
+      curl --insecure -O https://password.corp.redhat.com/RH-IT-Root-CA.crt
+      curl --insecure -O https://certs.corp.redhat.com/certs/2015-IT-Root-CA.pem
+      curl --insecure -O https://certs.corp.redhat.com/certs/2022-IT-Root-CA.pem
       curl --insecure -O https://engineering.redhat.com/Eng-CA.crt
       update-ca-trust extract
       popd
+    - 'curl -sSL https://archive.apache.org/dist/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz | tar xz -C /opt && ln -s /opt/apache-maven-3.9.1/bin/mvn /usr/local/bin/mvn'
+
     - 'mkdir /opt/yq && curl -sSL https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_amd64.tar.gz | tar xz -C /opt/yq && ln -s /opt/yq/yq_linux_amd64 /usr/local/bin/yq'
 #    - 'make -f Makefile.downstream build'
     - 'make -f Makefile.downstream standalone_prepare operator_prepare checkstyle'
