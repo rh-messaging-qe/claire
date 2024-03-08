@@ -200,7 +200,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     @Test
     void verifyResourceRequest() {
         Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("200m");
+        IntOrString cpuValue = new IntOrString("400m");
         IntOrString memValue = new IntOrString("512M");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);
@@ -227,7 +227,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     @Test
     void verifyResourceLimits() {
         Map<String, IntOrString> requestedResourceLimits = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("200m");
+        IntOrString cpuValue = new IntOrString("400m");
         IntOrString memValue = new IntOrString("512M");
         requestedResourceLimits.put("cpu", cpuValue);
         requestedResourceLimits.put("memory", memValue);
@@ -255,7 +255,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     @Test
     void verifyResourceUpdates() {
         Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("200m");
+        IntOrString cpuValue = new IntOrString("400m");
         IntOrString memValue = new IntOrString("512M");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);
@@ -309,7 +309,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         assertThat(String.format("Resource requests were applied by default: %s", requests), requests, aMapWithSize(0));
 
         Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("200m");
+        IntOrString cpuValue = new IntOrString("400m");
         IntOrString memValue = new IntOrString("512M");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);
