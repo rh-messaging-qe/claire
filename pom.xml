@@ -2,53 +2,57 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <artifactId>claire</artifactId>
-    <groupId>io.brokerqe</groupId>
-    <version>0.1-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
+    <description>Claire Test Suite</description>
+    <groupId>rh-messaging-qe</groupId>
+    <artifactId>claire</artifactId>
+    <version>0.1-SNAPSHOT</version>
 
     <modules>
+        <module>operator-crd</module>
         <module>common</module>
         <module>standalone-suite</module>
         <module>operator-suite</module>
     </modules>
 
     <properties>
-        <artemiscloud-crd.version>main</artemiscloud-crd.version>
-        <artemis-jms-client-all.version>2.29.0</artemis-jms-client-all.version>
-        <assertj.version>3.24.2</assertj.version>
+        <operator-crd.version>${project.version}</operator-crd.version>
+        <artemis-jms-client-all.version>2.32.0</artemis-jms-client-all.version>
+        <assertj.version>3.25.3</assertj.version>
         <bouncycastle.version>1.70</bouncycastle.version>
-        <checkstyle.version>9.2.1</checkstyle.version>
-        <commons-compress.version>1.23.0</commons-compress.version>
-        <commons-io.version>2.13.0</commons-io.version>
-        <commons-lang3.version>3.13.0</commons-lang3.version>
+        <checkstyle.version>10.14.1</checkstyle.version>
         <commons-collections4.version>4.4</commons-collections4.version>
-        <fabric8.version>6.8.1</fabric8.version>
+        <commons-compress.version>1.26.1</commons-compress.version>
+        <commons-io.version>2.15.1</commons-io.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <datafaker.version>2.1.0</datafaker.version>
+        <fabric8.version>6.10.0</fabric8.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <jackson-databind.version>2.15.1</jackson-databind.version>
-        <datafaker.version>1.8.1</datafaker.version>
-        <mockito.version>5.3.1</mockito.version>
-        <joda-time.version>2.12.4</joda-time.version>
-        <junit-jupiter.version>5.9.2</junit-jupiter.version>
-        <junit-pioneer.version>2.0.1</junit-pioneer.version>
-        <junit-platform.version>1.9.2</junit-platform.version>
-        <logback.version>1.4.6</logback.version>
-        <lombok.version>1.18.28</lombok.version>
-        <maven.checkstyle.version>3.1.2</maven.checkstyle.version>
+        <jackson-databind.version>2.17.0</jackson-databind.version>
+        <joda-time.version>2.12.7</joda-time.version>
+        <junit-jupiter.version>5.10.2</junit-jupiter.version>
+        <junit-pioneer.version>2.2.0</junit-pioneer.version>
+        <junit-platform.version>1.10.2</junit-platform.version>
+        <logback.version>1.5.3</logback.version>
+        <lombok.version>1.18.30</lombok.version>
+        <maven.checkstyle.version>3.3.1</maven.checkstyle.version>
+        <maven.clean.version>3.3.2</maven.clean.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <maven.surefire.version>3.0.0</maven.surefire.version>
-        <maven.failsafe.version>3.1.2</maven.failsafe.version>
+        <maven.dependency.version>3.6.1</maven.dependency.version>
+        <maven.failsafe.version>3.2.5</maven.failsafe.version>
+        <maven.surefire.version>3.2.5</maven.surefire.version>
+        <mockito.version>5.11.0</mockito.version>
         <okhttp.version>4.10.0</okhttp.version>
-        <org-json.version>20230227</org-json.version>
+        <org-json.version>20240303</org-json.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <qpid.jms.version>1.6.0</qpid.jms.version>
-        <selenium.version>4.10.0</selenium.version>
-        <slf4j.version>2.0.7</slf4j.version>
-        <sundrio.version>0.100.3</sundrio.version>
-        <testcontainers.version>1.19.3</testcontainers.version>
-        <zip4j.version>2.6.1</zip4j.version>
+        <qpid.jms.version>2.5.0</qpid.jms.version>
+        <selenium.version>4.18.1</selenium.version>
+        <slf4j.version>2.0.9</slf4j.version>
+        <sundrio.version>0.101.3</sundrio.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
+        <zip4j.version>2.11.5</zip4j.version>
     </properties>
 
     <!--
@@ -59,10 +63,26 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.brokerqe</groupId>
-                <artifactId>artemiscloud-crd</artifactId>
-                <version>${artemiscloud-crd.version}</version>
+                <groupId>rh-messaging-qe</groupId>
+                <artifactId>operator-crd</artifactId>
+                <version>${operator-crd.version}</version>
             </dependency>
+            <dependency>
+                <groupId>rh-messaging-qe</groupId>
+                <artifactId>common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>rh-messaging-qe</groupId>
+                <artifactId>standalone-suite</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>rh-messaging-qe</groupId>
+                <artifactId>operator-suite</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
@@ -264,68 +284,112 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven.clean.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>java-generator-maven-plugin</artifactId>
+                    <version>${fabric8.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${maven.dependency.version}</version>
+                    <configuration>
+                        <excludeGroupIds>${project.groupId}</excludeGroupIds>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.version}</version>
+                    <configuration>
+                        <properties>
+                            <configurationParameters>
+                                junit.jupiter.extensions.autodetection.enabled = true
+                                <!--  junit.platform.reporting.open.xml.enabled = true // use legacy format -->
+                                junit.platform.reporting.open.xml.enabled = false
+                                junit.platform.reporting.output.dir = target/surefire-reports
+                            </configurationParameters>
+                        </properties>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven.failsafe.version}</version>
+                    <configuration>
+                        <includes>
+                            <!-- Surefire defaults (just to do not rename all tests) -->
+                            <include>**/Test*.java</include>
+                            <include>**/*Test.java</include>
+                            <include>**/*Tests.java</include>
+                            <include>**/*TestCase.java</include>
+                            <!-- Failsafe defaults -->
+                            <include>**/IT*.java</include>
+                            <include>**/*IT.java</include>
+                            <include>**/*ITCase.java</include>
+                        </includes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven.checkstyle.version}</version>
+                    <configuration>
+                        <configLocation>.checkstyle/checkstyle.xml</configLocation>
+                        <suppressionsLocation>.checkstyle/suppressions.xml</suppressionsLocation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
+                        <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>checkstyle-validate</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${maven.checkstyle.version}</version>
-                <configuration>
-                    <configLocation>.checkstyle/checkstyle.xml</configLocation>
-                    <suppressionsLocation>.checkstyle/suppressions.xml</suppressionsLocation>
-                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                    <encoding>UTF-8</encoding>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${checkstyle.version}</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>checkstyle-validate</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven.surefire.version}</version>
-                <configuration>
-                    <properties>
-                        <configurationParameters>
-                            junit.jupiter.extensions.autodetection.enabled = true
-                            <!--  junit.platform.reporting.open.xml.enabled = true // use legacy format -->
-                            junit.platform.reporting.open.xml.enabled = false
-                            junit.platform.reporting.output.dir = target/surefire-reports
-                        </configurationParameters>
-                    </properties>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${maven.failsafe.version}</version>
-                <configuration>
-                    <includes>
-                        <!-- Surefire defaults (just to do not rename all tests) -->
-                        <include>**/Test*.java</include>
-                        <include>**/*Test.java</include>
-                        <include>**/*Tests.java</include>
-                        <include>**/*TestCase.java</include>
-                        <!-- Failsafe defaults -->
-                        <include>**/IT*.java</include>
-                        <include>**/*IT.java</include>
-                        <include>**/*ITCase.java</include>
-                    </includes>
-                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

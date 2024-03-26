@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.Message;
-import javax.jms.Queue;
+import jakarta.jms.Message;
+import jakarta.jms.Queue;
 import java.util.Map;
 
 public class FailoverReplicationTests extends AbstractSystemTests {

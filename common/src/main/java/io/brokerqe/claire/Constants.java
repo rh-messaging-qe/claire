@@ -22,6 +22,8 @@ public interface Constants {
 
     // Environment Variables
     String EV_KUBE_CONTEXT = "KUBE_CONTEXT";
+    String EV_OPERATOR_TYPE = "OPERATOR_TYPE";
+    String EV_OPERATOR_VERSION = "OPERATOR_VERSION";
     String EV_ARTEMIS_VERSION = "ARTEMIS_VERSION";
     String EV_ARTEMIS_TEST_VERSION = "ARTEMIS_TEST_VERSION";
     String EV_DISABLE_RANDOM_NAMESPACES = "DISABLE_RANDOM_NAMESPACES";
@@ -93,7 +95,7 @@ public interface Constants {
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";
     String EXAMPLES_DIR_PATH = PROJECT_USER_DIR + "/artemis/examples/";
-    String VERSION_MAPPER_PATH = PROJECT_USER_DIR + "/../version_map.yaml";
+    String BUILD_PROPERTIES_FILE = PROJECT_USER_DIR + "/../build_properties.yaml";
     String PERFORMANCE_DIR = PROJECT_USER_DIR + "/../performance/";
 
     String PROP_LOG_DIR = "log.dir";
@@ -135,6 +137,7 @@ public interface Constants {
     String PROP_YACFG_ARTEMIS_PROFILES_OVERRIDE_DIR = "yacfg.artemis.profiles_override_dir";
     String EV_YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR = "YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR";
     String PROP_YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR = "yacfg.artemis.templates_override_dir";
+    String YACFG_SNAPSHOT_VERSION = "main";
 
     String ARTEMIS_DEFAULT_CFG_DIR = "artemis/artemis_default_cfg";
     String ARTEMIS_TEST_CFG_DIR = "test-cfg";

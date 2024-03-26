@@ -9,6 +9,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
@@ -308,10 +309,11 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     @Tag(Constants.TAG_SMOKE)
     void testDefaultBrokerVersion() {
-        String expectedVersion = getExpectedVersion();
-        assumeFalse(expectedVersion.equals("main"), "version supplied is \"main\", skipping test.");
+        String expectedVersion = testEnvironmentOperator.getArtemisVersion();
+        assumeFalse(expectedVersion.equals(ArtemisConstants.SNAPSHOT_VERSION), "version supplied is \""
+                + ArtemisConstants.SNAPSHOT_VERSION + "\", skipping test.");
 
-        String expectedBrokerPattern = "Red Hat AMQ.*\\.GA";
+        String expectedBrokerPattern = "(Red Hat AMQ.*\\.GA|Apache ActiveMQ Artemis.*)";
 
         ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, "smoke", 1);
         Pod brokerPod = getClient().listPodsByPrefixName(testNamespace, artemisBroker.getMetadata().getName()).get(0);
@@ -332,8 +334,10 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     @Tag(Constants.TAG_SMOKE)
     void testDefaultOperatorVersion() {
-        String expectedVersion = getExpectedVersion();
-        assumeFalse(expectedVersion.equals("main"), "version supplied is \"main\", skipping test.");
+        String expectedVersion = getOperatorExpectedVersion().replaceAll("^v", "");
+        assumeFalse(expectedVersion.equals(ArtemisConstants.SNAPSHOT_VERSION), "version supplied is \""
+                + ArtemisConstants.SNAPSHOT_VERSION + "\", skipping test.");
+
         String expectedOperatorVersionPattern = "Version of the operator: .*\n";
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
 

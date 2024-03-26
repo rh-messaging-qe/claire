@@ -19,8 +19,7 @@
 
 FROM fedora:latest
 
-RUN set -x && \
-    dnf --quiet --assumeyes upgrade && \
+RUN dnf --quiet --assumeyes upgrade && \
     dnf --quiet --assumeyes install nfs-utils procps-ng && \
     dnf clean all && \
     mkdir /exports

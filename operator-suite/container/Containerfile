@@ -1,0 +1,96 @@
+# Build variables
+ARG ubiVersion=9
+ARG openJDKVersion=17
+ARG ubiTag=latest
+ARG image=registry.access.redhat.com/ubi${ubiVersion}/openjdk-${openJDKVersion}:${ubiTag}
+
+####################
+# Base image stage #
+####################
+FROM $image AS base
+
+# Build variables
+ARG buildArch=amd64
+
+# Use a root user
+USER root
+
+# Set locale
+RUN sed -i 's/^LANG=.*/LANG="en_US.utf8"/' /etc/locale.conf
+ENV LANG=en_US.utf8
+
+# Install required packages
+RUN microdnf --assumeyes --nodocs upgrade && \
+    microdnf --assumeyes --nodocs install git glibc-langpack-en gzip jq make unzip wget && \
+    microdnf clean all && \
+    curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${buildArch} -o /usr/bin/yq && \
+    chmod +x /usr/bin/yq && \
+    mkdir /opt/ocp-client && \
+    curl -sSL https://mirror.openshift.com/pub/openshift-v4/${buildArch}/clients/ocp/latest/openshift-client-linux.tar.gz | \
+    tar -zx -C /opt/ocp-client && \
+    ln -s /opt/ocp-client/oc /usr/local/bin/oc && \
+    ln -s /opt/ocp-client/kubectl /usr/local/bin/kubectl && \
+    curl -sSL https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz | \
+    tar -zx -C /opt && ln -s /opt/apache-maven-3.9.6/bin/mvn /usr/local/bin/mvn
+
+###################################
+# Final stage for the tests image #
+###################################
+FROM base AS final
+
+ARG operatorType
+ARG operatorVersion
+ARG claireUser=claire
+ARG claireUserUid=1000
+ARG claireUserGroup=root
+
+# Create claire user
+RUN useradd -u "${claireUserUid}" -d "/app" -m -g "${claireUserGroup}" "${claireUser}" && \
+    chmod 0755 /app
+
+# Add metadata labels
+LABEL name="Red Hat AMQ Broker QE - Claire Test Suite"
+
+# Set home directory
+ENV HOME="/app"
+
+# Set user
+ENV CLAIRE_USER=${claireUser}
+ENV CLAIRE_USER_UID=${claireUserUid}
+ENV CLAIRE_USER_GROUP=${claireUserGroup}
+
+# Set claire variables
+ENV OPERATOR_TYPE=${operatorType}
+ENV OPERATOR_VERSION=${operatorVersion}
+
+# Allow the user to choose which client to use
+ENV CLIENT_TYPE=${CLIENT_TYPE:-kubectl}
+
+# Set environment variables for OpenShift
+ENV OCP_API_URL=https://api.openshift:6443
+ENV OCP_USERNAME=CHANGE_ME
+ENV OCP_PASSWORD=CHANGE_ME
+
+# Set maven options with local repo from /app
+ENV MAVEN_OPTS="-Dmaven.repo.local=/app/.m2/repository -Dmaven.artifact.threads=42"
+
+# Set the working directory
+WORKDIR /app
+
+# Use a non-root user
+USER ${CLAIRE_USER_UID}
+
+# Set the entrypoint and default command
+ENTRYPOINT ["/app/operator-suite/container/entrypoint.sh"]
+CMD ["/bin/bash"]
+
+# Set permissions
+RUN mkdir -p /app/test-results && \
+    chmod 0775 /app && \
+    find /app -type f -exec chmod 0664 \{\} \; && \
+    find /app -type d -exec chmod 0775 \{\} \; && \
+    find /app -name *.sh -exec chmod 0775 \{\} \;
+
+# Copy cliare files
+COPY --chown=${CLAIRE_USER_UID}:${CLAIRE_USER_GROUP} . /app/
+

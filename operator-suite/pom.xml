@@ -3,25 +3,27 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <groupId>rh-messaging-qe</groupId>
         <artifactId>claire</artifactId>
-        <groupId>io.brokerqe</groupId>
         <version>0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
-    <description>ArtemisCloud Operator Test Suite</description>
-    <artifactId>operator-suite</artifactId>
     <packaging>jar</packaging>
+    <description>Claire Operator Test Suite Module</description>
+    <artifactId>operator-suite</artifactId>
 
+    <properties>
+        <test-report.dir>${project.basedir}/../test-results/${project.artifactId}</test-report.dir>
+    </properties>
+    
     <dependencies>
         <dependency>
-            <groupId>io.brokerqe</groupId>
+            <groupId>rh-messaging-qe</groupId>
             <artifactId>common</artifactId>
-            <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>io.brokerqe</groupId>
-            <artifactId>artemiscloud-crd</artifactId>
+            <groupId>rh-messaging-qe</groupId>
+            <artifactId>operator-crd</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -72,15 +74,30 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>io.brokerqe</groupId>
-                                    <artifactId>artemiscloud-crd</artifactId>
+                                    <groupId>rh-messaging-qe</groupId>
+                                    <artifactId>operator-crd</artifactId>
                                     <outputDirectory>${project.basedir}/artemis</outputDirectory>
-                                    <includes>crds/*.*,examples/**/*.*,install/*.*,project-settings.properties</includes>
+                                    <includes>crds/*.*,examples/**/*.*,install/*.*</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <reportsDirectory>${test-report.dir}</reportsDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <summaryFile>${test-report.dir}/failsafe-summary.xml</summaryFile>
+                    <reportsDirectory>${test-report.dir}</reportsDirectory>
+                </configuration>
             </plugin>
         </plugins>
     </build>

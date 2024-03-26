@@ -13,13 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 public class EnvironmentOperator extends Environment {
 
@@ -30,10 +27,10 @@ public class EnvironmentOperator extends Environment {
     private final boolean olmReleased;
     private final boolean olmLts;
     private final boolean olmInstallation;
-    private final String artemisOperatorName;
-    private final String artemisOperatorType;
     private List<String> kubeContexts;
+    private String operatorType;
     private String artemisVersion;
+    private String operatorVersion;
     private final ArtemisVersion artemisTestVersion;
     private final String brokerImage;
     private final String brokerInitImage;
@@ -56,7 +53,10 @@ public class EnvironmentOperator extends Environment {
         this.set(this);
         String initialTimestamp = TestUtils.generateTimestamp();
         initializeKubeContexts(System.getenv().getOrDefault(Constants.EV_KUBE_CONTEXT, null));
+        operatorType = System.getenv(Constants.EV_OPERATOR_TYPE);
+        operatorVersion = System.getenv(Constants.EV_OPERATOR_VERSION);
         artemisVersion = System.getenv(Constants.EV_ARTEMIS_VERSION);
+
         testLogLevel = System.getenv(Constants.EV_TEST_LOG_LEVEL);
         logsDirLocation = System.getenv().getOrDefault(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + initialTimestamp;
         tmpDirLocation = System.getenv().getOrDefault(Constants.EV_TMP_LOCATION, Constants.TMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + initialTimestamp;
@@ -77,26 +77,19 @@ public class EnvironmentOperator extends Environment {
         olmLts = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_OLM_LTS, "false"));
         olmInstallation = olmReleased || olmChannel != null && olmIndexImageBundle != null || testUpgradePlan != null;
 
-        brokerImage = System.getenv(Constants.EV_BROKER_IMAGE);
-        brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
-        operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE);
-        bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
 
-        Properties projectSettings = new Properties();
-        FileInputStream projectSettingsFile;
-        try {
-            projectSettingsFile = new FileInputStream(Constants.PROJECT_SETTINGS_PATH);
-            projectSettings.load(projectSettingsFile);
-            artemisOperatorName = olmInstallation ? "amq-broker" : String.valueOf(projectSettings.get("artemis.name"));
-            artemisOperatorType = String.valueOf(projectSettings.get("artemis.type"));
-            artemisVersion = artemisVersion == null ? String.valueOf(projectSettings.get("artemis.version")) : artemisVersion;
-            // Use ENV Var, project property or default to artemisVersion
-            String artemisTestVersionStr = System.getenv().getOrDefault(Constants.EV_ARTEMIS_TEST_VERSION, String.valueOf(projectSettings.get("artemis.test.version")));
-            artemisTestVersionStr = artemisTestVersionStr == null || artemisTestVersionStr.equals("null") || isOlmInstallation() ? artemisVersion : artemisTestVersionStr;
-            artemisTestVersion = convertArtemisVersion(artemisTestVersionStr);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
+        loadBuildProperties();
+        brokerImage = System.getenv(Constants.EV_BROKER_IMAGE) == null ? String.valueOf(buildProperties.get("operator").get("broker_image")) : System.getenv(Constants.EV_BROKER_IMAGE);
+        brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE) == null ? String.valueOf(buildProperties.get("operator").get("broker_init_image")) : System.getenv(Constants.EV_BROKER_INIT_IMAGE);
+        operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE)  == null ? String.valueOf(buildProperties.get("operator").get("operator_image")) : System.getenv(Constants.EV_OPERATOR_IMAGE);
+        operatorType = operatorType == null ? String.valueOf(buildProperties.get("operator").get("type")) : operatorType;
+        artemisVersion = artemisVersion == null ? String.valueOf(buildProperties.get("operator").get("artemis_container_version")) : artemisVersion;
+        operatorVersion = operatorVersion == null ? String.valueOf(buildProperties.get("operator").get("version")) : operatorVersion;
+        // Use ENV Var, project property or default to artemisVersion
+        String artemisTestVersionStr = System.getenv().get(Constants.EV_ARTEMIS_TEST_VERSION);
+        artemisTestVersionStr = artemisTestVersionStr == null || isOlmInstallation() ? artemisVersion : artemisTestVersionStr;
+        artemisTestVersion = convertArtemisVersion(artemisTestVersionStr);
 
         keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
 
@@ -114,6 +107,12 @@ public class EnvironmentOperator extends Environment {
 
         if (testLogLevel != null) {
             envVarsSB.append(Constants.EV_TEST_LOG_LEVEL).append("=").append(testLogLevel).append(Constants.LINE_SEPARATOR);
+        }
+        if (operatorType != null) {
+            envVarsSB.append(Constants.EV_OPERATOR_TYPE).append("=").append(operatorType).append(Constants.LINE_SEPARATOR);
+        }
+        if (operatorVersion != null) {
+            envVarsSB.append(Constants.EV_OPERATOR_VERSION).append("=").append(operatorVersion).append(Constants.LINE_SEPARATOR);
         }
         if (artemisVersion != null) {
             envVarsSB.append(Constants.EV_ARTEMIS_VERSION).append("=").append(artemisVersion).append(Constants.LINE_SEPARATOR);
@@ -184,7 +183,7 @@ public class EnvironmentOperator extends Environment {
 
     @Override
     public boolean isUpstreamArtemis() {
-        return artemisOperatorType.equals("upstream");
+        return operatorType.equals("activemq-artemis");
     }
 
     @Override
@@ -273,8 +272,8 @@ public class EnvironmentOperator extends Environment {
         return disabledRandomNs;
     }
 
-    public String getArtemisOperatorName() {
-        return artemisOperatorName;
+    public String getOperatorType() {
+        return operatorType;
     }
 
     public boolean isProjectManagedClusterOperator() {
@@ -351,5 +350,9 @@ public class EnvironmentOperator extends Environment {
             LOGGER.warn("Unknown serialization type! Defaulting to YAML format.");
             return SerializationFormat.YAML;
         }
+    }
+
+    public String getOperatorVersion() {
+        return operatorVersion;
     }
 }
