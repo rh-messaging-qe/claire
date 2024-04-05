@@ -165,7 +165,7 @@ public interface ArtemisConstants {
 
 
     // Log Strings
-    String IS_LIVE_LOG_MSG = " INFO  [org.apache.activemq.artemis.core.server] AMQ221007: Server is now live";
+    String IS_LIVE_LOG_MSG = " INFO  [org.apache.activemq.artemis.core.server] AMQ221007: Server is now";
     String USING_CUSTOM_LOG_MSG = "There is a custom logger configuration defined in JAVA_ARGS_APPEND: -Dlog4j2.configurationFile=";
     String USING_DEFAULT_LOG_MSG = "Using default logging configuration(console only)";
     String LOG_PATTERN_FAILED_AUTH_304 = "AMQ601716: User .* failed authentication, reason: 304";
