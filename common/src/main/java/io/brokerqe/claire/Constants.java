@@ -58,7 +58,7 @@ public interface Constants {
 
     // Test related strings
     String DEFAULT_KEYCLOAK_VERSION = "22.0.5";
-    String DEFAULT_RHSSO_VERSION = "rhbk-operator.v22.0.8-opr.2";
+    String DEFAULT_RHSSO_VERSION = "rhbk-operator.v22.0.9-opr.1";
 
     // Networking
     String AMQP = "amqp";

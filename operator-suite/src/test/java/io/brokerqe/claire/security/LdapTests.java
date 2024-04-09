@@ -190,7 +190,11 @@ public class LdapTests extends AbstractSystemTests {
 
         LOGGER.info("[{}] Trying to send messages as {} with {}", getTestNamespace(), ArtemisConstants.BOB_NAME, bobPass);
         t = assertThrows(MessagingClientException.class, consumerBob::sendMessages);
-        assertThat(t.getMessage(), containsString("does not have permission='SEND' on address"));
+        if (ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber() <= ArtemisVersion.VERSION_2_28.getVersionNumber()) {
+            assertThat(t.getMessage(), containsString("does not have permission='SEND' on address"));
+        } else {
+            assertThat(t.getMessage(), containsString("does not have permission='SEND' for queue"));
+        }
     }
 
     @Test
