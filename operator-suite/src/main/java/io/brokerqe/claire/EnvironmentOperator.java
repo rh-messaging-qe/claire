@@ -9,6 +9,7 @@ import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.helpers.SerializationFormat;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorFile;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
+import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,9 @@ public class EnvironmentOperator extends Environment {
     private final boolean projectManagedClusterOperator;
     private final String logsDirLocation;
     private final String tmpDirLocation;
+    private final String keycloakOperatorName;
     private final String keycloakVersion;
+    private final String keycloakChannel;
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     private Map<String, KubeClient> kubeClients;
     private final boolean collectTestData;
@@ -51,6 +54,7 @@ public class EnvironmentOperator extends Environment {
     private final boolean serializationEnabled;
     private final String serializationDirectory;
     private final String serializationFormat;
+    private PackageManifest pm;
 
     public EnvironmentOperator() {
         this.set(this);
@@ -98,7 +102,10 @@ public class EnvironmentOperator extends Environment {
             throw new RuntimeException(e);
         }
 
-        keycloakVersion = System.getProperty(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion());
+        keycloakOperatorName = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_OPERATOR_NAME, getDefaultKeycloakOperatorName());
+        keycloakChannel = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_CHANNEL, getDefaultKeycloakChannel());
+        keycloakVersion = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion(keycloakChannel));
+
 
         printAllUsedTestVariables();
     }
@@ -201,9 +208,17 @@ public class EnvironmentOperator extends Environment {
         return tmpDirLocation;
     }
 
+    public String getKeycloakOperatorName() {
+        return keycloakOperatorName;
+    }
+
     @Override
     public String getKeycloakVersion() {
         return keycloakVersion;
+    }
+
+    public String getKeycloakChannel() {
+        return keycloakChannel;
     }
 
     @Override
@@ -304,11 +319,36 @@ public class EnvironmentOperator extends Environment {
         }
     }
 
-    private String getDefaultKeycloakVersion() {
+    private String getDefaultKeycloakOperatorName() {
         if (isUpstreamArtemis()) {
-            return Constants.DEFAULT_KEYCLOAK_VERSION;
+            return Constants.DEFAULT_KEYCLOAK_OPERATOR_NAME;
         } else {
-            return Constants.DEFAULT_RHSSO_VERSION;
+            return Constants.DEFAULT_RHSSO_OPERATOR_NAME;
+        }
+    }
+
+    private String getDefaultKeycloakVersion(String keycloakChannel) {
+        if (getDefaultKubeClient().isOpenshiftPlatform()) {
+            return getDefaultKubeClient().getPackageManifestVersion(pm, keycloakChannel);
+        } else {
+            if (isUpstreamArtemis()) {
+                return Constants.DEFAULT_KEYCLOAK_VERSION;
+            } else {
+                return Constants.DEFAULT_RHSSO_VERSION;
+            }
+        }
+    }
+
+    private String getDefaultKeycloakChannel() {
+        if (getDefaultKubeClient().isOpenshiftPlatform()) {
+            pm = getDefaultKubeClient().getPackageManifest(keycloakOperatorName);
+            return getDefaultKubeClient().getPackageManifestDefaultChannel(pm);
+        } else {
+            if (isUpstreamArtemis()) {
+                return Constants.DEFAULT_KEYCLOAK_CHANNEL;
+            } else {
+                return Constants.DEFAULT_RHSSO_CHANNEL;
+            }
         }
     }
 

@@ -36,6 +36,8 @@ import io.fabric8.openshift.api.model.RouteBuilder;
 import io.fabric8.openshift.api.model.RoutePortBuilder;
 import io.fabric8.openshift.api.model.RouteTargetReferenceBuilder;
 import io.fabric8.openshift.api.model.TLSConfigBuilder;
+import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
+import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -53,9 +55,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Base64;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -525,6 +528,41 @@ public class KubeClient {
         HasMetadata operatorGroup = getKubernetesClient().resource(operatorGroupString).inNamespace(namespace).createOrReplace();
         DataStorer.dumpResourceToFile(operatorGroup);
         return operatorGroup;
+    }
+
+    public PackageManifest getPackageManifest(String packageName) {
+        String namespace;
+        if (isOpenshiftPlatform()) {
+            namespace = "openshift-marketplace";
+        } else {
+            namespace = "olm";
+        }
+        try {
+            LOGGER.info("Getting package manifest {} from namespace {}", packageName, namespace);
+            return ((OpenShiftClient) client).operatorHub().packageManifests().inNamespace(namespace)
+                    .list().getItems().stream().filter(e -> e.getMetadata().getName().equals(packageName)).findFirst().orElseThrow();
+        } catch (NoSuchElementException e) {
+            LOGGER.error("Package manifest {} not found in namespace {}", packageName, namespace);
+            throw e;
+        }
+    }
+
+    public String getPackageManifestDefaultChannel(PackageManifest pm) {
+        String channel = pm.getStatus().getDefaultChannel();
+        LOGGER.info("Retrieved default channel {} from package manifest {} ", channel, pm.getMetadata().getName());
+        return channel;
+    }
+
+    public String getPackageManifestVersion(PackageManifest pm, String channelName) {
+        try {
+            PackageChannel channel = pm.getStatus().getChannels().stream().filter(e -> e.getName().equals(channelName)).findFirst().orElseThrow();
+            String version =  channel.getCurrentCSV();
+            LOGGER.info("Retrieved current  version {} from channel {} from package manifest {} ", version, channelName, pm.getMetadata().getName());
+            return version;
+        } catch (NoSuchElementException e) {
+            LOGGER.error("No versions found in channel {}", channelName);
+            throw e;
+        }
     }
 
     public List<ClusterServiceVersion> getClusterServiceVersions(String namespaceName) {

@@ -21,7 +21,6 @@ import java.util.List;
 public class Rhsso extends Keycloak {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Rhsso.class);
-    private final String rhbkOperatorName = "rhbk-operator";
 
     public Rhsso(EnvironmentOperator testEnvironmentOperator, KubeClient kubeClient, String namespace) {
         super(testEnvironmentOperator, kubeClient, namespace);
@@ -69,6 +68,9 @@ public class Rhsso extends Keycloak {
     }
 
     private void applySubscription() {
+        String rhbkOperatorName = testEnvironmentOperator.getKeycloakOperatorName();
+        String keycloakChannel = testEnvironmentOperator.getKeycloakChannel();
+        String keycloakVersion = testEnvironmentOperator.getKeycloakVersion();
         String subscriptionString = String.format(
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -77,12 +79,12 @@ public class Rhsso extends Keycloak {
               name: rhbk-operator-my
               namespace: %s
             spec:
-              channel: stable-v22
+              channel: %s
               installPlanApproval: Automatic
-              name: rhbk-operator
+              name: %s
               source: redhat-operators
               startingCSV: %s
-              sourceNamespace: openshift-marketplace""", namespace, keycloakVersion);
+              sourceNamespace: openshift-marketplace""", namespace, keycloakChannel, rhbkOperatorName, keycloakVersion);
 
         HasMetadata subscription = kubeClient.getKubernetesClient().resource(subscriptionString).inNamespace(namespace).createOrReplace();
         keycloakResources.add(subscription);

@@ -45,7 +45,9 @@ public interface Constants {
     String EV_JDBC_DATA = "JDBC_DATA";
     String PROP_JDBC_DATA = "jdbc.data";
     String EV_CUSTOM_EXTRA_DELAY = "CUSTOM_EXTRA_DELAY";
+    String EV_KEYCLOAK_OPERATOR_NAME = "KEYCLOAK_OPERATOR_NAME";
     String EV_KEYCLOAK_VERSION = "KEYCLOAK_VERSION";
+    String EV_KEYCLOAK_CHANNEL = "KEYCLOAK_CHANNEL";
     String EV_USE_EXISTING_CONFIG = "USE_EXISTING_CONFIG";
     String PROP_USE_EXISTING_CONFIG = "use.existing.config";
 
@@ -57,8 +59,12 @@ public interface Constants {
     String KEY_KEYSTORE_PASSWORD = "keyStorePassword";
 
     // Test related strings
+    String DEFAULT_KEYCLOAK_OPERATOR_NAME = "keycloak-operator";
+    String DEFAULT_RHSSO_OPERATOR_NAME = "rhbk-operator";
     String DEFAULT_KEYCLOAK_VERSION = "22.0.5";
     String DEFAULT_RHSSO_VERSION = "rhbk-operator.v22.0.9-opr.1";
+    String DEFAULT_KEYCLOAK_CHANNEL = "fast";
+    String DEFAULT_RHSSO_CHANNEL = "stable-v22";
 
     // Networking
     String AMQP = "amqp";
