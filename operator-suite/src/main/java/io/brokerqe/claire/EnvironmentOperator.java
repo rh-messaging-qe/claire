@@ -328,11 +328,11 @@ public class EnvironmentOperator extends Environment {
     }
 
     private String getDefaultKeycloakVersion(String keycloakChannel) {
-        if (getDefaultKubeClient().isOpenshiftPlatform()) {
-            return getDefaultKubeClient().getPackageManifestVersion(pm, keycloakChannel);
+        if (isUpstreamArtemis()) {
+            return Constants.DEFAULT_KEYCLOAK_VERSION;
         } else {
-            if (isUpstreamArtemis()) {
-                return Constants.DEFAULT_KEYCLOAK_VERSION;
+            if (getDefaultKubeClient().isOpenshiftPlatform()) {
+                return getDefaultKubeClient().getPackageManifestVersion(pm, keycloakChannel);
             } else {
                 return Constants.DEFAULT_RHSSO_VERSION;
             }
@@ -340,12 +340,12 @@ public class EnvironmentOperator extends Environment {
     }
 
     private String getDefaultKeycloakChannel() {
-        if (getDefaultKubeClient().isOpenshiftPlatform()) {
-            pm = getDefaultKubeClient().getPackageManifest(keycloakOperatorName);
-            return getDefaultKubeClient().getPackageManifestDefaultChannel(pm);
+        if (isUpstreamArtemis()) {
+            return Constants.DEFAULT_KEYCLOAK_CHANNEL;
         } else {
-            if (isUpstreamArtemis()) {
-                return Constants.DEFAULT_KEYCLOAK_CHANNEL;
+            if (getDefaultKubeClient().isOpenshiftPlatform()) {
+                pm = getDefaultKubeClient().getPackageManifest(keycloakOperatorName);
+                return getDefaultKubeClient().getPackageManifestDefaultChannel(pm);
             } else {
                 return Constants.DEFAULT_RHSSO_CHANNEL;
             }

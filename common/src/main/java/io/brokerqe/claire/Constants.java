@@ -61,7 +61,7 @@ public interface Constants {
     // Test related strings
     String DEFAULT_KEYCLOAK_OPERATOR_NAME = "keycloak-operator";
     String DEFAULT_RHSSO_OPERATOR_NAME = "rhbk-operator";
-    String DEFAULT_KEYCLOAK_VERSION = "22.0.5";
+    String DEFAULT_KEYCLOAK_VERSION = "24.0.2";
     String DEFAULT_RHSSO_VERSION = "rhbk-operator.v22.0.9-opr.1";
     String DEFAULT_KEYCLOAK_CHANNEL = "fast";
     String DEFAULT_RHSSO_CHANNEL = "stable-v22";
