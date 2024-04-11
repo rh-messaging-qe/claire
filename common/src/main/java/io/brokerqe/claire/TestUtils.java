@@ -19,6 +19,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.PreconditionViolationException;
@@ -68,7 +69,6 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
-import java.lang.Runtime.Version;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public final class TestUtils {
@@ -351,10 +351,23 @@ public final class TestUtils {
     }
 
     // ========== String Operations ==========
-    public static String parseVersionMMM(String versionString) {
-        Version version = Version.parse(versionString);
-        String versionMMM = String.format("%d.%d.%d", version.feature(), version.interim(), version.update());
-        LOGGER.debug("Parsed version: {} from {}.", versionMMM, versionString);
+    // return Major.Minor.Micro version
+    public static String parseVersionMMM(String version) {
+        // drop "-opr-X" from version string
+        String versionMMM;
+        String versionString;
+        if (version.contains("opr")) {
+            versionString = version.substring(0, version.indexOf("-"));
+        } else {
+            versionString = version;
+        }
+        if (StringUtils.countMatches(versionString, ".") >= 2) {
+            versionMMM = versionString.replaceAll("^([0-9]+\\.[0-9]+\\.[0-9]+).*$", "$1");
+        } else {
+            LOGGER.debug("Version {} is too short!", versionString);
+            versionMMM = versionString;
+        }
+        LOGGER.debug("Parsed version: {} from {}.", versionMMM, version);
         return versionMMM;
     }
 
