@@ -850,4 +850,105 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         }
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
+
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
+    void testResourceTemplateWithKindSelector() {
+        String annotationKey = "my-test-annotation-name";
+        String annotationValue = "my-test-annotation";
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(testBrokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                .addNewResourceTemplate()
+                    .withNewResourcetemplatesSelector()
+                        .withKind("Service")
+                    .endResourcetemplatesSelector()
+                    .addToAnnotations(annotationKey, annotationValue)
+                .endResourceTemplate()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                    .endDeploymentPlan()
+                .endSpec().build();
+        ResourceManager.createArtemis(testNamespace, broker);
+        List<Service> services = ResourceManager.getKubeClient().getServicesInNamespace(testNamespace);
+        Assertions.assertThat(services)
+                .withFailMessage("No specified annotations found on services")
+                .extracting(e -> e.getMetadata().getAnnotations().get(annotationKey).equals(annotationValue))
+                .contains(true);
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
+    void testResourceTemplateWithPatch() {
+        String amqpAcceptorName = "amqp-acceptor";
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(testBrokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .addNewResourceTemplate()
+                        .withNewResourcetemplatesSelector()
+                            .withKind("Service")
+                        .endResourcetemplatesSelector()
+                        .withNewPatch()
+                            .addToAdditionalProperties(Map.of(
+                                "kind", "Service",
+                                "spec", Map.of("publishNotReadyAddresses", false)
+                            ))
+                        .endPatch()
+                    .endResourceTemplate()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                    .endDeploymentPlan()
+                    .addNewAcceptor()
+                        .withExpose(true)
+                        .withProtocols("amqp")
+                        .withPort(5672)
+                        .withSslEnabled(false)
+                        .withNeedClientAuth(false)
+                        .withName(amqpAcceptorName)
+                    .endAcceptor()
+                .endSpec().build();
+        ResourceManager.createArtemis(testNamespace, broker);
+        Service service = ResourceManager.getKubeClient().getService(testNamespace, testBrokerName + "-" + amqpAcceptorName + "-0-svc");
+        Assertions.assertThat(Boolean.TRUE.equals(service.getSpec().getPublishNotReadyAddresses()))
+                .withFailMessage("publishNotReadyAddresses is not false. Patch may not have worked")
+                .isFalse();
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
+    void testAcceptorWithPublishNotReadyAddressAsFalseByDefault() {
+        String amqpAcceptorName = "amqp-acceptor";
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(testBrokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                    .endDeploymentPlan()
+                    .addNewAcceptor()
+                        .withExpose(true)
+                        .withProtocols("amqp")
+                        .withPort(5672)
+                        .withSslEnabled(false)
+                        .withNeedClientAuth(false)
+                        .withName(amqpAcceptorName)
+                    .endAcceptor()
+                .endSpec().build();
+        ResourceManager.createArtemis(testNamespace, broker);
+        Service service = ResourceManager.getKubeClient().getService(testNamespace, testBrokerName + "-" + amqpAcceptorName + "-0-svc");
+        Assertions.assertThat(service.getSpec().getPublishNotReadyAddresses())
+                .withFailMessage("publishNotReadyAddresses should be true by default")
+                .isTrue();
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
 }
