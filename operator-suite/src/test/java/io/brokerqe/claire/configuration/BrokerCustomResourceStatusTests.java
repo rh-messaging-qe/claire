@@ -142,6 +142,10 @@ public class BrokerCustomResourceStatusTests extends AbstractSystemTests  {
             ArtemisConstants.CONDITION_REASON_VALIDATION,
             Constants.DURATION_5_MINUTES, false);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
+        if (!broker.getStatus().getConditions().stream().anyMatch(e -> e.getType().equals(ArtemisConstants.CONDITION_TYPE_DEPLOYED))) {
+            LOGGER.info("[{}] Broker pod is not ready yet. Waiting for more 30 seconds", testNamespace);
+            TestUtils.threadSleep(Constants.DURATION_30_SECONDS);
+        }
         LOGGER.info("Checking for the expected conditions on Broker CR status");
         assertThat("Default status fields didn't contain what was expected", broker.getStatus().getConditions(), containsInAnyOrder(
             hasProperty("type", is(ArtemisConstants.CONDITION_TYPE_VALID)),
