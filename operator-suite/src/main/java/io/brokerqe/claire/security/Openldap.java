@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class Openldap {
 
@@ -95,6 +96,7 @@ public class Openldap {
                             .withRunAsNonRoot(true)
                             .withNewCapabilities()
                                 .withDrop("ALL")
+                                .withAdd("NET_BIND_SERVICE")
                             .endCapabilities()
                         .endSecurityContext()
                         .withPorts(new ContainerPortBuilder()
@@ -140,6 +142,7 @@ public class Openldap {
         kubeClient.createSecretStringData(namespace, secretName, secretData, true);
         openldapDeployment = kubeClient.getKubernetesClient().resource(openldapDeployment).inNamespace(namespace).createOrReplace();
         service = kubeClient.getKubernetesClient().services().inNamespace(namespace).resource(service).createOrReplace();
+        kubeClient.getKubernetesClient().resource(openldapDeployment).waitUntilReady(2, TimeUnit.MINUTES);
     }
 
     public void undeployLdap() {

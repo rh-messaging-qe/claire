@@ -10,7 +10,9 @@ import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 import org.junit.jupiter.api.AfterAll;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
+@DisabledTestArchitecture(archs = KubernetesArchitecture.ARM64)
 public class KeycloakLdapTests extends LdapTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLdapTests.class);

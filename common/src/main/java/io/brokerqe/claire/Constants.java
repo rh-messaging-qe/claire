@@ -162,7 +162,7 @@ public interface Constants {
     String IMAGE_SYSTEMTEST_CLI_RHEA = "quay.io/messaging/cli-rhea:latest";
     String IMAGE_MQTT_CLIENT = "quay.io/rhmessagingqe/hivemq-mqtt-cli";
 //    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
-    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:2.6.3";
+    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:2.6.7";
     String IMAGE_POSTGRES = "docker.io/bitnami/postgresql:latest";
     String IMAGE_MYSQL = "docker.io/bitnami/mysql:latest";
     String IMAGE_MARIADB = "docker.io/bitnami/mariadb:latest";
