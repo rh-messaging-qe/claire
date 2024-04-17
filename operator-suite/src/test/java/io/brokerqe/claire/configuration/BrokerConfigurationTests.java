@@ -14,7 +14,6 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
-import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.WaitException;
@@ -176,8 +175,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
             .endSpec()
             .build();
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
-        KubeClient kube = getClient();
-        Service svc = kube.getService(testNamespace, broker.getMetadata().getName() + "-wconsj-0-svc");
+        Service svc = getClient().getService(testNamespace, broker.getMetadata().getName() + "-wconsj-0-svc");
         List<ServicePort> amqPorts = svc.getSpec().getPorts();
         assertThat(String.format("List of AMQ Ports did not consist of the expected items: %s", amqPorts),
             amqPorts, contains(
