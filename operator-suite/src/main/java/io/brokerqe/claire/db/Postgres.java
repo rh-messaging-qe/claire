@@ -6,6 +6,7 @@ package io.brokerqe.claire.db;
 
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
+import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.helpers.DataStorer;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -24,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class Postgres {
+public class Postgres implements Database {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Postgres.class);
     private final KubeClient kubeClient;
@@ -35,6 +36,7 @@ public class Postgres {
     private final String adminUsername = "postgres";
     private final String adminPassword = "testpassword";
     private StatefulSet postgresStatefulset;
+    private int port = 5432;
 
     Map<String, String> secretData = Map.of(
             "username", adminUsername,
@@ -49,7 +51,7 @@ public class Postgres {
             .withType("ClusterIP")
             .withPorts(new ServicePortBuilder()
                 .withName(name)
-                .withPort(5432)
+                .withPort(port)
                 .withTargetPort(new IntOrString(name))
                 .build())
             .withSelector(Map.of("app", name))
@@ -90,7 +92,7 @@ public class Postgres {
                             .withImagePullPolicy("Always")
                             .withPorts(new ContainerPortBuilder()
                                 .withName(name)
-                                .withContainerPort(5432)
+                                .withContainerPort(port)
                                 .build())
                             .editOrNewSecurityContext()
                                 .withPrivileged(false)
@@ -138,8 +140,58 @@ public class Postgres {
         kubeClient.deleteSecret(namespace, secretName);
     }
 
+    @Override
+    public String getJdbcUrl() {
+        return "jdbc:postgresql://%s:%s/postgres?user=%s&password=%s".formatted(getName(), port, getUsername(), getPassword());
+    }
+
+    @Override
+    public String getConnectionUrl() {
+        return null;
+    }
+
+    @Override
+    public String getDriverName() {
+        return null;
+    }
+
+    @Override
+    public String getDriverUrl() {
+        return null;
+    }
+
+    @Override
+    public String getDriverFile() {
+        return null;
+    }
+
+    @Override
+    public String getDriverFilename() {
+        return null;
+    }
+
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return null;
+    }
+
+    @Override
+    public String getTuneFile() {
+        return null;
+    }
+
+    @Override
+    public String getUsername() {
+        return adminUsername;
+    }
+
+    @Override
+    public String getPassword() {
+        return adminPassword;
     }
 
     public String getSecretName() {
