@@ -24,6 +24,9 @@ public abstract class ArtemisCloudClusterOperator {
     final static Logger LOGGER = LoggerFactory.getLogger(ArtemisCloudClusterOperator.class);
     public static final List<String> ZAP_LOG_LEVELS = List.of("debug", "info", "error");
     public static final String ZAP_LOG_LEVEL_OPTION = "--zap-log-level";
+    public static final String LEASE_DURATION_OPTION = "--lease-duration";
+    public static final String RENEW_DEADLINE_OPTION = "--renew-deadline";
+    public static final String RETRY_PERIOD_OPTION = "--retry-period";
     protected final String deploymentNamespace;
     protected final boolean isNamespaced;
     protected final EnvironmentOperator environmentOperator;
@@ -116,6 +119,13 @@ public abstract class ArtemisCloudClusterOperator {
             throw new ClaireRuntimeException("Operator is not installed using OLM!");
         }
     }
+
     abstract public void setOperatorLogLevel(String logLevel);
+
+    abstract public void setOperatorLeaseDuration(int durationInSeconds);
+
+    abstract public void setOperatorRenewDeadlineDuration(int durationInSeconds);
+
+    abstract public void setOperatorRetryPeriodDuration(int durationInSeconds);
 
 }

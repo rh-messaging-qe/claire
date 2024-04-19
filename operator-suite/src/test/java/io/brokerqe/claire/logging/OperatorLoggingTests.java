@@ -12,7 +12,6 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.junit.TestValidSince;
-import io.brokerqe.claire.smoke.SmokeTests;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -37,7 +36,7 @@ import static org.hamcrest.Matchers.not;
 @TestValidSince(ArtemisVersion.VERSION_2_28)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class OperatorLoggingTests extends AbstractSystemTests {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SmokeTests.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OperatorLoggingTests.class);
     private final String testNamespace = getRandomNamespaceName("log-tests", 3);
     final static String DEBUG = "DEBUG";
     final static String INFO = "INFO";

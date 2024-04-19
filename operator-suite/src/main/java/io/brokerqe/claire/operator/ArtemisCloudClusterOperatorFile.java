@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator {
 
@@ -292,33 +293,57 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         return operatorCODeployment.getMetadata().getName();
     }
 
+    public void updateArgs(String oldValue, String newValue) {
+        Deployment deployment = kubeClient.getDeployment(getDeploymentNamespace(), getOperatorName());
+        Pod pod = kubeClient.getFirstPodByPrefixName(getDeploymentNamespace(), getOperatorName());
+        List<String> args = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getArgs();
+        List<String> argsUpdated;
+
+        if (args.stream().anyMatch(e -> e.contains(oldValue))) {
+            argsUpdated = args.stream().map(f -> {
+                if (f.contains(oldValue)) {
+                    return newValue;
+                } else {
+                    return f;
+                }
+            }).collect(Collectors.toList());
+        } else {
+            argsUpdated = new ArrayList<>(args);
+            argsUpdated.add(newValue);
+        }
+
+        if (!args.equals(argsUpdated)) {
+            deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setArgs(argsUpdated);
+            kubeClient.setDeployment(getDeploymentNamespace(), deployment);
+            kubeClient.waitForPodReload(getDeploymentNamespace(), pod, getOperatorName());
+            LOGGER.info("[{}] Changed operator {} args {} to {}", getDeploymentNamespace(), getOperatorName(), oldValue, newValue);
+        } else {
+            LOGGER.debug("[{}] Reload is not needed, operator {} args are the same", getDeploymentNamespace(), getOperatorName());
+        }
+    }
+
     @Override
     public void setOperatorLogLevel(String logLevel) {
         if (ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
-            Deployment deployment = kubeClient.getDeployment(getDeploymentNamespace(), getOperatorName());
-            Pod podOld = kubeClient.getFirstPodByPrefixName(getDeploymentNamespace(), getOperatorName());
-            List<String> args = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getArgs();
-            List<String> argsUpdated = new ArrayList<>();
-
-            for (String arg : args) {
-                if (arg.contains(ZAP_LOG_LEVEL_OPTION)) {
-                    argsUpdated.add(ZAP_LOG_LEVEL_OPTION + "=" + logLevel.toLowerCase(Locale.ROOT));
-                } else {
-                    argsUpdated.add(arg);
-                }
-            }
-
-            if (!args.equals(argsUpdated)) {
-                deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setArgs(argsUpdated);
-                kubeClient.setDeployment(getDeploymentNamespace(), deployment);
-                kubeClient.waitForPodReload(getDeploymentNamespace(), podOld, getOperatorName());
-                LOGGER.info("[{}] Changed operator {} log level to {}", getDeploymentNamespace(), getOperatorName(), logLevel);
-            } else {
-                LOGGER.debug("[{}] Reload is not needed, zap-log-level is {} as expected", getDeploymentNamespace(), logLevel);
-            }
+            updateArgs(ZAP_LOG_LEVEL_OPTION, ZAP_LOG_LEVEL_OPTION + "=" + logLevel.toLowerCase(Locale.ROOT));
         } else {
             LOGGER.error("[{}] Unable to set provided log level to operator {}", getDeploymentNamespace(), getOperatorName());
         }
+    }
+
+    @Override
+    public void setOperatorLeaseDuration(int durationInSeconds) {
+        updateArgs(LEASE_DURATION_OPTION, LEASE_DURATION_OPTION + "=" + durationInSeconds);
+    }
+
+    @Override
+    public void setOperatorRenewDeadlineDuration(int durationInSeconds) {
+        updateArgs(RENEW_DEADLINE_OPTION, RENEW_DEADLINE_OPTION + "=" + durationInSeconds);
+    }
+
+    @Override
+    public void setOperatorRetryPeriodDuration(int durationInSeconds) {
+        updateArgs(RETRY_PERIOD_OPTION, RETRY_PERIOD_OPTION + "=" + durationInSeconds);
     }
 
     public static String getLastVersionFromOperatorFile(String imageType, Deployment operator) {

@@ -12,6 +12,7 @@ import io.brokerqe.claire.helpers.DataStorer;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
@@ -185,38 +186,59 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         LOGGER.info("[{}] [OLM] Successfully undeployed ArtemisCloudOperator", deploymentNamespace);
     }
 
-    @Override
-    public void setOperatorLogLevel(String logLevel) {
-        LOGGER.debug("[{}] Updating subscription {} with log level {}", getDeploymentNamespace(), subscriptionName, logLevel);
+    public void updateSubscriptionEnvVar(String name, String value) {
         Subscription subscription = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).withName(subscriptionName).get();
         SubscriptionConfig subscriptionConfig = subscription.getSpec().getConfig();
         if (subscriptionConfig == null) {
             // Create new SubscriptionConfig
             subscriptionConfig = new SubscriptionConfigBuilder()
-                .withEnv(List.of(
-                    new EnvVarBuilder()
-                        .withName("ARGS")
-                        .withValue(ZAP_LOG_LEVEL_OPTION + "=" + logLevel)
-                        .build()
-                )).build();
+                    .withEnv(List.of(
+                            new EnvVarBuilder()
+                                    .withName("ARGS")
+                                    .withValue(name + "=" + value)
+                                    .build()
+                    )).build();
         } else {
             // Update existing EnvVars
             List<EnvVar> envVars = subscriptionConfig.getEnv();
             for (EnvVar envVar : envVars) {
                 if (envVar.getName().equals("ARGS")) {
-                    if (envVar.getValue().contains(ZAP_LOG_LEVEL_OPTION)) {
-                        String newValue = envVar.getValue().replaceFirst(ZAP_LOG_LEVEL_OPTION + "=\\w+",
-                                ZAP_LOG_LEVEL_OPTION + "=" + logLevel);
+                    if (envVar.getValue().contains(name)) {
+                        String newValue = envVar.getValue().replaceFirst(name + "=\\w+",
+                                name + "=" + value);
                         envVar.setValue(newValue);
                     } else {
-                        envVar.setValue(envVar.getValue() + " " + ZAP_LOG_LEVEL_OPTION + "=" + logLevel);
+                        envVar.setValue(envVar.getValue() + " " + name + "=" + value);
                     }
                     subscriptionConfig.setEnv(envVars);
                 }
             }
         }
+        Pod operatorPod = kubeClient.getFirstPodByPrefixName(getDeploymentNamespace(), getOperatorName());
         subscription.getSpec().setConfig(subscriptionConfig);
         ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().resource(subscription).createOrReplace();
+        kubeClient.waitForPodReload(getDeploymentNamespace(), operatorPod, getOperatorName());
+    }
+
+    @Override
+    public void setOperatorLogLevel(String logLevel) {
+        LOGGER.debug("[{}] Updating subscription {} with log level {}", getDeploymentNamespace(), subscriptionName, logLevel);
+        updateSubscriptionEnvVar(ZAP_LOG_LEVEL_OPTION, logLevel);
+    }
+
+    @Override
+    public void setOperatorLeaseDuration(int durationInSeconds) {
+        updateSubscriptionEnvVar(LEASE_DURATION_OPTION, String.valueOf(durationInSeconds));
+    }
+
+    @Override
+    public void setOperatorRenewDeadlineDuration(int durationInSeconds) {
+        updateSubscriptionEnvVar(RENEW_DEADLINE_OPTION, String.valueOf(durationInSeconds));
+    }
+
+    @Override
+    public void setOperatorRetryPeriodDuration(int durationInSeconds) {
+        updateSubscriptionEnvVar(RETRY_PERIOD_OPTION, String.valueOf(durationInSeconds));
     }
 
     protected void updateSubscription(Subscription updatedSubscription) {
