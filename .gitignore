@@ -20,3 +20,4 @@ standalone-suite/dockerfiles/artemis/*.gz
 standalone-suite/dockerfiles/artemis/*.xz
 standalone-suite/certificates/
 standalone-suite/https_console_tune.yaml
+standalone-suite/standalone.properties.bak

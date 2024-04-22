@@ -8,6 +8,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.EnvironmentStandalone;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestValidSince;
@@ -54,8 +55,8 @@ public class VersionTests extends AbstractSystemTests {
                     .build();
             HttpClient client = HttpClient.newHttpClient();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String testVersion = String.valueOf(getEnvironment().getArtemisTestVersion().getAmqBrokerNumber());
-            String currentVersion = response.body().replaceAll("\\.", "");
+            String testVersion = String.valueOf(((EnvironmentStandalone) getEnvironment()).getArtemisBuildVersion());
+            String currentVersion = response.body();
             Assertions.assertThat(currentVersion).contains(testVersion);
         } catch (Exception e) {
             throw new ClaireRuntimeException(e.getMessage(), e);
