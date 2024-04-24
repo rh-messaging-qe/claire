@@ -59,7 +59,6 @@ checkstyle:
 
 ### Standalone targets
 standalone_clean:
-	mv standalone-suite/standalone.properties.bak standalone-suite/standalone.properties || true
 	rm -rf ${STANDALONE_ARTEMIS_DIR}
 
 standalone_prepare: standalone_prepare_dirs standalone_download_zip standalone_generate_artemis_default_cfg
@@ -89,7 +88,6 @@ standalone_download_zip:
 	find ${STANDALONE_ARTEMIS_INSTALL_DIR} -maxdepth 1 -type d -name apache-artemis-* -exec rmdir \{\} \;
 
 standalone_generate_artemis_default_cfg:
-	sed -i.bak -e 's/artemis.build.version=/artemis.build.version=${ARTEMIS_VERSION}/' standalone-suite/standalone.properties
 	# create default instance
 	${STANDALONE_ARTEMIS_INSTALL_DIR}/bin/artemis create --force --name ${STANDALONE_INSTANCE_NAME} \
 		--user ${STANDALONE_USER} --password ${STANDALONE_PASSWORD} \

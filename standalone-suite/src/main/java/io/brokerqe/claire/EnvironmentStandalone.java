@@ -34,7 +34,6 @@ public class EnvironmentStandalone extends Environment {
     private final String tmpDirLocation;
     private final boolean logContainers;
     private final boolean collectTestData;
-    private final String artemisBuildVersion;
     private final String artemisContainerImage;
     private final String artemisContainerJavaHome;
     private final String nfsServerContainerImage;
@@ -64,10 +63,6 @@ public class EnvironmentStandalone extends Environment {
         logContainers = Boolean.parseBoolean(getConfigurationValue(Constants.EV_LOG_CONTAINERS, Constants.PROP_LOG_CONTAINERS,
                 String.valueOf(Constants.DEFAULT_LOG_CONTAINERS)));
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
-
-        artemisBuildVersion = getConfigurationValue(Constants.EV_ARTEMIS_BUILD_VERSION,
-                Constants.PROP_ARTEMIS_BUILD_VERSION, "");
-
         artemisContainerImage = getConfigurationValue(Constants.EV_ARTEMIS_CONTAINER_IMAGE,
                 Constants.PROP_ARTEMIS_CONTAINER_IMAGE, Constants.DEFAULT_ARTEMIS_CONTAINER_IMAGE);
 
@@ -128,7 +123,6 @@ public class EnvironmentStandalone extends Environment {
                 Constants.PROP_LOG_LEVEL + ": " + logLevel + Constants.LINE_SEPARATOR +
                 Constants.PROP_LOG_DIR + ": " + logsDirLocation + Constants.LINE_SEPARATOR +
                 Constants.PROP_LOG_CONTAINERS + ": " + logContainers + Constants.LINE_SEPARATOR +
-                Constants.PROP_ARTEMIS_BUILD_VERSION + ": " + artemisBuildVersion + Constants.LINE_SEPARATOR +
                 Constants.PROP_ARTEMIS_CONTAINER_IMAGE + ": " + artemisContainerImage + Constants.LINE_SEPARATOR +
                 Constants.PROP_ARTEMIS_CONTAINER_JAVA_HOME + ": " + artemisContainerJavaHome + Constants.LINE_SEPARATOR +
                 Constants.PROP_NFS_SERVER_CONTAINER_IMAGE + ": " + nfsServerContainerImage + Constants.LINE_SEPARATOR +
@@ -240,9 +234,6 @@ public class EnvironmentStandalone extends Environment {
         return logContainers;
     }
 
-    public String getArtemisBuildVersion() {
-        return artemisBuildVersion;
-    }
     public String getArtemisContainerImage() {
         return artemisContainerImage;
     }

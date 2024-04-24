@@ -7,42 +7,47 @@ package io.brokerqe.claire;
 import java.util.Arrays;
 
 public enum ArtemisVersion {
-    VERSION_2_10(2100),
-    VERSION_2_11(2110),
-    VERSION_2_12(2120),
-    VERSION_2_13(2130),
-    VERSION_2_14(2140),
-    VERSION_2_15(2150),
-    VERSION_2_16(2160),
-    VERSION_2_17(2170),
-    VERSION_2_18(2180),
-    VERSION_2_19(2190),
-    VERSION_2_20(2200),
-    VERSION_2_21(2210),
-    VERSION_2_22(2220),
-    VERSION_2_23(2230),
-    VERSION_2_24(2240),
-    VERSION_2_25(2250),
-    VERSION_2_26(2260),
-    VERSION_2_27(2270),
-    VERSION_2_28(2280),
-    VERSION_2_29(2290),
-    VERSION_2_30(2300),
-    VERSION_2_31(2310),
-    VERSION_2_32(2320),
-    VERSION_2_33(2330),
-    VERSION_2_34(2340),
-    VERSION_2_35(2350),
-    VERSION_2_36(2360);
+    VERSION_2_10(2100, null),
+    VERSION_2_11(2110, null),
+    VERSION_2_12(2120, null),
+    VERSION_2_13(2130, null),
+    VERSION_2_14(2140, null),
+    VERSION_2_15(2150, null),
+    VERSION_2_16(2160, null),
+    VERSION_2_17(2170, null),
+    VERSION_2_18(2180, null),
+    VERSION_2_19(2190, null),
+    VERSION_2_20(2200, null),
+    VERSION_2_21(2210, 7100),
+    VERSION_2_22(2220, null),
+    VERSION_2_23(2230, null),
+    VERSION_2_24(2240, null),
+    VERSION_2_25(2250, null),
+    VERSION_2_26(2260, null),
+    VERSION_2_27(2270, null),
+    VERSION_2_28(2280, 7110),
+    VERSION_2_29(2290, null),
+    VERSION_2_30(2300, null),
+    VERSION_2_31(2310, null),
+    VERSION_2_32(2320, null),
+    VERSION_2_33(2330, 7120),
+    VERSION_2_34(2340, null),
+    VERSION_2_35(2350, null),
+    VERSION_2_36(2360, null);
 
     private final int versionNumber;
+    private final Integer amqBrokerVersion;
 
-    ArtemisVersion(int version) {
+    ArtemisVersion(int version, Integer amqBrokerVersion) {
         this.versionNumber = version;
+        this.amqBrokerVersion = amqBrokerVersion;
     }
 
     public int getVersionNumber() {
         return versionNumber;
+    }
+    public Integer getAmqBrokerNumber() {
+        return amqBrokerVersion;
     }
 
     private int getOrdinalCustomPosition() {
