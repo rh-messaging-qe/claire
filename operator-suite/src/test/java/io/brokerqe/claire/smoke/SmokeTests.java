@@ -9,15 +9,23 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.junit.TestSupportedPlatform;
+import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -26,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -331,6 +340,42 @@ public class SmokeTests extends AbstractSystemTests {
 
     @Test
     @Tag(Constants.TAG_SMOKE)
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
+    @TestSupportedPlatform(KubernetesPlatform.OPENSHIFT)
+    void testConsoleProvidedVersion() {
+        Assumptions.assumeThat(testEnvironmentOperator.isUpstreamArtemis()).isFalse();
+
+        String brokerName = "smoke";
+        ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(brokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                        .withImage("placeholder")
+                    .endDeploymentPlan()
+                    .editOrNewConsole()
+                        .withExpose(true)
+                        .withSslEnabled(false)
+                    .endConsole()
+                .endSpec()
+                .build();
+
+        ResourceManager.createArtemis(testNamespace, artemis, true);
+
+        HasMetadata webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace,
+                brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX).get(0);
+        String serviceUrl = getClient().getExternalAccessServiceUrl(testNamespace, webserviceUrl.getMetadata().getName());
+        String url = "https://" + serviceUrl + "/redhat-branding/plugin/amq-broker-version";
+        patchRouteTls(webserviceUrl, "Redirect", "edge");
+        checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, testEnvironmentOperator.getArtemisVersion());
+
+    }
+
+    @Test
+    @Tag(Constants.TAG_SMOKE)
     void testDefaultOperatorVersion() {
         String expectedVersion = getExpectedVersion();
         assumeFalse(expectedVersion.equals("main"), "version supplied is \"main\", skipping test.");
@@ -349,4 +394,5 @@ public class SmokeTests extends AbstractSystemTests {
             throw new AssertionError(String.format("Expected pattern %s was not found", expectedOperatorVersionPattern));
         }
     }
+
 }
