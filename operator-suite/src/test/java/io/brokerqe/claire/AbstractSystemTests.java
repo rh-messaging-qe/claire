@@ -148,6 +148,21 @@ public abstract class AbstractSystemTests implements TestSeparator {
         }
     }
 
+    public void containExpectedSelectors(Map<String, String> selectors, Map<String, String> expectedSelectors) {
+        expectedSelectors.entrySet().forEach(e -> {
+            assertThat("Selectors do not contain expected key", selectors.containsKey(e.getKey()));
+            assertThat("Selectors do not contain expected value", selectors.containsValue(e.getValue()));
+        });
+    }
+
+    public void containExpectedLabels(HasMetadata resource, Map<String, String> expectedLabels) {
+        Map<String, String> labels = resource.getMetadata().getLabels();
+        expectedLabels.entrySet().forEach(e -> {
+            assertThat("Selectors do not contain expected key", labels.containsKey(e.getKey()));
+            assertThat("Selectors do not contain expected value", labels.containsValue(e.getValue()));
+        });
+    }
+
     /******************************************************************************************************************
      *  Default setup and teardown methods
      ******************************************************************************************************************/

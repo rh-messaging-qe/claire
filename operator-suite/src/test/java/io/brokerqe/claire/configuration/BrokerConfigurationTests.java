@@ -27,6 +27,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.openshift.api.model.Route;
 import org.assertj.core.api.Assertions;
@@ -948,5 +950,26 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .withFailMessage("publishNotReadyAddresses should be true by default")
                 .isTrue();
         ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_28)
+    void testOperatorSelector() {
+        String brokerName = "brk-selector";
+        ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, brokerName);
+        Deployment operatorDeployment = getClient().getDeployment(testNamespace, operator.getOperatorName());
+        ReplicaSet operatorRS = getClient().getReplicaSetsWithPrefix(testNamespace, operator.getOperatorName()).get(0);
+        Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
+
+        LOGGER.info("[{}] Check selectors in Operator Deployment and ReplicaSet", testNamespace);
+        // amq-broker-operator --> operator.getOperatorOldName();
+        Map<String, String> expectedSelectors = Map.of("name", operator.getOperatorOldName());
+        containExpectedSelectors(operatorDeployment.getSpec().getSelector().getMatchLabels(), expectedSelectors);
+        containExpectedSelectors(operatorRS.getSpec().getSelector().getMatchLabels(), expectedSelectors);
+
+        LOGGER.info("[{}] Check labels in deployed operator Pod {}", testNamespace, operatorPod.getMetadata().getName());
+        containExpectedLabels(operatorPod, expectedSelectors);
+
+        ResourceManager.deleteArtemis(testNamespace, artemisBroker);
     }
 }
