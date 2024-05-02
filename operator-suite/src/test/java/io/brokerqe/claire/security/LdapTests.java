@@ -17,6 +17,8 @@ import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
+import io.brokerqe.claire.KubernetesArchitecture;
+import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +35,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
+@DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
 public class LdapTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LdapTests.class);

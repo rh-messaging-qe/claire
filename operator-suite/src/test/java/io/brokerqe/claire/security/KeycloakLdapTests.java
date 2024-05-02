@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
-@DisabledTestArchitecture(archs = KubernetesArchitecture.ARM64)
+@DisabledTestArchitecture(archs = {KubernetesArchitecture.ARM64, KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
 public class KeycloakLdapTests extends LdapTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLdapTests.class);
@@ -75,7 +75,7 @@ public class KeycloakLdapTests extends LdapTests {
                             org.apache.activemq.jaas.properties.user="artemis-users.properties"
                             org.apache.activemq.jaas.properties.role="artemis-roles.properties"
                             baseDir="/home/jboss/amq-broker/etc";
-    
+
                        org.keycloak.adapters.jaas.BearerTokenLoginModule sufficient
                             keycloak-config-file="${secret.mount}/_keycloak-bearer-token.json"
                             role-principal-class=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
