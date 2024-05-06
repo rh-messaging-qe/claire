@@ -120,6 +120,15 @@ public class BundledArtemisClient {
                             headers.add(name.trim().toLowerCase(Locale.ROOT));
                         }
                     }
+                // when headers are separated on 2 lines, concat them properly
+                } else if (line.contains("COUNT") && line.contains("ACKED") && line.contains("ADDED")) {
+                    int counter = -1;
+                    for (String name : line.split("\\|")) {
+                        if (!name.trim().isEmpty()) {
+                            headers.set(counter, headers.get(counter) + "_" + name.trim().toLowerCase(Locale.ROOT));
+                        }
+                        counter++;
+                    }
                 } else {
                     mappedLineOutput = new HashMap<>();
                     String[] splittedLine = line.split("\\|");
