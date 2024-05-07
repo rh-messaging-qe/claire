@@ -1,18 +1,20 @@
 .idea/
-.vscode/
 *.iml
 /target/*
 */target/*
 */test-logs/
 */test-tmp/*
 
+pom.xml.versionsBackup
 test_upgrade_plan.yaml
 version_map.yaml
 common.yaml
 settings.xml
+performance/
 operator-suite/artemis/
 operator-suite/certificates/
 operator-suite/operator-suite.log
+operator-suite/serialization-dump/
 standalone-suite/artemis/
 standalone-suite/standalone-suite.log
 standalone-suite/test_cfg/

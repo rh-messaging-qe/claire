@@ -3,7 +3,7 @@
 # License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
 #
 ROOT_DIR                                          = $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-MVN_DEFAULT_CMD                                   = mvn -T 1.5C --no-transfer-progress
+MVN_DEFAULT_CMD                                   = mvn -T 1.5C --no-transfer-progress --update-snapshots
 MVN_TEST_CMD                                      = ${MVN_DEFAULT_CMD} -Dfailsafe.rerunFailingTestsCount=3 failsafe:integration-test
 WGET_CMD                                          = wget -nv -c
 
@@ -47,11 +47,12 @@ endif
 clean: clean_maven standalone_clean operator_clean
 
 clean_maven:
-	${MVN_DEFAULT_CMD} clean
+	${MVN_DEFAULT_CMD} --no-transfer-progress versions:revert clean
 
 build: standalone_prepare operator_prepare build_maven
 
 build_maven:
+	${MVN_DEFAULT_CMD} versions:update-property -DallowDowngrade=true -Dproperty=artemiscloud-crd.version -DnewVersion=[${OPERATOR_VERSION}]
 	${MVN_DEFAULT_CMD} -DskipTests install
 
 checkstyle:
@@ -106,7 +107,7 @@ operator_prepare_dirs:
 operator_prepare: operator_prepare_dirs
 
 operator_build_java:
-	${MVN_DEFAULT_CMD} versions:update-property -Dproperty=artemiscloud-crd.version -DnewVersion=${OPERATOR_VERSION}
+	${MVN_DEFAULT_CMD} versions:update-property -DallowDowngrade=true -Dproperty=artemiscloud-crd.version -DnewVersion=[${OPERATOR_VERSION}]
 	${MVN_DEFAULT_CMD} --projects :operator-suite install -DskipTests
 
 operator_build: operator_prepare operator_build_java

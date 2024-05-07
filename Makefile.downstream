@@ -37,12 +37,13 @@ clean: clean_maven standalone_clean operator_clean
 	- rm -f ${ROOT_DIR}/{settings.xml,version_map.yaml,common.yaml}
 
 clean_maven:
-	mvn --no-transfer-progress clean
+	mvn --no-transfer-progress versions:revert clean
 
 build: standalone_prepare operator_prepare build_maven
 
 build_maven:
-	${MVN_DEFAULT_CMD} -DskipTests -Dartemiscloud-crd.version=${OPERATOR_CR_VERSION} install
+	${MVN_DEFAULT_CMD} versions:update-property -DallowDowngrade=true -Dproperty=artemiscloud-crd.version -DnewVersion=[${OPERATOR_CR_VERSION}]
+	${MVN_DEFAULT_CMD} -DskipTests install
 
 checkstyle: get_settings_xml_file
 	${MVN_DEFAULT_CMD} checkstyle:check
@@ -51,8 +52,8 @@ get_settings_xml_file:
 	${WGET_CMD} "https://gitlab.cee.redhat.com/amq-broker/amq-broker-ci/-/raw/main/resources/claire/claire-settings.xml" -O "${ROOT_DIR}/settings.xml"
 
 get_metadata_files:
-	${WGET_CMD} "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/version_map.yaml" -P "${ROOT_DIR}"
-	${WGET_CMD} "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/common.yaml" -P "${ROOT_DIR}"
+	${WGET_CMD} "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/version_map.yaml" -O "${ROOT_DIR}/version_map.yaml"
+	${WGET_CMD} "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/common.yaml" -O "${ROOT_DIR}/common.yaml"
 
 ### Standalone targets
 standalone_clean:
@@ -117,7 +118,7 @@ operator_prepare_urls:
 operator_prepare: get_settings_xml_file get_metadata_files operator_prepare_urls operator_prepare_dirs
 
 operator_build_java:
-	${MVN_DEFAULT_CMD} versions:update-property -Dproperty=artemiscloud-crd.version -DnewVersion=${OPERATOR_CR_VERSION}
+	${MVN_DEFAULT_CMD} versions:update-property -DallowDowngrade=true -Dproperty=artemiscloud-crd.version -DnewVersion=[${OPERATOR_CR_VERSION}]
 	${MVN_DEFAULT_CMD} --projects :operator-suite install -DskipTests
 
 operator_build: operator_prepare operator_build_java
