@@ -11,8 +11,8 @@ MVN_DEFAULT_CMD                                   = mvn --update-snapshots --no-
 MVN_TEST_CMD                                      = ${MVN_DEFAULT_CMD} failsafe:integration-test
 WGET_CMD                                          = wget -nv -c
 
-ARTEMIS_VERSION                                  ?= 7.11.6
-RELEASE_TYPE                                     ?= released
+ARTEMIS_VERSION                                  ?= 7.12.0
+RELEASE_TYPE                                     ?= candidate
 
 OPERATOR_ROOT_DIR                                 = ${ROOT_DIR}/operator-suite
 
