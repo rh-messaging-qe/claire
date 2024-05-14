@@ -121,9 +121,12 @@ public class MessageMigrationTests extends AbstractSystemTests {
         String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
 
         broker = sendMessagesAndScaledown(broker, pod3, allDefaultPort, myAddress, msgExpected, 3);
+        int msgSum = 0;
         for (Pod pod : getClient().listPodsByPrefixName(testNamespace, brokerName)) {
-            checkMessageCount(testNamespace, pod, myAddress.getSpec().getQueueName(), msgExpected);
+            msgSum += getMessageCount(testNamespace, pod, myAddress.getSpec().getQueueName());
         }
+        assertThat("expected number of messages on pods is not same!", msgSum, equalTo(msgExpected));
+
         MessagingClient receiver = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, pod0, allDefaultPort, myAddress, 100);
         int received = receiver.receiveMessages();
         assertThat("Received different amount of messages than expected", received, equalTo(msgExpected));
