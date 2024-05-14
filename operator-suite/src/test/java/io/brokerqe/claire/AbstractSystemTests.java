@@ -366,17 +366,26 @@ public abstract class AbstractSystemTests implements TestSeparator {
     }
 
     // Messaging methods
-    public Map<String, Map<String, String>> checkMessageCount(String namespace, Pod brokerPod) {
-        return checkMessageCount(namespace, brokerPod, null);
+    public void checkMessageCount(String namespace, Pod brokerPod, String queue, int expectedMessageCount) {
+        int actual = getMessageCount(namespace, brokerPod, queue);
+        assertThat("Unexpected amount of messages in queue", actual, equalTo(expectedMessageCount));
     }
 
-    public Map<String, Map<String, String>> checkMessageCount(String namespace, Pod brokerPod, Map<String, String> queueStatOptions) {
+    public int getMessageCount(String namespace, Pod brokerPod, String queue) {
+        Map<String, Map<String, String>> queueStats = getMessageCount(namespace, brokerPod, null, queue);
+        return Integer.parseInt(queueStats.get(queue).get("message_count"));
+    }
+
+    public Map<String, Map<String, String>> getMessageCount(String namespace, Pod brokerPod, Map<String, String> queueStatOptions, String queueName) {
         if (queueStatOptions == null) {
             queueStatOptions = new HashMap<>(Map.of(
                     "maxColumnSize", "-1",
                     "maxRows", "1000",
                     "url", "tcp://" + brokerPod.getMetadata().getName() + ":61616"
             ));
+        }
+        if (queueName != null) {
+            queueStatOptions.put("queueName", queueName);
         }
         BundledArtemisClient bac = new BundledArtemisClient(new BundledClientDeployment(namespace, brokerPod), ArtemisCommand.QUEUE_STAT, queueStatOptions);
         Map<String, Map<String, String>> queueStats = (Map<String, Map<String, String>>) bac.executeCommand();

@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Base64;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -283,14 +284,19 @@ public class KubeClient {
         }
     }
 
-    public void reloadPodWithWait(String namespaceName, Pod pod, String podName) {
+    public Pod reloadPodWithWait(String namespaceName, Pod pod, String podName) {
         this.getKubernetesClient().resource(pod).inNamespace(namespaceName).delete();
-        waitForPodReload(namespaceName, pod, podName);
+        return waitForPodReload(namespaceName, pod, podName);
     }
 
     public void waitUntilPodIsReady(String namespaceName, Pod pod) {
         client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(3, TimeUnit.MINUTES);
     }
+
+    public void waitUntilPodCondition(String namespaceName, Pod pod, Predicate<Pod> condition) {
+        client.pods().inNamespace(namespaceName).resource(pod).waitUntilCondition(condition, 3, TimeUnit.MINUTES);
+    }
+
 
     public void waitUntilPodIsDeleted(String namespaceName, Pod pod) {
         TestUtils.waitFor("deletion of pod " + pod.getMetadata().getName(), Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {

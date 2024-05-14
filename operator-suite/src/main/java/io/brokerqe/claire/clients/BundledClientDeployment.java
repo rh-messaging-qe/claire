@@ -56,7 +56,7 @@ public class BundledClientDeployment implements KubernetesDeployableClient {
 
     @Override
     public String getExecutableHome() {
-        return "./amq-broker/bin/";
+        return "./amq-broker/bin";
     }
 
     @Override

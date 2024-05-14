@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -97,8 +96,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         MessagingClient coreClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, pod, allDefaultPort, address, msgExpected);
         int sent = coreClient.sendMessages();
         assertThat("Sent different amount of messages than expected", sent, equalTo(msgExpected));
-        // TODO assert number of messages! Check does nothing so far!
-        Map<String, Map<String, String>> queueStats = checkMessageCount(testNamespace, pod);
+        checkMessageCount(testNamespace, pod, address.getSpec().getQueueName(), msgExpected);
         int initialSize = broker.getSpec().getDeploymentPlan().getSize();
         broker = doArtemisScale(testNamespace, broker, initialSize, targetSize);
         return broker;
@@ -124,8 +122,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
 
         broker = sendMessagesAndScaledown(broker, pod3, allDefaultPort, myAddress, msgExpected, 3);
         for (Pod pod : getClient().listPodsByPrefixName(testNamespace, brokerName)) {
-            // TODO check real MessageCount??
-            checkMessageCount(testNamespace, pod);
+            checkMessageCount(testNamespace, pod, myAddress.getSpec().getQueueName(), msgExpected);
         }
         MessagingClient receiver = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, pod0, allDefaultPort, myAddress, 100);
         int received = receiver.receiveMessages();

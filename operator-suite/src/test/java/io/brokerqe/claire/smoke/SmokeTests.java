@@ -116,7 +116,6 @@ public class SmokeTests extends AbstractSystemTests {
 
         // Messaging tests
         int msgsExpected = 10;
-
         MessagingClient messagingClientAmqp = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, brokerPod,
                 amqpPort.toString(), myAddress, msgsExpected);
         int sent = messagingClientAmqp.sendMessages();
