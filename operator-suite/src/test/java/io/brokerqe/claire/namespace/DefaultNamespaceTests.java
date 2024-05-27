@@ -9,10 +9,12 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
@@ -52,6 +54,7 @@ public class DefaultNamespaceTests extends AbstractSystemTests {
 
     @Test
     @Tag(Constants.TAG_OPERATOR)
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
     void testNonRootDeployment() {
         Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire", 5672);
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
