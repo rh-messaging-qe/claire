@@ -953,7 +953,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
-    @TestValidSince(ArtemisVersion.VERSION_2_28)
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
     void testOperatorSelector() {
         String brokerName = "brk-selector";
         ActiveMQArtemis artemisBroker = ResourceManager.createArtemis(testNamespace, brokerName);
