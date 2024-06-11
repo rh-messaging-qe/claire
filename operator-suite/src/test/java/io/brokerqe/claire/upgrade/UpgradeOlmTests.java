@@ -9,6 +9,8 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.clients.ClientType;
+import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.junit.DisableOnNoUpgradePlan;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorOlm;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
@@ -32,6 +34,8 @@ import java.util.stream.Stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 @DisableOnNoUpgradePlan
 public class UpgradeOlmTests extends AbstractSystemTests {
@@ -133,6 +137,20 @@ public class UpgradeOlmTests extends AbstractSystemTests {
         Pod brokerVersionPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         String brokerVersionLogs = getClient().getLogsFromPod(brokerVersionPod);
         assertThat(brokerVersionLogs, anyOf(containsString(brokerVersionOldString), containsString(brokerVersionNewString)));
+
+        LOGGER.info("[{}] Test messaging on this new broker {}", testNamespace, brokerVersionPod);
+        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        int msgsExpected = 10;
+        String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, brokerVersion), "all");
+        MessagingClient messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerVersionPod, allDefaultPort, myAddress, msgsExpected);
+        int sent = messagingClient.sendMessages();
+        int received = messagingClient.receiveMessages();
+
+        LOGGER.info("[{}] Sent {} - Received {}", testNamespace, sent, received);
+        assertThat(sent, equalTo(msgsExpected));
+        assertThat(sent, equalTo(received));
+        assertThat(messagingClient.compareMessages(), is(true));
+
         ResourceManager.deleteArtemis(testNamespace, brokerVersion);
     }
 
