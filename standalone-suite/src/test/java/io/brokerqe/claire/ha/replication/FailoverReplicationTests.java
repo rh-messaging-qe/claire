@@ -12,6 +12,8 @@ import io.brokerqe.claire.client.JmsClient;
 import io.brokerqe.claire.client.AmqpUtil;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.ZookeeperContainerCluster;
+import jakarta.jms.Message;
+import jakarta.jms.Queue;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,8 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.Message;
-import javax.jms.Queue;
 import java.util.Map;
 
 public class FailoverReplicationTests extends AbstractSystemTests {

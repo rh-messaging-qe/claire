@@ -58,6 +58,9 @@ build_maven:
 checkstyle:
 	${MVN_DEFAULT_CMD} checkstyle:check
 
+display_mvn_property_updates:
+	${MVN_DEFAULT_CMD} versions:display-property-updates
+
 ### Standalone targets
 standalone_clean:
 	rm -rf ${STANDALONE_ARTEMIS_DIR}

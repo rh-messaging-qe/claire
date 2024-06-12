@@ -19,6 +19,7 @@ import io.brokerqe.claire.container.YacfgArtemisContainer;
 import io.brokerqe.claire.container.ZookeeperContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helper.ContainerHelper;
+import jakarta.jms.ConnectionFactory;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxOptions;
@@ -28,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
 
-import javax.jms.ConnectionFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.ArrayList;
