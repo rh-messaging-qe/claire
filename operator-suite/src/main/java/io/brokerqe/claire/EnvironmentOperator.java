@@ -44,9 +44,9 @@ public class EnvironmentOperator extends Environment {
     private final boolean projectManagedClusterOperator;
     private final String logsDirLocation;
     private final String tmpDirLocation;
-    private final String keycloakOperatorName;
-    private final String keycloakVersion;
-    private final String keycloakChannel;
+    private String keycloakOperatorName;
+    private String keycloakVersion;
+    private String keycloakChannel;
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     private Map<String, KubeClient> kubeClients;
     private final boolean collectTestData;
@@ -101,11 +101,6 @@ public class EnvironmentOperator extends Environment {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        keycloakOperatorName = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_OPERATOR_NAME, getDefaultKeycloakOperatorName());
-        keycloakChannel = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_CHANNEL, getDefaultKeycloakChannel());
-        keycloakVersion = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion(keycloakChannel));
-
 
         printAllUsedTestVariables();
     }
@@ -209,15 +204,24 @@ public class EnvironmentOperator extends Environment {
     }
 
     public String getKeycloakOperatorName() {
+        if (keycloakOperatorName == null || keycloakOperatorName.isEmpty() || keycloakOperatorName.isBlank()) {
+            keycloakOperatorName = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_OPERATOR_NAME, getDefaultKeycloakOperatorName());
+        }
         return keycloakOperatorName;
     }
 
     @Override
     public String getKeycloakVersion() {
+        if (keycloakVersion == null || keycloakVersion.isEmpty() || keycloakVersion.isBlank()) {
+            keycloakVersion = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion(keycloakChannel));
+        }
         return keycloakVersion;
     }
 
     public String getKeycloakChannel() {
+        if (keycloakChannel == null || keycloakChannel.isEmpty() || keycloakChannel.isBlank()) {
+            keycloakChannel = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_CHANNEL, getDefaultKeycloakChannel());
+        }
         return keycloakChannel;
     }
 
