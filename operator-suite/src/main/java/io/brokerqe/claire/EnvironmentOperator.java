@@ -212,6 +212,7 @@ public class EnvironmentOperator extends Environment {
 
     @Override
     public String getKeycloakVersion() {
+        getKeycloakChannel();
         if (keycloakVersion == null || keycloakVersion.isEmpty() || keycloakVersion.isBlank()) {
             keycloakVersion = System.getenv().getOrDefault(Constants.EV_KEYCLOAK_VERSION, getDefaultKeycloakVersion(keycloakChannel));
         }
@@ -348,6 +349,7 @@ public class EnvironmentOperator extends Environment {
             return Constants.DEFAULT_KEYCLOAK_CHANNEL;
         } else {
             if (getDefaultKubeClient().isOpenshiftPlatform()) {
+                getKeycloakOperatorName();
                 pm = getDefaultKubeClient().getPackageManifest(keycloakOperatorName);
                 return getDefaultKubeClient().getPackageManifestDefaultChannel(pm);
             } else {
