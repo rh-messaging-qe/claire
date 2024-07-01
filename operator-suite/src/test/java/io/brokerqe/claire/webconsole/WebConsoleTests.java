@@ -86,8 +86,11 @@ public class WebConsoleTests extends AbstractSystemTests {
             LOGGER.info("[{}] Probing https request on console should fail.", testNamespace);
             checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_UNAVAILABLE, "Application is not available");
 
-            patchRouteTls(service, "Redirect", "edge");
-            LOGGER.info("[{}] Probing https request on console should pass", testNamespace);
+            url = "http://" + serviceUrl;
+            if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() <= ArtemisVersion.VERSION_2_28.getVersionNumber()) {
+                url = "http://" + serviceUrl + "/console/auth/login";
+            }
+            LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
             checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login");
         }
         ResourceManager.deleteArtemis(testNamespace, artemis);
