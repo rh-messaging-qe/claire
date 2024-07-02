@@ -324,7 +324,7 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
 
     @Override
     public void setOperatorLogLevel(String logLevel) {
-        if (!ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
+        if (ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
             updateArgs(ZAP_LOG_LEVEL_OPTION, ZAP_LOG_LEVEL_OPTION + "=" + logLevel.toLowerCase(Locale.ROOT));
         } else {
             LOGGER.error("[{}] Unable to set provided log level to operator {}", getDeploymentNamespace(), getOperatorName());
