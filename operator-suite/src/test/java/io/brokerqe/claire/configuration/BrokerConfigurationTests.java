@@ -280,7 +280,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         verifyResourceRequestValues("limit", limits, cpuValue, memValue);
         verifyResourceRequestValues("request", requests, cpuValue, memValue);
 
-        cpuValue = new IntOrString("1");
+        cpuValue = new IntOrString("500m");
         memValue = new IntOrString("768M");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);

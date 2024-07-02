@@ -333,6 +333,31 @@ public abstract class AbstractSystemTests implements TestSeparator {
         return testBrokerName;
     }
 
+    public void waitConsoleReady(String url, long pool, long timeout) {
+        TestUtils.waitFor("wait for console be ready", pool, timeout,
+                () -> isHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login"));
+    }
+
+    public boolean isHttpResponse(URLConnection connection, int expectedCode, String expectedString) {
+        InputStream response;
+        try {
+            response = connection.getInputStream();
+            assertThat(((HttpURLConnection) connection).getResponseCode(), equalTo(expectedCode));
+            Scanner scanner = new Scanner(response);
+            String responseBody = scanner.useDelimiter("\\A").next();
+            response.close();
+            return responseBody.contains(expectedString);
+        } catch (IOException e) {
+            // carry on with execution, we've got expected exception
+            if (e.getMessage().contains(String.valueOf(expectedCode))) {
+                assertThat(e.getMessage(), containsString(String.valueOf(expectedCode)));
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
+    }
+
     public void checkHttpResponse(URLConnection connection, int expectedCode, String expectedString) {
         InputStream response = null;
         try {
