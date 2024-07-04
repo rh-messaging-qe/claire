@@ -271,7 +271,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
                             .withInitContainers(
                                 new ContainerBuilder()
                                     .withName("log4j-json-template-init")
-                                    .withImage("quay.io/almworks/alpine-curl:latest")
+                                    .withImage("quay.io/rh_integration/alpine-curl:latest")
                                     .withVolumeMounts(
                                         new VolumeMountBuilder()
                                             .withName("amq-cfg-dir")

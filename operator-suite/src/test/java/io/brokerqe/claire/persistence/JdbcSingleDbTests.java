@@ -11,13 +11,11 @@ import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
-import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.db.Postgres;
-import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -38,7 +36,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
-@DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
 @TestValidSince(ArtemisVersion.VERSION_2_32)
 public class JdbcSingleDbTests extends AbstractSystemTests {
 
@@ -81,7 +78,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
                         .withInitContainers(
                             new ContainerBuilder()
                                 .withName("postgresql-jdbc-driver-init")
-                                .withImage("quay.io/almworks/alpine-curl:latest")
+                                .withImage("quay.io/rh_integration/alpine-curl:latest")
                                 .withVolumeMounts(
                                     new VolumeMountBuilder()
                                         .withName("amq-cfg-dir")

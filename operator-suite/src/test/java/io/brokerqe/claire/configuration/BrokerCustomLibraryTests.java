@@ -14,8 +14,6 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.db.Postgres;
 import io.brokerqe.claire.junit.TestValidSince;
-import io.brokerqe.claire.KubernetesArchitecture;
-import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
@@ -28,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-@DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
 public class BrokerCustomLibraryTests extends AbstractSystemTests {
     private final String testNamespace = getRandomNamespaceName("brkplugin-tests", 2);
     private Postgres postgres;
@@ -62,7 +59,7 @@ public class BrokerCustomLibraryTests extends AbstractSystemTests {
                         .withInitContainers(
                             new ContainerBuilder()
                                 .withName("postgresql-jdbc-driver-init")
-                                .withImage("quay.io/almworks/alpine-curl:latest")
+                                .withImage("quay.io/rh_integration/alpine-curl:latest")
                                 .withVolumeMounts(
                                     new VolumeMountBuilder()
                                         .withName("amq-cfg-dir")
