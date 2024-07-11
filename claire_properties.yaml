@@ -12,7 +12,7 @@ standalone:
     ###################################
     latest:
       activemq-artemis: "2.33.0"
-      amq-broker: "7.11.6"
+      amq-broker: "7.12.0"
 
     #################################
     ### activemq-artemis versions ###
@@ -44,6 +44,10 @@ standalone:
     ### amq-broker versions ###
     ###########################
     # released #
+    "7.12.0":
+      type: "amq-broker"
+      upstream_version: "2.33.0"
+
     "7.11.6":
       type: "amq-broker"
       upstream_version: "2.28.0"
@@ -80,7 +84,7 @@ operator:
     ###################################
     latest:
       activemq-artemis: "1.1.0"
-      amq-broker: "7.11.6.OPR.1"
+      amq-broker: "7.12.0.OPR.2"
 
     #################################
     ### activemq-artemis versions ###
@@ -137,6 +141,30 @@ operator:
     ### amq-broker versions ###
     ###########################
     # released #
+    "7.12.1.OPR.1":
+      type: "amq-broker"
+      src_url_version_placeholder: "7.12.1"
+      upstream_version: "v1.2.0"
+      # empty image means use the value from operator.yaml
+      operator_image: ""
+      broker_image: ""
+      broker_init_image: ""
+      # the artemis container image imager to be updated in operator.yaml in the case of images fields above are defined
+      artemis_container_version: "7.12.1"
+      artemis_container_version_upstream: "2.33.0"
+
+    "7.12.0.OPR.2":
+      type: "amq-broker"
+      src_url_version_placeholder: "7.12.0.OPR.2"
+      upstream_version: "v1.2.0"
+      # empty image means use the value from operator.yaml
+      operator_image: ""
+      broker_image: ""
+      broker_init_image: ""
+      # the artemis container image imager to be updated in operator.yaml in the case of images fields above are defined
+      artemis_container_version: "7.12.0"
+      artemis_container_version_upstream: "2.33.0"
+
     "7.11.6.OPR.1":
       type: "amq-broker"
       src_url_version_placeholder: "7.11.6"

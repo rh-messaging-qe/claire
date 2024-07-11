@@ -13,6 +13,7 @@ spec:
   containers:
     - name: claire-test-suite
       image: ${IMAGE}
+      imagePullPolicy: Always
       command: ["/app/run.sh"]
       volumeMounts:
         - name: run-script-volume

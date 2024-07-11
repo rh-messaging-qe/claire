@@ -46,7 +46,7 @@ ARG claireUserGroup=root
 
 # Create claire user
 RUN useradd -u "${claireUserUid}" -d "/app" -m -g "${claireUserGroup}" "${claireUser}" && \
-    chmod 0755 /app
+    chmod 0775 /app
 
 # Add metadata labels
 LABEL name="Red Hat AMQ Broker QE - Claire Test Suite"
@@ -84,13 +84,13 @@ USER ${CLAIRE_USER_UID}
 ENTRYPOINT ["/app/operator-suite/container/entrypoint.sh"]
 CMD ["/bin/bash"]
 
+# Copy cliare files
+COPY --chown=${CLAIRE_USER_UID}:${CLAIRE_USER_GROUP} . /app/
+
 # Set permissions
 RUN mkdir -p /app/test-results && \
     chmod 0775 /app && \
     find /app -type f -exec chmod 0664 \{\} \; && \
     find /app -type d -exec chmod 0775 \{\} \; && \
     find /app -name *.sh -exec chmod 0775 \{\} \;
-
-# Copy cliare files
-COPY --chown=${CLAIRE_USER_UID}:${CLAIRE_USER_GROUP} . /app/
 

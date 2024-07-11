@@ -334,7 +334,7 @@ operator_crd_copy_files:
 		${WGET_CMD} -q -O - https://api.github.com/repos/artemiscloud/activemq-artemis-operator/contents/deploy/crds | jq -r '.[].download_url' | xargs -n 1 ${WGET_CMD} -P ${OPERATOR_CRD_ARTEMIS_DIR}/crds ;\
 	fi ;
 	cp ${OPERATOR_CRD_SRC_DIR}/deploy/*.yaml ${OPERATOR_CRD_ARTEMIS_DIR}/install/
-	cp -ax ${OPERATOR_CRD_SRC_DIR}/examples/* ${OPERATOR_CRD_ARTEMIS_DIR}/examples/
+	cp -ax ${OPERATOR_CRD_SRC_DIR}/deploy/examples/* ${OPERATOR_CRD_ARTEMIS_DIR}/examples/
 	rm -rf ${OPERATOR_CRD_SRC_DIR}
 	@echo ""
 	@echo ""
