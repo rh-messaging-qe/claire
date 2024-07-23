@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
-@DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
+@DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.ARM64, KubernetesArchitecture.PPC64LE})
 public class LdapTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LdapTests.class);

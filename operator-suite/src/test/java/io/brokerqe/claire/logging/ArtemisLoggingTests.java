@@ -15,8 +15,6 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.WaitException;
 import io.brokerqe.claire.junit.TestValidSince;
-import io.brokerqe.claire.KubernetesArchitecture;
-import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
@@ -258,7 +256,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     }
 
     @Test
-    @DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
     void providerLoggingUsingExternalLibraryTest() {
         getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME,
                 Map.of(LOGGING_PROPERTIES_KEY, TestUtils.readFileContent(Paths.get(JSON_TEMPLATE_LOGGER_FILE).toFile())));

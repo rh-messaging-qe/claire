@@ -162,10 +162,11 @@ public interface Constants {
     String IMAGE_SYSTEMTEST_CLI_RHEA = "quay.io/messaging/cli-rhea:latest";
     String IMAGE_MQTT_CLIENT = "quay.io/rhmessagingqe/hivemq-mqtt-cli";
 //    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
+    // To be mirrored!
     String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:2.6.7";
-    String IMAGE_POSTGRES = "docker.io/bitnami/postgresql:latest";
-    String IMAGE_MYSQL = "docker.io/bitnami/mysql:latest";
-    String IMAGE_MARIADB = "docker.io/bitnami/mariadb:latest";
+    String IMAGE_POSTGRES = "registry.redhat.io/rhel8/postgresql-12:latest";
+    String IMAGE_MYSQL = "registry.redhat.io/rhel8/mysql-80:latest";
+    String IMAGE_MARIADB = "registry.redhat.io/rhel8/mariadb-103:latest";
     // https://hub.docker.com/_/microsoft-mssql-server
     String IMAGE_MSSQL = "mcr.microsoft.com/mssql/server:2022-latest";
     String IMAGE_ORACLE = "container-registry.oracle.com/database/free:latest";

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
-@DisabledTestArchitecture(archs = {KubernetesArchitecture.ARM64, KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
+@DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.ARM64, KubernetesArchitecture.PPC64LE})
 public class KeycloakLdapTests extends LdapTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeycloakLdapTests.class);

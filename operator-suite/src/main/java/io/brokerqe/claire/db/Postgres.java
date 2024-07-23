@@ -33,7 +33,7 @@ public class Postgres implements Database {
 
     protected final String name = "postgresdb";
     private final String secretName = "postgres-db-secret";
-    private final String adminUsername = "postgres";
+    private final String adminUsername = "newuser";
     private final String adminPassword = "testpassword";
     private StatefulSet postgresStatefulset;
     private int port = 5432;
@@ -104,19 +104,19 @@ public class Postgres implements Database {
                             .endSecurityContext()
                             .withEnv(List.of(
                                 new EnvVarBuilder()
-                                    .withName("POSTGRES_USER")
+                                    .withName("POSTGRESQL_USER")
                                     .withValueFrom(new EnvVarSourceBuilder()
                                             .withNewSecretKeyRef("username", secretName, false)
                                             .build())
                                     .build(),
                                 new EnvVarBuilder()
-                                    .withName("POSTGRES_PASSWORD")
+                                    .withName("POSTGRESQL_PASSWORD")
                                     .withValueFrom(new EnvVarSourceBuilder()
                                         .withNewSecretKeyRef("password", secretName, false)
                                         .build())
                                 .build(),
                                 new EnvVarBuilder()
-                                    .withName("POSTGRES_DB")
+                                    .withName("POSTGRESQL_DATABASE")
                                     .withValue(applicationName)
                                 .build()
                             ))
