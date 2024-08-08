@@ -22,9 +22,14 @@ data:
         fi
     }
 
+    log "Starting..."
+    sleep 15
+    
     log ""
     log "Running with git commit id: $${COMMIT_ID}"
     log "Running with image: $${CONTAINER_IMAGE}"
+    log "Running with image id: $$(kubectl -n claire get pod claire-test-suite -o jsonpath='{.status.containerStatuses[*].imageID}')"
+    
     log ""
     log "Creating test-results directory: $${OPERATOR_TEST_RESULTS_DIR}"
     mkdir -p "$${OPERATOR_TEST_RESULTS_DIR}"
