@@ -12,6 +12,7 @@ OPERATOR_SUITE_DIR                             = ${ROOT_DIR}/operator-suite
 STANDALONE_SUITE_DIR                           = ${ROOT_DIR}/standalone-suite
 VERSION_PROPERTIES_FILE                       ?= ${ROOT_DIR}/claire_properties.yaml
 BUILD_PROPERTIES                               = ${ROOT_DIR}/build_properties.yaml
+COMMIT_ID                                      = $(shell git rev-parse HEAD)
 
 ### Commands variables
 MVN_DEFAULT_CMD                                = mvn --no-transfer-progress --update-snapshots -Dmaven.repo.local=./.m2/repository
@@ -445,6 +446,7 @@ build_container:
 	  	if [[ "${OPERATOR_CONTAINER_SKIP_BUILD}" == "false" ]]; then \
 			podman build --arch=$${arch} --tag $${FULL_VERSION_WITH_ARCH} --build-arg buildArch=$${arch} \
 						--build-arg operatorType=${OPERATOR_TYPE_FINAL} --build-arg operatorVersion=${OPERATOR_VERSION} \
+						--build-arg commitId=${COMMIT_ID} \
 						--file operator-suite/container/Containerfile . ;\
 			if [[ "${OPERATOR_TYPE_FINAL}" == "amq-broker" ]]; then \
 				echo "Creating tag from $${FULL_VERSION_WITH_ARCH} to $${MMM_VERSION_WITH_ARCH}" ;\

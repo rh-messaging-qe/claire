@@ -15,6 +15,9 @@ spec:
       image: ${IMAGE}
       imagePullPolicy: Always
       command: ["/app/run.sh"]
+      env:
+        - name: CONTAINER_IMAGE
+          value: ${IMAGE}
       volumeMounts:
         - name: run-script-volume
           mountPath: /app/run.sh

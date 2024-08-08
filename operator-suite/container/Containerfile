@@ -43,6 +43,7 @@ ARG operatorVersion
 ARG claireUser=claire
 ARG claireUserUid=1000
 ARG claireUserGroup=root
+ARG commitId
 
 # Create claire user
 RUN useradd -u "${claireUserUid}" -d "/app" -m -g "${claireUserGroup}" "${claireUser}" && \
@@ -83,6 +84,9 @@ USER ${CLAIRE_USER_UID}
 # Set the entrypoint and default command
 ENTRYPOINT ["/app/operator-suite/container/entrypoint.sh"]
 CMD ["/bin/bash"]
+
+# Set the current commit id
+ENV COMMIT_ID=${commitId}
 
 # Copy cliare files
 COPY --chown=${CLAIRE_USER_UID}:${CLAIRE_USER_GROUP} . /app/

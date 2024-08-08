@@ -71,6 +71,7 @@ if [[ "${#_arg_make_envvar[@]}" -gt 0  ]]; then
 fi
 yq -i e '(.metadata.namespace = strenv(NAMESPACE))' "${SCRIPT_DIR}/yaml/030-pod.yaml.$$"
 yq -i e '(.spec.containers[].image = strenv(IMAGE))' "${SCRIPT_DIR}/yaml/030-pod.yaml.$$"
+yq -i e '.spec.containers[].env[] |= select(.name == "CONTAINER_IMAGE") |= .value = strenv(IMAGE)' "${SCRIPT_DIR}/yaml/030-pod.yaml.$$"
 tee >(kubectl apply -f -) < "${SCRIPT_DIR}/yaml/030-pod.yaml.$$"
 rm -rf "${SCRIPT_DIR}/yaml/030-pod.yaml.$$"
 sleep 5
@@ -83,8 +84,8 @@ if kubectl wait -n "${NAMESPACE}" --for=jsonpath='{.status.phase}'='Running' pod
     log "Waiting execution to finish"
     set +e
     while ! kubectl -n "${NAMESPACE}" exec claire-test-suite -- /bin/ls /app/test-results/tests.execution.completed > /dev/null 2>&1; do
-    log "Execution not completed. Waiting for ${_arg_test_completion_wait_check} seconds before check again"
-    sleep "${_arg_test_completion_wait_check}"
+        log "Execution not completed. Waiting for ${_arg_test_completion_wait_check} seconds before check again"
+        sleep "${_arg_test_completion_wait_check}"
     done
     set -e
 
