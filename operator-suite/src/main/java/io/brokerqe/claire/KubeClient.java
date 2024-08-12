@@ -518,6 +518,9 @@ public class KubeClient {
         } else {
             watchedNamespacesString = namespaceName;
         }
+
+
+
         String operatorGroupString = String.format("""
             apiVersion: operators.coreos.com/v1
             kind: OperatorGroup
@@ -787,7 +790,7 @@ public class KubeClient {
             .endMetadata()
             .withData(data)
             .build();
-        secret = client.secrets().inNamespace(namespaceName).resource(secret).createOrReplace();
+        secret = client.secrets().inNamespace(namespaceName).resource(secret).create();
         if (waitForCreation) {
             waitForSecretCreation(namespaceName, secretName);
         }
