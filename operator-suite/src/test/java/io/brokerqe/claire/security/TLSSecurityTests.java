@@ -158,16 +158,22 @@ public class TLSSecurityTests extends AbstractSystemTests {
 
     @ParameterizedTest
     @EnumSource(value = Constants.SECRETSOURCE.class, names = {"MANUAL", "TRUST_MANAGER"})
-    @TestValidSince(ArtemisVersion.VERSION_2_21)
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
     public void testMutualAuthentication(Constants.SECRETSOURCE source) {
         doTestTlsMessaging(true, source, true);
     }
 
     @ParameterizedTest
     @EnumSource(value = Constants.SECRETSOURCE.class, names = {"MANUAL", "CERT_MANAGER"})
-    @TestValidSince(ArtemisVersion.VERSION_2_21)
+    @TestValidSince(ArtemisVersion.VERSION_2_33)
     public void testWithoutClientAuthentication(Constants.SECRETSOURCE source) {
-        doTestTlsMessaging(true, source, true);
+        doTestTlsMessaging(true, source, false);
+    }
+
+    @TestValidSince(ArtemisVersion.VERSION_2_21)
+    @TestValidUntil(ArtemisVersion.VERSION_2_33)
+    public void testSslManual() {
+        doTestTlsMessaging(true, Constants.SECRETSOURCE.MANUAL, true);
     }
 
     @Test
