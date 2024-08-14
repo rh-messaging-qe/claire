@@ -297,7 +297,6 @@ public class KubeClient {
         client.pods().inNamespace(namespaceName).resource(pod).waitUntilCondition(condition, 3, TimeUnit.MINUTES);
     }
 
-
     public void waitUntilPodIsDeleted(String namespaceName, Pod pod) {
         TestUtils.waitFor("deletion of pod " + pod.getMetadata().getName(), Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
             return getPod(namespaceName, pod.getMetadata().getName()) == null;
@@ -518,8 +517,6 @@ public class KubeClient {
         } else {
             watchedNamespacesString = namespaceName;
         }
-
-
 
         String operatorGroupString = String.format("""
             apiVersion: operators.coreos.com/v1

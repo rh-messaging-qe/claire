@@ -8,6 +8,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -170,6 +171,7 @@ public class TLSSecurityTests extends AbstractSystemTests {
         doTestTlsMessaging(true, source, false);
     }
 
+    @Test
     @TestValidSince(ArtemisVersion.VERSION_2_21)
     @TestValidUntil(ArtemisVersion.VERSION_2_33)
     public void testSslManual() {
@@ -263,6 +265,7 @@ public class TLSSecurityTests extends AbstractSystemTests {
 
         Map<String, KeyStoreData> keystores = new HashMap<>();
         if (source == Constants.SECRETSOURCE.MANUAL) {
+//            keystores = CertificateManager.reuseDefaultGeneratedKeystoresFromFiles(); // kept for future debugging purposes
             keystores = CertificateManager.generateDefaultCertificateKeystores(
                     ResourceManager.generateDefaultBrokerDN(),
                     ResourceManager.generateDefaultClientDN(),
@@ -279,8 +282,8 @@ public class TLSSecurityTests extends AbstractSystemTests {
             getClient().createSecretEncodedData(testNamespace, clientSecretName, CertificateManager.createClientKeystoreSecret(keystores));
         } else {
             //acceptorConfigurations.new-acceptor.params.sslAutoReload=true
-            List<String> autoReload = List.of(String.format(Constants.AUTO_RELOAD_PROPERTY, amqpAcceptorName),
-                    String.format(Constants.AUTO_RELOAD_PROPERTY, owireAcceptorName));
+            List<String> autoReload = List.of(String.format(ArtemisConstants.AUTO_RELOAD_PROPERTY, amqpAcceptorName),
+                    String.format(ArtemisConstants.AUTO_RELOAD_PROPERTY, owireAcceptorName));
 
             broker.getSpec().setBrokerProperties(autoReload);
             String brokerName = broker.getMetadata().getName();

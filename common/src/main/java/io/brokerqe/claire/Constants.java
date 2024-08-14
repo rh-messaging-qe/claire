@@ -160,7 +160,6 @@ public interface Constants {
     String IMAGE_SYSTEMTEST_CLI_CPP = "quay.io/messaging/cli-cpp:latest";
     String IMAGE_SYSTEMTEST_CLI_PROTON_PYTHON = "quay.io/messaging/cli-proton-python:latest";
     String IMAGE_SYSTEMTEST_CLI_RHEA = "quay.io/messaging/cli-rhea:latest";
-    String IMAGE_MQTT_CLIENT = "quay.io/rhmessagingqe/hivemq-mqtt-cli";
 //    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
     // To be mirrored!
     String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:2.6.7";
@@ -173,8 +172,6 @@ public interface Constants {
 
     // Openshift related
     String MONITORING_NAMESPACE = "openshift-monitoring";
-    String CERT_MANAGER_NAMESPACE = "cert-manager";
-
     String MONITORING_NAMESPACE_USER = "openshift-user-workload-monitoring";
     String PROMETHEUS_USER_SS = "prometheus-user-workload";
     String THANOS_USER_SS = "thanos-ruler-user-workload";
@@ -185,14 +182,9 @@ public interface Constants {
     String MARIADB_DRIVER_URL = "https://dlm.mariadb.com/2912798/Connectors/java/connector-java-3.1.4/mariadb-java-client-3.1.4.jar";
     String MSSQL_DRIVER_URL = "https://download.microsoft.com/download/a/9/1/a91534b0-ed8c-4501-b491-e1dd0a20335a/sqljdbc_12.2.0.0_enu.zip";
     String ORACLE_DRIVER_URL = "https://download.oracle.com/otn-pub/otn_software/jdbc/2110/ojdbc11.jar";
-    //CHECKSTYLE:OFF
     enum SECRETSOURCE {
         CERT_MANAGER,
         TRUST_MANAGER,
         MANUAL
     }
-
-    //CHECKSTYLE:ON
-
-    String AUTO_RELOAD_PROPERTY = "acceptorConfigurations.%s.params.sslAutoReload=true";
 }

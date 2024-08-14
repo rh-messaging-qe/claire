@@ -182,4 +182,5 @@ public interface ArtemisConstants {
     String LOG_AUDIT_CREATE_QUEUE_PATTERN = ".* AMQ601065: User %s\\(%s\\).*is creating a queue on target resource:.*with parameters.* name=myQueue.*address=myAddress.*";
     String LOG_AUDIT_SENT_MESSAGE_PATTERN = ".* AMQ601500: User %s\\(%s\\)@.* sent a message .* address=%s::%s.*";
     String LOG_AUDIT_RECEIVED_MESSAGE_PATTERN = ".* AMQ601501: User %s\\(%s\\)@.* is consuming a message from %s.*";
+    String AUTO_RELOAD_PROPERTY = "acceptorConfigurations.%s.params.sslAutoReload=true";
 }
