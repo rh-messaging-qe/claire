@@ -134,6 +134,11 @@ public abstract class BundledMessagingClient implements MessagingClient {
 
     @Override
     public int receiveMessages() {
+        return receiveMessages(Constants.DURATION_3_MINUTES);
+    }
+
+    @Override
+    public int receiveMessages(long duration) {
         if (subscriberExecutor != null) {
             // executed client on background
             return getSubscribedMessages();
@@ -141,7 +146,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
             // executed client on foreground
             String cmdOutput;
             String[] command = constructClientCommand(CONSUMER);
-            cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+            cmdOutput = (String) deployableClient.getExecutor().executeCommand(duration, command);
             LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
             return parseMessageCount(cmdOutput, CONSUMER);
         }

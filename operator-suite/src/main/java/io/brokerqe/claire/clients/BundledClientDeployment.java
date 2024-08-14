@@ -33,8 +33,8 @@ public class BundledClientDeployment implements KubernetesDeployableClient {
     @Override
     public Pod getContainer() {
         if (pod == null) {
-            LOGGER.debug("[{}] [BundledClient] Using default first found artemis pod", namespace);
             pod = ResourceManager.getKubeClient().getArtemisPodByLabel(namespace);
+            LOGGER.debug("[{}] [BundledClient] Using default first found artemis pod: {}", namespace, pod.getMetadata().getName());
         }
         return pod;
     }

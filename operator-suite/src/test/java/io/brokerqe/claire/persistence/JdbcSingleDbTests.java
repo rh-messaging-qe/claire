@@ -9,6 +9,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
@@ -46,8 +47,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
     private Postgres postgres;
     private ActiveMQArtemis broker;
     private static final String LOGGER_SECRET_NAME = "artemis-secret-logging-config";
-    private static final String LOGGING_PROPERTIES_KEY = "logging.properties";
-    private static final String LOGGER_FILE = Constants.PROJECT_TEST_DIR + "/resources/logging/persistence-enabled-log4j2.properties";
+    private static final String LOGGER_FILE = Constants.PROJECT_TEST_DIR + "/resources/logging/debug-log4j2.properties";
 
     @BeforeAll
     void setupClusterOperator() {
@@ -68,7 +68,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
     }
 
     void deployBrokerWithDB(int brokerSize, boolean waitForDeployment) {
-        getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(LOGGING_PROPERTIES_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
+        getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
 
         String downloadDriverCommand = "mkdir -p /amq/init/config/extra-libs && wget -O /amq/init/config/extra-libs/postgresql.jar %s".formatted(Constants.POSTGRESQL_DRIVER_URL);
         StatefulSet jdbcPatchSs = new StatefulSetBuilder()

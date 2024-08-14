@@ -277,6 +277,10 @@ public class ResourceManager {
         return artemisBroker;
     }
 
+    public static ActiveMQArtemis createArtemis(ActiveMQArtemis artemisBroker) {
+        return createArtemis(artemisBroker.getMetadata().getNamespace(), artemisBroker, true);
+    }
+
     public static ActiveMQArtemis createArtemis(String namespace, ActiveMQArtemis artemisBroker) {
         return createArtemis(namespace, artemisBroker, true);
     }
@@ -295,6 +299,23 @@ public class ResourceManager {
         return artemisBroker;
     }
 
+    public static ActiveMQArtemis updateArtemis(ActiveMQArtemis broker, boolean restartPods) {
+        String namespace = broker.getMetadata().getNamespace();
+        broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
+        if (restartPods) {
+            getKubeClient().listPodsByPrefixName(namespace, broker.getMetadata().getName()).forEach(pod ->
+                    getKubeClient().restartPod(namespace, pod)
+            );
+        }
+        TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
+        ResourceManager.waitForArtemisStatusUpdate(namespace, broker, ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED, ArtemisConstants.CONDITION_REASON_APPLIED, Constants.DURATION_5_MINUTES);
+        return broker;
+    }
+
+    public static void deleteArtemis(ActiveMQArtemis broker) {
+        deleteArtemis(broker.getMetadata().getNamespace(), broker, true, Constants.DURATION_1_MINUTE);
+    }
+
     public static void deleteArtemis(String namespace, ActiveMQArtemis broker) {
         deleteArtemis(namespace, broker, true, Constants.DURATION_1_MINUTE);
     }
@@ -309,6 +330,22 @@ public class ResourceManager {
         LOGGER.info("[{}] Deleted ActiveMQArtemis {}", namespace, broker.getMetadata().getName());
     }
 
+    public static ActiveMQArtemis setBrokerProperties(ActiveMQArtemis broker, List<String> brokerProperties, boolean withRestart) {
+        broker.getSpec().setBrokerProperties(brokerProperties);
+        broker = ResourceManager.getArtemisClient().inNamespace(broker.getMetadata().getNamespace()).resource(broker).createOrReplace();
+        return updateArtemis(broker, withRestart);
+    }
+
+    public static ActiveMQArtemis addToBrokerProperties(ActiveMQArtemis broker, List<String> brokerProperties, boolean restartPods) {
+        broker.getSpec().getBrokerProperties().addAll(brokerProperties);
+        return updateArtemis(broker, restartPods);
+    }
+
+    public static ActiveMQArtemis removeFromBrokerProperties(ActiveMQArtemis broker, List<String> brokerProperties, boolean restartPods) {
+        broker.getSpec().getBrokerProperties().removeAll(brokerProperties);
+        return updateArtemis(broker, restartPods);
+    }
+
     public static ActiveMQArtemisAddress createArtemisAddress(String namespace, Path filePath) {
         ActiveMQArtemisAddress artemisAddress = TestUtils.configFromYaml(filePath.toFile(), ActiveMQArtemisAddress.class);
         artemisAddress = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).createOrReplace();
@@ -321,6 +358,10 @@ public class ResourceManager {
         ResourceManager.addArtemisAddress(artemisAddress);
         LOGGER.info("[{}] Created ActiveMQArtemisAddress {}", namespace, artemisAddress.getMetadata().getName());
         return artemisAddress;
+    }
+
+    public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String addressName) {
+        return createArtemisAddress(namespace, addressName, addressName);
     }
 
     public static ActiveMQArtemisAddress createArtemisAddress(String namespace, String addressName, String queueName) {
@@ -343,6 +384,7 @@ public class ResourceManager {
                     .withAddressName(addressName)
                     .withQueueName(queueName)
                     .withRoutingType(routingType)
+                    .withRemoveFromBrokerOnDelete(true)
                 .endSpec()
                 .build();
         artemisAddress = ResourceManager.getArtemisAddressClient().inNamespace(namespace).resource(artemisAddress).createOrReplace();
@@ -706,6 +748,10 @@ public class ResourceManager {
         return deployment;
     }
 
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, String address, int messages) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, address, messages, null, null);
+    }
+
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, String address, String queue, int messages) {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, queue, messages, null, null);
     }
@@ -725,9 +771,18 @@ public class ResourceManager {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address, messages, null, null, persistenceDisabled);
     }
 
-    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages, String username, String password) {
-        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages, username, password);
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, String address, int messages, String username, String password) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, address, messages, username, password);
     }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, String address, String queue, int messages, String username, String password) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, queue, messages, username, password);
+    }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages, String username, String password) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password);
+    }
+
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, String username, String password, boolean persistenceDisabled) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password, persistenceDisabled);
     }

@@ -158,6 +158,11 @@ public class AmqpProtonPythonClient extends SystemtestClient {
 
     @Override
     public int receiveMessages() {
+        return receiveMessages(Constants.DURATION_3_MINUTES);
+    }
+
+    @Override
+    public int receiveMessages(long duration) {
         if (subscriberExecWatch != null) {
             // executed client on background
             return getSubscribedMessages();
@@ -165,7 +170,7 @@ public class AmqpProtonPythonClient extends SystemtestClient {
             // executed client on foreground
             String cmdOutput;
             String[] command = constructClientCommand(MessagingClient.RECEIVER, receiverOptions);
-            cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+            cmdOutput = (String) deployableClient.getExecutor().executeCommand(duration, command);
             LOGGER.debug("[{}][RX] \n{}", deployableClient.getContainerName(), cmdOutput);
             this.receivedMessages = parseMessages(cmdOutput);
             return receivedMessages.size();

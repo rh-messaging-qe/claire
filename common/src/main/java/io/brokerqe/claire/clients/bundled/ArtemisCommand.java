@@ -11,11 +11,10 @@ public enum ArtemisCommand {
     QUEUE_CREATE("queue create"),
     QUEUE_DELETE("queue delete"),
     QUEUE_STAT("queue stat"),
-    PERF_CLIENT("perf client");
-//    BROWSE,
+    PERF_CLIENT("perf client"),
+    BROWSE_CLIENT("browser");
 //    DATA,
 //    TRANSFER;
-
 
     private final String command;
 

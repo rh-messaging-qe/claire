@@ -16,6 +16,7 @@ public interface MessagingClient {
     int receiveMessages();
     void subscribe();
     void unsubscribe();
+    int receiveMessages(long duration);
     Object getSentMessages();
     Object getReceivedMessages();
     boolean compareMessages();

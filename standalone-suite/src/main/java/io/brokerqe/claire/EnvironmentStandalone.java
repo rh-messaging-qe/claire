@@ -7,6 +7,7 @@ package io.brokerqe.claire;
 import io.brokerqe.claire.container.database.OracleDbContainer;
 import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.database.JdbcData;
+import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.container.database.MariadbContainer;
 import io.brokerqe.claire.container.database.MssqlContainer;
@@ -315,6 +316,13 @@ public class EnvironmentStandalone extends Environment {
     @Override
     public boolean isCollectTestData() {
         return collectTestData;
+    }
+
+    @Override
+    public boolean isTeardownEnv() {
+        // TODO
+        throw new ClaireNotImplementedException("teardown is not implemented on standalone");
+//        return true;
     }
 
     @Override

@@ -37,7 +37,7 @@ public class ClusteredOperatorSmokeTests extends AbstractSystemTests {
         getClient().createNamespace(testNamespace, true);
         getClient().createNamespace(testNamespaceA, true);
         getClient().createNamespace(testNamespaceB, true);
-        LOGGER.info("[{}] Creating new namespace {}", testNamespace, testNamespace);
+        LOGGER.info("[{}] Creating new namespaces {} {} {}", testNamespace, testNamespace, testNamespaceA, testNamespaceB);
         // Operator will watch namespaces testNamespace and testNamespaceA
         operator = ResourceManager.deployArtemisClusterOperatorClustered(testNamespace, List.of(testNamespace, testNamespaceA));
     }

@@ -50,6 +50,7 @@ public class EnvironmentOperator extends Environment {
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     private Map<String, KubeClient> kubeClients;
     private final boolean collectTestData;
+    private boolean teardownEnv = true;
     private final int customExtraDelay;
     private final boolean serializationEnabled;
     private final String serializationDirectory;
@@ -68,6 +69,7 @@ public class EnvironmentOperator extends Environment {
         serializationEnabled = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_DUMP_ENABLED, "false"));
         serializationDirectory = System.getenv().getOrDefault(Constants.EV_DUMP_LOCATION, Constants.DUMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + initialTimestamp;
         serializationFormat = System.getenv().getOrDefault(Constants.EV_DUMP_FORMAT, Constants.DUMP_DEFAULT_TYPE);
+        teardownEnv = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_TEARDOWN, "true"));
 
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
         customExtraDelay = Integer.parseInt(System.getenv().getOrDefault(Constants.EV_CUSTOM_EXTRA_DELAY, "0"));
@@ -113,6 +115,7 @@ public class EnvironmentOperator extends Environment {
         envVarsSB.append(Constants.EV_CLUSTER_OPERATOR_MANAGED).append("=").append(projectManagedClusterOperator).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_COLLECT_TEST_DATA).append("=").append(collectTestData).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_DUMP_ENABLED).append("=").append(serializationEnabled).append(Constants.LINE_SEPARATOR);
+        envVarsSB.append(Constants.EV_TEARDOWN).append("=").append(teardownEnv).append(Constants.LINE_SEPARATOR);
 
         if (testLogLevel != null) {
             envVarsSB.append(Constants.EV_TEST_LOG_LEVEL).append("=").append(testLogLevel).append(Constants.LINE_SEPARATOR);
@@ -163,7 +166,6 @@ public class EnvironmentOperator extends Environment {
         if (serializationEnabled) {
             envVarsSB.append(Constants.EV_DUMP_LOCATION).append("=").append(serializationDirectory).append(Constants.LINE_SEPARATOR);
             envVarsSB.append(Constants.EV_DUMP_FORMAT).append("=").append(serializationFormat).append(Constants.LINE_SEPARATOR);
-
         }
 
         LOGGER.info(envVarsSB.toString());
@@ -182,6 +184,11 @@ public class EnvironmentOperator extends Environment {
     @Override
     public boolean isCollectTestData() {
         return collectTestData;
+    }
+
+    @Override
+    public boolean isTeardownEnv() {
+        return teardownEnv;
     }
 
     @Override

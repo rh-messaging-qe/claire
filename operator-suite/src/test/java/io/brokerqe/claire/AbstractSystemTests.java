@@ -10,6 +10,7 @@ import io.amq.broker.v1beta1.ActiveMQArtemisSpecBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.clients.BundledClientDeployment;
 import io.brokerqe.claire.clients.ClientType;
+import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
@@ -248,22 +249,32 @@ public abstract class AbstractSystemTests implements TestSeparator {
     }
 
     protected ActiveMQArtemis doArtemisScale(String namespace, ActiveMQArtemis broker, int previousSize, int newSize) {
-        LOGGER.info("[{}] Starting Broker scaledown {} -> {}", namespace, previousSize, newSize);
+        return doArtemisScale(namespace, broker, previousSize, newSize, false);
+    }
+
+    protected ActiveMQArtemis doArtemisScale(String namespace, ActiveMQArtemis broker, int previousSize, int newSize, boolean multipleNamespaces) {
+        String operation;
+        LOGGER.info("[{}] Starting Broker scale {} -> {}", namespace, previousSize, newSize);
         broker.getSpec().getDeploymentPlan().setSize(newSize);
         broker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(broker).createOrReplace();
-        long waitTime = Math.abs(previousSize - newSize) * Constants.DURATION_2_MINUTES;
+        long waitTime = Math.abs(previousSize - newSize) * Constants.DURATION_3_MINUTES;
 
         if (previousSize > newSize && newSize != 0 && broker.getSpec().getDeploymentPlan().getMessageMigration()) {
-            waitForScaleDownDrainer(namespace, operator.getOperatorName(),
-                    broker.getMetadata().getName(), waitTime, previousSize, newSize);
+            operation = "scaledown";
+            if (multipleNamespaces) {
+                // drain events might now show up; check only AA CR status
+                ResourceManager.waitForBrokerDeployment(namespace, broker, false, null, waitTime);
+            } else {
+                waitForScaleDownDrainer(namespace, operator.getOperatorName(), broker.getMetadata().getName(), waitTime, previousSize, newSize);
+            }
         } else {
+            operation = "scaleup";
             boolean reload = previousSize != 0;
             ResourceManager.waitForBrokerDeployment(namespace, broker, reload, null, waitTime);
-            ResourceManager.waitForBrokerPodsExpectedCount(namespace, broker, newSize, waitTime);
         }
         List<Pod> brokers = getClient().listPodsByPrefixName(namespace, broker.getMetadata().getName());
         assertEquals(brokers.size(), newSize);
-        LOGGER.info("[{}] Performed Broker scaledown {} -> {}", namespace, previousSize, newSize);
+        LOGGER.info("[{}] Performed Broker {} {} -> {}", namespace, operation, previousSize, newSize);
         return broker;
     }
 
@@ -278,10 +289,19 @@ public abstract class AbstractSystemTests implements TestSeparator {
         Instant now = Instant.now().minus(Duration.ofSeconds(5));
         Pod operatorPod = getClient().getFirstPodByPrefixName(namespace, operatorName);
         Pattern pattern = Pattern.compile("Drain pod " + brokerName + ".* finished");
+        // ENTMQBR-9316 - unable to send msg migration events to different namespace
+        Pattern pattern2 = Pattern.compile("drain Pod " + brokerName + ".* in StatefulSet " + brokerName + ".* completed successfully");
 
         TestUtils.waitFor("Drain pod to finish", Constants.DURATION_2_SECONDS, maxTimeout, () -> {
             String log = getClient().getLogsFromPod(operatorPod, now);
             Matcher matcher = pattern.matcher(log);
+            Matcher matcher2 = pattern2.matcher(log);
+            if (matcher2.find() && !matcher.find()) {
+                matcher = matcher2;
+            } else {
+                LOGGER.warn("[{}] Unexpected situation while checking drain pods for {}!", namespace, brokerName);
+            }
+
             int count = 0;
             while (matcher.find()) {
                 for (int i = previousSize - 1; i >= newSize; i--) {
@@ -296,7 +316,6 @@ public abstract class AbstractSystemTests implements TestSeparator {
             return count == expectedDrainPodsCount;
         });
         // Wait for drainPods to disappear
-
     }
 
     protected String maybeStripBrokerName(String testBrokerName, String testNamespace) {
@@ -392,29 +411,84 @@ public abstract class AbstractSystemTests implements TestSeparator {
 
     // Messaging methods
     public void checkMessageCount(String namespace, Pod brokerPod, String queue, int expectedMessageCount) {
-        int actual = getMessageCount(namespace, brokerPod, queue);
+        checkMessageCount(namespace, brokerPod, queue, expectedMessageCount, null, null);
+    }
+
+    public void checkMessageCount(String namespace, Pod brokerPod, String queue, int expectedMessageCount, String username, String password) {
+        int actual = getMessageCount(namespace, brokerPod, queue, username, password);
+        LOGGER.info("[{}] {} - Message count check exp: {} act: {}", namespace, brokerPod.getMetadata().getName(), expectedMessageCount, actual);
         assertThat("Unexpected amount of messages in queue", actual, equalTo(expectedMessageCount));
     }
 
     public int getMessageCount(String namespace, Pod brokerPod, String queue) {
-        Map<String, Map<String, String>> queueStats = getMessageCount(namespace, brokerPod, null, queue);
-        return Integer.parseInt(queueStats.get(queue).get("message_count"));
+        return getMessageCount(namespace, brokerPod, queue, null, null);
     }
 
-    public Map<String, Map<String, String>> getMessageCount(String namespace, Pod brokerPod, Map<String, String> queueStatOptions, String queueName) {
+    public int getMessageCount(String namespace, Pod brokerPod, String queueName, String user, String password) {
+        Map<String, Map<String, String>> queueStats = getQueueStats(namespace, brokerPod, null, queueName, user, password);
+        return Integer.parseInt(queueStats.get(queueName).get("message_count"));
+    }
+
+    public Map<String, Map<String, String>> getQueueStats(String namespace, Pod brokerPod, String username, String password) {
+        return getQueueStats(namespace, brokerPod, null, null, username, password, false);
+    }
+
+    public Map<String, Map<String, String>> getQueueStats(String namespace, Pod brokerPod, Map<String, String> queueStatOptions, String queueName, String username, String password) {
+        return getQueueStats(namespace, brokerPod, queueStatOptions, queueName, username, password, false);
+    }
+
+    public Map<String, Map<String, String>> getQueueStats(String namespace, Pod brokerPod, Map<String, String> queueStatOptions, String queueName, String username, String password, boolean clustered) {
         if (queueStatOptions == null) {
-            queueStatOptions = new HashMap<>(Map.of(
-                    "maxColumnSize", "-1",
-                    "maxRows", "1000",
-                    "url", "tcp://" + brokerPod.getMetadata().getName() + ":61616"
-            ));
+            queueStatOptions = new HashMap<>();
         }
+        queueStatOptions.putAll(Map.of(
+                "maxColumnSize", "-1",
+                "maxRows", "1000",
+                "url", "tcp://" + brokerPod.getMetadata().getName() + ":61616"
+        ));
+
+        if (clustered) {
+            queueStatOptions.put("clustered", "");
+        }
+
         if (queueName != null) {
             queueStatOptions.put("queueName", queueName);
         }
-        BundledArtemisClient bac = new BundledArtemisClient(new BundledClientDeployment(namespace, brokerPod), ArtemisCommand.QUEUE_STAT, queueStatOptions);
+
+        BundledArtemisClient bac;
+        if (username != null || password != null) {
+            bac = new BundledArtemisClient(new BundledClientDeployment(namespace, brokerPod), ArtemisCommand.QUEUE_STAT, username, password, queueStatOptions);
+        } else {
+            bac = new BundledArtemisClient(new BundledClientDeployment(namespace, brokerPod), ArtemisCommand.QUEUE_STAT, queueStatOptions);
+        }
         Map<String, Map<String, String>> queueStats = (Map<String, Map<String, String>>) bac.executeCommand();
         return queueStats;
+    }
+
+    public void checkClusteredMessageCount(ActiveMQArtemis prodBroker, String address, int expectedTotalMsgs) {
+        checkClusteredMessageCount(prodBroker, null, address, expectedTotalMsgs, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+    }
+
+    public void checkClusteredMessageCount(ActiveMQArtemis prodBroker, ActiveMQArtemis drBroker, String address, int expectedTotalMsgs) {
+        checkClusteredMessageCount(prodBroker, drBroker, address, expectedTotalMsgs, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+    }
+
+    public void checkClusteredMessageCount(ActiveMQArtemis prodBroker, ActiveMQArtemis drBroker, String address, int expectedTotalMsgs, String username, String password) {
+        int totalMsgsProd = 0;
+        int totalMsgsDr = 0;
+        for (int i = 0; i < prodBroker.getSpec().getDeploymentPlan().getSize(); i++) {
+            Pod prodBrokerPodI = getClient().getPod(prodBroker.getMetadata().getNamespace(), prodBroker.getMetadata().getName() + "-ss-" + i);
+            totalMsgsProd += Integer.parseInt(browseMessages(prodBrokerPodI, address, username, password).get(-1));
+        }
+        if (drBroker != null) {
+            for (int i = 0; i < drBroker.getSpec().getDeploymentPlan().getSize(); i++) {
+                Pod drBrokerPodI = getClient().getPod(drBroker.getMetadata().getNamespace(), drBroker.getMetadata().getName() + "-ss-" + i);
+                totalMsgsDr += Integer.parseInt(browseMessages(drBrokerPodI, address, username, password).get(-1));
+            }
+            assertEquals(expectedTotalMsgs, totalMsgsDr);
+        }
+        assertEquals(expectedTotalMsgs, totalMsgsProd);
+
     }
 
     public void testMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages) {
@@ -426,19 +500,27 @@ public abstract class AbstractSystemTests implements TestSeparator {
     }
 
     public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages, String username, String password) {
+        testMessaging(clientType, namespace, brokerPod, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password);
+    }
+
+    public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, String address, int messages, String username, String password) {
+        testMessaging(clientType, namespace, brokerPod, address, address, messages, username, password);
+    }
+
+    public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, String address, String queue, int messages, String username, String password) {
         Deployment clients = null;
         MessagingClient messagingClient;
         if (clientType.equals(ClientType.BUNDLED_AMQP)) {
-            messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, brokerPod, "5672", address, messages, username, password);
+            messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, brokerPod, "5672", address, queue, messages, username, password);
         } else if (clientType.equals(ClientType.BUNDLED_CORE)) {
-            messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, "61616", address, messages, username, password);
+            messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, "61616", address, queue, messages, username, password);
         } else if (clientType.equals(ClientType.ST_AMQP_QPID_JMS)) {
             Pod clientsPod = getClient().getFirstPodByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
             if (clientsPod == null) {
                 clients = ResourceManager.deployClientsContainer(namespace);
                 clientsPod = getClient().getFirstPodByPrefixName(namespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
             }
-            messagingClient = ResourceManager.createMessagingClient(ClientType.ST_AMQP_QPID_JMS, clientsPod, brokerPod.getStatus().getPodIP(), "5672", address, messages, username, password);
+            messagingClient = ResourceManager.createMessagingClient(ClientType.ST_AMQP_QPID_JMS, clientsPod, brokerPod.getStatus().getPodIP(), "5672", address, queue, messages, username, password);
         } else {
             throw new ClaireRuntimeException("Unknown/Unsupported client type!" + clientType);
         }
@@ -462,7 +544,21 @@ public abstract class AbstractSystemTests implements TestSeparator {
                 null, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
     }
 
+    public void testTlsMessaging(String namespace, String address, String queue,
+                                 String externalBrokerUri, String saslMechanism, String secretName,
+                                 String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
+        testTlsMessaging(namespace, address, queue, externalBrokerUri, saslMechanism, secretName,
+                null, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
+    }
+
     public void testTlsMessaging(String namespace, ActiveMQArtemisAddress address,
+                                 String externalBrokerUri, String saslMechanism, String secretName, Pod clientsPod,
+                                 String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
+        testTlsMessaging(namespace, address.getSpec().getAddressName(), address.getSpec().getQueueName(), externalBrokerUri, saslMechanism, secretName,
+                clientsPod, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
+    }
+
+    public void testTlsMessaging(String namespace, String address, String queue,
                                  String externalBrokerUri, String saslMechanism, String secretName, Pod clientsPod,
                                  String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
         Deployment clients = null;
@@ -475,7 +571,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
         int received = 0;
 
         // Publisher - Receiver
-        MessagingClient messagingClient = ResourceManager.createMessagingClientTls(clientsPod, externalBrokerUri, address, msgsExpected, saslMechanism,
+        MessagingClient messagingClient = ResourceManager.createMessagingClientTls(clientsPod, externalBrokerUri, address, queue, msgsExpected, saslMechanism,
                 "/etc/" + secretName + "/" + clientKeyStore, clientKeyStorePassword,
                 "/etc/" + secretName + "/" + clientTrustStore, clientTrustStorePassword);
         sent = messagingClient.sendMessages();
@@ -486,5 +582,46 @@ public abstract class AbstractSystemTests implements TestSeparator {
         if (clientsPod == null) {
             ResourceManager.undeployClientsContainer(namespace, clients);
         }
+    }
+
+    public void sendMessages(Pod brokerPod, Acceptors acceptors, String address, int messageCount, String username, String password) {
+        String allDefaultPort = String.valueOf(acceptors.getPort());
+        String namespace = brokerPod.getMetadata().getNamespace();
+        LOGGER.info("[{}] Send {} messages to {}", namespace, messageCount, brokerPod.getMetadata().getName());
+        MessagingClient messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, allDefaultPort, address, messageCount, username, password);
+        int sent = messagingClient.sendMessages();
+        assertThat("Sent different amount of messages than expected", sent, equalTo(messageCount));
+    }
+
+    public void receiveMessages(Pod brokerPod, Acceptors acceptors, String address, int messageCount, String username, String password) {
+        String allDefaultPort = String.valueOf(acceptors.getPort());
+        String namespace = brokerPod.getMetadata().getNamespace();
+        LOGGER.info("[{}] Send {} messages to {}", namespace, messageCount, brokerPod.getMetadata().getName());
+        MessagingClient messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, allDefaultPort, address, messageCount, username, password);
+        int received = messagingClient.receiveMessages();
+        assertThat("Received different amount of messages than expected", received, equalTo(messageCount));
+    }
+
+    public Map<Integer, String> browseMessages(Pod brokerPod, String fqqn, String username, String password) {
+        return browseMessages(brokerPod, fqqn, 0, username, password);
+    }
+
+    public Map<Integer, String> browseMessages(Pod brokerPod, String fqqn, int messageCount, String username, String password) {
+        String namespace = brokerPod.getMetadata().getNamespace();
+        LOGGER.debug("[{}] Browse messages in {} on {}", namespace, fqqn, brokerPod.getMetadata().getName());
+        Map<String, String> commandOptions = new HashMap<>(Map.of(
+                "destination", fqqn,
+                "url", "tcp://" + brokerPod.getMetadata().getName() + ":61616"
+        ));
+
+        if (messageCount != 0) {
+            commandOptions.put("message-count", String.valueOf(messageCount));
+        }
+
+        DeployableClient<Deployment, Pod> deployableClient = new BundledClientDeployment(brokerPod.getMetadata().getNamespace(), brokerPod);
+        BundledArtemisClient browserClient = new BundledArtemisClient(deployableClient, ArtemisCommand.BROWSE_CLIENT, username, password, commandOptions);
+        Map<Integer, String> browsedMessages = (Map<Integer, String>) browserClient.executeCommand();
+        LOGGER.debug("[{}] Browsed {} messages from {} on {}", namespace, browsedMessages.get(-1), fqqn, brokerPod.getMetadata().getName());
+        return browsedMessages;
     }
 }

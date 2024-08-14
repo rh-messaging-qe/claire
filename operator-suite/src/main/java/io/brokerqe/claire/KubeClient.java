@@ -272,6 +272,11 @@ public class KubeClient {
         }
     }
 
+    public void restartPod(String namespace, Pod pod) {
+        getKubernetesClient().pods().inNamespace(namespace).resource(pod).delete();
+        waitForPodReload(namespace, pod, pod.getMetadata().getName(), Constants.DURATION_1_MINUTE);
+    }
+
     public Pod getFirstPodByPrefixName(String namespaceName, String podNamePrefix) {
         List<Pod> pods = listPodsByPrefixName(namespaceName, podNamePrefix);
         if (pods.size() > 1) {
@@ -313,8 +318,9 @@ public class KubeClient {
         LOGGER.info("[{}] Waiting {}s for pod {} reload", namespace, Duration.ofMillis(maxTimeout).toSeconds(), podName);
         TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             Pod newPod = getFirstPodByPrefixName(namespace, podName);
-            LOGGER.debug("[{}] OriginalPodUid {} vs currentPodUid {}", namespace, originalUid, newPod.getMetadata().getUid());
-            return newPod != null && !newPod.getMetadata().getUid().equals(originalUid);
+            String newPodUid = newPod == null ? "unknown" : newPod.getMetadata().getUid();
+            LOGGER.debug("[{}] OriginalPodUid {} vs currentPodUid {}", namespace, originalUid, newPodUid);
+            return newPod != null && !newPodUid.equals(originalUid);
         });
 
         for (Pod podTmp : listPodsByPrefixName(namespace, podName)) {
@@ -822,7 +828,7 @@ public class KubeClient {
     }
 
     public void waitForSecretCreation(String namespaceName, String secretName) {
-        TestUtils.waitFor("creation of secret " + secretName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
+        TestUtils.waitFor("[" + namespaceName + "] creation of secret " + secretName, Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
                 () -> client.secrets().inNamespace(namespaceName).withName(secretName).get() != null);
     }
 

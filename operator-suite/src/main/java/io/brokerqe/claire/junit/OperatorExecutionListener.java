@@ -35,12 +35,14 @@ public class OperatorExecutionListener extends ClaireExecutionListener {
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
-        LOGGER.debug("Teardown environment started");
-        ResourceManager.undeployAllResources();
-        if (!testEnvironmentOperator.isOlmInstallation()) {
-            ResourceManager.undeployArtemisClusterOperatorCRDs();
+        if (testEnvironmentOperator.isTeardownEnv()) {
+            LOGGER.debug("Teardown environment started");
+            ResourceManager.undeployAllResources();
+            if (!testEnvironmentOperator.isOlmInstallation()) {
+                ResourceManager.undeployArtemisClusterOperatorCRDs();
+            }
+            LOGGER.debug("Teardown environment finished");
         }
-        LOGGER.debug("Teardown environment finished");
         setupPerformed = false;
         LOGGER.debug("Resetting setupPerformed to 'false'");
     }

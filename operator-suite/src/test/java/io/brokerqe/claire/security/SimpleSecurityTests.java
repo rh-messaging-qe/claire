@@ -152,8 +152,7 @@ public class SimpleSecurityTests extends AbstractSystemTests {
             String username = entry.getKey();
             String password = entry.getValue();
 
-            MessagingClient messagingClientCore = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod,
-                    allDefaultPort, myAddress, msgsExpected, username, password);
+            MessagingClient messagingClientCore = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, allDefaultPort, myAddress, msgsExpected, username, password);
             int sent = messagingClientCore.sendMessages();
             int received = messagingClientCore.receiveMessages();
             LOGGER.info("[{}] User: {}, Sent {} - Received {}",

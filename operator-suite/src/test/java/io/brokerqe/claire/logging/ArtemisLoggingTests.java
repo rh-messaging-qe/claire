@@ -51,7 +51,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     private static final String JSON_TEMPLATE_LOGGER_FILE = Constants.PROJECT_TEST_DIR + "/resources/logging/json-template-log4j2.properties";
     private static final String LOGGER_CONFIG_MAP_NAME = "artemis-cm-logging-config";
     private static final String LOGGER_SECRET_NAME = "artemis-secret-logging-config";
-    private static final String LOGGING_PROPERTIES_KEY = "logging.properties";
     private static final String LOGGING_MOUNT_ONLY_ONCE = "Spec.DeploymentPlan.ExtraMounts, entry with suffix -logging-config can only be supplied once";
 
     private static final String LOG4J_LAYOUT_TEMPLATE_JAR_URL = "https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-layout-template-json/2.19.0/log4j-layout-template-json-2.19.0.jar";
@@ -84,7 +83,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
 
     @Test
     void providedLoggingUsingSecretTest() throws IOException {
-        getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(LOGGING_PROPERTIES_KEY,
+        getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY,
                 TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
 
         String artemisName = "artemis-secret-log";
@@ -116,7 +115,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     @Test
     void providedLoggingUsingConfigMapTest() throws IOException {
         getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME,
-                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.readFileContent(Paths.get(LOGGER_FILE).toFile())));
+                Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, TestUtils.readFileContent(Paths.get(LOGGER_FILE).toFile())));
 
         String artemisName = "artemis-cm-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -153,7 +152,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
 
     @Test
     void providedLoggingUsingEmptyConfigMapTest() {
-        getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME, Map.of(LOGGING_PROPERTIES_KEY, ""));
+        getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME, Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, ""));
 
         String artemisName = "artemis-empty-cm-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -185,10 +184,10 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
 
     @Test
     void providedLoggingUsingConfigMapAndSecretTest() {
-        getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(LOGGING_PROPERTIES_KEY,
+        getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY,
                 TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
         getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME,
-                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.readFileContent(Paths.get(LOGGER_FILE).toFile())));
+                Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, TestUtils.readFileContent(Paths.get(LOGGER_FILE).toFile())));
 
         String artemisName = "artemis-cm-secret-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -258,7 +257,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     @Test
     void providerLoggingUsingExternalLibraryTest() {
         getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME,
-                Map.of(LOGGING_PROPERTIES_KEY, TestUtils.readFileContent(Paths.get(JSON_TEMPLATE_LOGGER_FILE).toFile())));
+                Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, TestUtils.readFileContent(Paths.get(JSON_TEMPLATE_LOGGER_FILE).toFile())));
 
         String downloadDriverCommand = "mkdir -p /amq/init/config/extra-libs && wget -O /amq/init/config/extra-libs/log4j-layout-template-json-2.19.0.jar %s".formatted(LOG4J_LAYOUT_TEMPLATE_JAR_URL);
         StatefulSet log4jlibPatchSs = new StatefulSetBuilder()

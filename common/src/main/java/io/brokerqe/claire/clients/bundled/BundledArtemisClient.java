@@ -101,6 +101,9 @@ public class BundledArtemisClient {
             case PERF_CLIENT -> {
                 return parsePerfClientOutput(cmdOutput);
             }
+            case BROWSE_CLIENT -> {
+                return parseBrowseCommand(cmdOutput);
+            }
 
         }
         return null;
@@ -171,6 +174,26 @@ public class BundledArtemisClient {
             if (line.contains("SUMMARY")) {
                 startParsing = true;
             }
+        }
+        return data;
+    }
+
+    private static Map<Integer, String> parseBrowseCommand(String cmdOutput) {
+        List<String> lines = List.of(cmdOutput.split("\n"));
+        Map<Integer, String> data = new HashMap<>();
+        int msgCounter = 0;
+        for (String line : lines) {
+            if (line.contains("browsing ")) {
+                String msgContent = line.substring(line.indexOf("browsing") + 9);
+                data.put(msgCounter, msgContent);
+                msgCounter++;
+            } else if (line.contains("browsed:")) {
+                String totalBrowsedMsgs = line.substring(line.indexOf("browsed:") + 9, line.indexOf(" messages"));
+                data.put(-1, totalBrowsedMsgs);
+            }
+        }
+        if (Integer.parseInt(data.get(-1)) != msgCounter) {
+            LOGGER.warn("Error while browsing messages! Message count does not equals number of browsed messages!");
         }
         return data;
     }
