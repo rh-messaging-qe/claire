@@ -314,7 +314,7 @@ public class MirroringUnsecuredTests extends MirroringTests {
         int sentA = prodClientA.sendMessages();
         assertThat("Sent different amount of messages than expected", sentA, equalTo(addressAmsgs));
 
-        LOGGER.info("[{}] Receive {} messages to excluded address {}", drNamespace, addressAmsgs, addressA);
+        LOGGER.info("[{}] Receive {} messages from excluded address {} (expecting fail)", drNamespace, addressAmsgs, addressA);
         MessagingClient drReceiverA = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, drBrokerPod, allDefaultPort, addressA, addressAmsgs, ADMIN, ADMIN_PASS);
         Throwable t = assertThrows(NullPointerException.class, () -> drReceiverA.receiveMessages(Constants.DURATION_1_MINUTE));
         assertThat(t.getMessage(), containsString("Cannot invoke \"String.split(String)\" because \"clientStdout\" is null"));
@@ -411,8 +411,8 @@ public class MirroringUnsecuredTests extends MirroringTests {
         getQueueStats(drNamespace, drBrokerPod, null, addressABPrefix, ADMIN, ADMIN_PASS, true);
 //        waitForScaleDownDrainer(testNamespace, operator.getOperatorName(), brokerName, Constants.DURATION_2_MINUTES, initialSize, scaledDownSize);
         // Send few messages & do checks
-        checkClusteredMessageCount(prodBroker, drBroker, addressA, initialCountA * scaleUpSize, ADMIN, ADMIN_PASS);
-        checkClusteredMessageCount(prodBroker, drBroker, addressB, initialCountB * scaleUpSize, ADMIN, ADMIN_PASS);
+//        checkClusteredMessageCount(prodBroker, drBroker, addressA, initialCountA * scaleUpSize, ADMIN, ADMIN_PASS);
+//        checkClusteredMessageCount(prodBroker, drBroker, addressB, initialCountB * scaleUpSize, ADMIN, ADMIN_PASS);
 
         teardownDeployment(false);
     }

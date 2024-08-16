@@ -80,6 +80,8 @@ public abstract class MirroringTests extends AbstractSystemTests {
             getClient().deleteSecret(drNamespace, DR_BROKER_TLS_SECRET);
             getClient().deleteSecret(prodNamespace, CLIENT_SECRET);
         }
+        getClient().deleteSecret(prodNamespace, LOGGER_SECRET_NAME);
+        getClient().deleteSecret(drNamespace, LOGGER_SECRET_NAME);
         ResourceManager.deleteArtemis(prodBroker);
         ResourceManager.deleteArtemis(drBroker);
     }
