@@ -40,11 +40,11 @@ EXPOSE \
 # Expose some outstanding folders
 VOLUME ["${artemis_instance_home}", "${artemis_install_home}"]
 
-COPY openjdk-java-17.tar.xz oracle-java-11.tar.gz oracle-java-17.tar.gz /tmp
+COPY openjdk-java-*.tar.xz oracle-java-*.tar.gz /tmp
 COPY install-java-versions.sh /usr/local/bin/
 RUN /usr/local/bin/install-java-versions.sh "${BASE_IMAGE}" \
     && rm -rf /usr/local/bin/install-java-versions.sh \
-    && rm -rf /tmp/openjdk-java-17.tar.xz /tmp/oracle-java-11.tar.gz /tmp/oracle-java-17.tar.gz
+    && rm -rf /tmp/openjdk-java-*.tar.xz /tmp/oracle-java-*.tar.gz
 
 COPY pulp-repository-*.repo /tmp
 COPY install-pulp-repo.sh install-packages.sh /usr/local/bin

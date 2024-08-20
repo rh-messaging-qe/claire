@@ -20,15 +20,26 @@ echo ""
 echo "#######################################################################"
 echo "Downloading additional Java JDK: openjdk-java-17"
 wget -nv -c -O openjdk-java-17.tar.xz \
-    https://download.eng.bos.redhat.com/released/OpenJDK/17.0.6/java-17-openjdk-17.0.6.0.10-2.portable.jdk.el.x86_64.tar.xz
+    https://download.eng.bos.redhat.com/released/OpenJDK/17.0.12/java-17-openjdk-17.0.12.0.7-1.portable.jdk.el.x86_64.tar.xz
 tar -Jtf openjdk-java-17.tar.xz > /dev/null
+
+echo "Downloading additional Java JDK: openjdk-java-21"
+wget -nv -c -O openjdk-java-21.tar.xz \
+    https://download.eng.bos.redhat.com/released/OpenJDK/21.0.4/java-21-openjdk-21.0.4.0.7-1.portable.jdk.x86_64.tar.xz
+tar -Jtf openjdk-java-21.tar.xz > /dev/null
+
 echo "Downloading additional Java JDK: oracle-java-11"
 wget -nv -c -O oracle-java-11.tar.gz \
   https://repository.engineering.redhat.com/nexus/repository/rhm-qe-amq-clients-raw/jdk/jdk-11.0.15.1_linux-x64_bin.tar.gz
 tar -ztf oracle-java-11.tar.gz > /dev/null
+
 echo "Downloading additional Java JDK: oracle-java-17"
 wget -nv -c -O oracle-java-17.tar.gz https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz
 tar -ztf oracle-java-17.tar.gz > /dev/null
+
+echo "Downloading additional Java JDK: oracle-java-21"
+wget -nv -c -O oracle-java-21.tar.gz https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz
+tar -ztf oracle-java-21.tar.gz > /dev/null
 
 echo ""
 for base_image_name in "${BASE_IMAGES[@]}"; do
