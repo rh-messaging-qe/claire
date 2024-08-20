@@ -175,7 +175,7 @@ public class MessagingTests extends AbstractSystemTests {
         Map<String, String> artemisCreateQueueOptions = new HashMap<>(Map.of(
                 "name", address,
                 "address", address,
-                "anycast", "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
                 "durable", "",
                 "auto-create-address", "",
                 "preserve-on-no-consumers", ""

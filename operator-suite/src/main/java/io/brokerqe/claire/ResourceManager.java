@@ -484,6 +484,18 @@ public class ResourceManager {
     public static void waitForArtemisStatusUpdate(String namespace, ActiveMQArtemis initialArtemis, String updateType, String expectedReason, long timeoutMillis) {
         waitForArtemisStatusUpdate(namespace, initialArtemis, updateType, expectedReason, timeoutMillis, true);
     }
+
+    public static void waitForArtemisStatusUpdateSequential(String namespace, ActiveMQArtemis artemis, String initialUpdate,
+                                                            String initialReason, String actualUpdateType, String actualUpdateReason, long timeoutMillis) {
+        waitForArtemisStatusUpdate(namespace, artemis, initialUpdate, initialReason, timeoutMillis, true);
+        waitForArtemisStatusUpdate(namespace, artemis, actualUpdateType, actualUpdateReason, timeoutMillis, true);
+    }
+    public static void waitForArtemisStatusUpdateSequential(String namespace, ActiveMQArtemis artemis, String initialUpdate,
+                                                   String initialReason, String actualUpdateType, String actualUpdateReason, long timeoutMillis, boolean checkDate) {
+        waitForArtemisStatusUpdate(namespace, artemis, initialUpdate, initialReason, timeoutMillis, checkDate);
+        waitForArtemisStatusUpdate(namespace, artemis, actualUpdateType, actualUpdateReason, timeoutMillis, checkDate);
+    }
+
     public static void waitForArtemisStatusUpdate(String namespace, ActiveMQArtemis initialArtemis, String updateType, String expectedReason, long timeoutMillis, boolean checkDate) {
         LOGGER.info("[{}] Waiting for broker {} custom resource status update, limit: {} seconds, period: 5 seconds", namespace, initialArtemis.getMetadata().getName(), timeoutMillis / 1000);
 //        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -762,11 +774,17 @@ public class ResourceManager {
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled) {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages, persistenceDisabled);
     }
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled, boolean multicast) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages, persistenceDisabled, multicast);
+    }
 
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address, messages, null, null);
     }
 
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled, boolean multicast) {
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, null, null, persistenceDisabled, multicast);
+    }
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address, messages, null, null, persistenceDisabled);
     }
@@ -784,12 +802,12 @@ public class ResourceManager {
     }
 
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, String username, String password, boolean persistenceDisabled) {
-        return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password, persistenceDisabled);
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password, persistenceDisabled, false);
     }
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, String username, String password) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password);
     }
-    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, String address, String queue, int messages, String username, String password, Boolean persistenceDisabled) {
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, String address, String queue, int messages, String username, String password, Boolean persistenceDisabled, Boolean multicast) {
         DeployableClient deployableClient;
         MessagingClient messagingClient;
         switch (clientType) {
@@ -828,7 +846,8 @@ public class ResourceManager {
                 .withUsername(username)
                 .withPersistenceDisabled(persistenceDisabled)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(serviceUrl);
+                .withDestinationUrl(serviceUrl)
+                .withMulticast(multicast);
         if (clientType.equals(ClientType.BUNDLED_AMQP)) {
             messagingClient = new BundledAmqpMessagingClient(options);
         } else if (clientType.equals(ClientType.BUNDLED_CORE)) {
@@ -856,7 +875,7 @@ public class ResourceManager {
         return messagingClient;
     }
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, String address, String queue, int messages, String username, String password) {
-        return createMessagingClient(clientType, execPod, serviceUrl, port, address, queue, messages, username, password, false);
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address, queue, messages, username, password, false, false);
     }
 
 

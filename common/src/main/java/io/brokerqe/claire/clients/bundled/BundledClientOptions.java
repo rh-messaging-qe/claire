@@ -17,6 +17,7 @@ public class BundledClientOptions {
     String username;
     String password;
     Boolean persistenceDisabled = false;
+    Boolean multicast = false;
 
     public BundledClientOptions withDeployableClient(DeployableClient deployableClient) {
         this.deployableClient = deployableClient;
@@ -61,5 +62,10 @@ public class BundledClientOptions {
     public BundledClientOptions withPersistenceDisabled(Boolean persistenceDisabled) {
         this.persistenceDisabled = persistenceDisabled;
         return this;
+    }
+    public BundledClientOptions withMulticast(Boolean multicast) {
+        this.multicast = multicast;
+        return this;
+
     }
 }

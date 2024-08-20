@@ -45,8 +45,11 @@ import java.net.URLConnection;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -286,20 +289,26 @@ public abstract class AbstractSystemTests implements TestSeparator {
         // Drain pod my-broker-ss-1 finished.
         // Deleting drain pod my-broker-ss-1
         int expectedDrainPodsCount = previousSize - newSize;
-        Instant now = Instant.now().minus(Duration.ofSeconds(5));
         Pod operatorPod = getClient().getFirstPodByPrefixName(namespace, operatorName);
+
+        String podDateTime = getClient().executeCommandInPod(operatorPod, "date", Constants.DURATION_10_SECONDS).strip();
+        // format: Thu Aug 15 09:34:26 UTC 2024
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
+        ZonedDateTime zonedDateTime = ZonedDateTime.parse(podDateTime, formatter);
+        Instant now = zonedDateTime.toInstant().minus(Duration.ofSeconds(15));
+
         Pattern pattern = Pattern.compile("Drain pod " + brokerName + ".* finished");
         // ENTMQBR-9316 - unable to send msg migration events to different namespace
         Pattern pattern2 = Pattern.compile("drain Pod " + brokerName + ".* in StatefulSet " + brokerName + ".* completed successfully");
 
-        TestUtils.waitFor("Drain pod to finish", Constants.DURATION_2_SECONDS, maxTimeout, () -> {
+        TestUtils.waitFor("Drain pod to finish", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
             String log = getClient().getLogsFromPod(operatorPod, now);
             Matcher matcher = pattern.matcher(log);
             Matcher matcher2 = pattern2.matcher(log);
             if (matcher2.find() && !matcher.find()) {
                 matcher = matcher2;
             } else {
-                LOGGER.warn("[{}] Unexpected situation while checking drain pods for {}!", namespace, brokerName);
+                LOGGER.debug("[{}] Unexpected situation while checking drain pods for {}!", namespace, brokerName);
             }
 
             int count = 0;

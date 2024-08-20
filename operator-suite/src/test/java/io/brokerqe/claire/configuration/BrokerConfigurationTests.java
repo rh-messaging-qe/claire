@@ -5,6 +5,8 @@
 package io.brokerqe.claire.configuration;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisSpecBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
@@ -16,7 +18,11 @@ import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.clients.ClientType;
+import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.exception.WaitException;
+import io.brokerqe.claire.helpers.JMXHelper;
+import io.brokerqe.claire.helpers.AddressData;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -716,6 +722,98 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    void filterApplicationTest() {
+        Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
+        amqpAcceptors.setBindToAllInterfaces(true);
+        String brokerName = "filter-test";
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(brokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(2)
+                        .withManagementRBACEnabled()
+                    .endDeploymentPlan()
+                .withBrokerProperties(List.of(
+                        "addressConfigurations.exampleTopic.routingTypes=ANYCAST",
+                        "addressConfigurations.exampleTopic.queueConfigs.queuewithfilter.address=exampleTopic",
+                        "addressConfigurations.exampleTopic.queueConfigs.queuewithfilter.routingType=ANYCAST"
+                ))
+                .withAcceptors(amqpAcceptors)
+                .editOrNewConsole()
+                    .withExpose(true)
+                .endConsole()
+                .endSpec().build();
+        broker = ResourceManager.createArtemis(testNamespace, broker, true);
+        int msgsExpected = 50;
+        Service amqp = getClient().getFirstServiceBrokerAcceptor(testNamespace, brokerName, AMQ_ACCEPTOR_NAME);
+        Integer amqpPort = amqp.getSpec().getPorts().get(0).getPort();
+        List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
+        Pod brokerPod1 = brokerPods.get(0);
+        Pod brokerPod2 = brokerPods.get(1);
+        String addressName = "exampleTopic";
+        String queueName = "queuewithfilter";
+        ActiveMQArtemisAddress myAddress = new ActiveMQArtemisAddressBuilder()
+                .editOrNewSpec()
+                    .withAddressName(addressName)
+                    .withQueueName(queueName)
+                .endSpec().build();
+        MessagingClient messagingClientAmqp1 = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, brokerPod1,
+                amqpPort.toString(), myAddress, msgsExpected);
+        MessagingClient messagingClientAmqp2 = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, brokerPod2,
+                amqpPort.toString(), myAddress, msgsExpected);
+        messagingClientAmqp1.sendMessages();
+        messagingClientAmqp2.sendMessages();
+        JMXHelper jmx = new JMXHelper().withKubeClient(getClient());
+
+        AddressData address1 = jmx.getAddressQueue(brokerName, addressName, queueName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
+        AddressData address2 = jmx.getAddressQueue(brokerName, addressName, queueName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 1);
+
+        assertThat(String.format("Address %s on pod %s has %d messages after filter update, expected %d.",
+                        myAddress.getSpec().getAddressName(), brokerPod1.getMetadata().getName(), address1.getMsgCount(), msgsExpected),
+                address1.getMsgCount(), equalTo(msgsExpected));
+        assertThat(String.format("Address %s on pod %s has %d messages after filter update, expected %d.",
+                        myAddress.getSpec().getAddressName(), brokerPod2.getMetadata().getName(), address2.getMsgCount(), msgsExpected),
+                address2.getMsgCount(), equalTo(msgsExpected));
+        broker.getSpec().getBrokerProperties().add("addressConfigurations." +
+                myAddress.getSpec().getAddressName() + ".queueConfigs." +
+                myAddress.getSpec().getQueueName() + ".filterString=color = 'red'");
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
+
+        ResourceManager.waitForArtemisStatusUpdateSequential(testNamespace, broker,
+                ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED, ArtemisConstants.CONDITION_REASON_OUT_OF_SYNC,
+                ArtemisConstants.CONDITION_TYPE_BROKER_PROPERTIES_APPLIED, ArtemisConstants.CONDITION_REASON_APPLIED, Constants.DURATION_5_MINUTES);
+
+        ActiveMQArtemisAddress destinationAddress = new ActiveMQArtemisAddressBuilder()
+                .editOrNewSpec()
+                    .withAddressName(addressName)
+                    .withQueueName(addressName)
+                .endSpec().build();
+
+        MessagingClient messagingClientAmqpUpdated1 = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, brokerPod1,
+                amqpPort.toString(), destinationAddress, msgsExpected);
+        MessagingClient messagingClientAmqpUpdated2 = ResourceManager.createMessagingClient(ClientType.BUNDLED_AMQP, brokerPod2,
+                amqpPort.toString(), destinationAddress, msgsExpected);
+        int sentUpdated1 = messagingClientAmqpUpdated1.sendMessages();
+        int sentUpdated2 = messagingClientAmqpUpdated2.sendMessages();
+
+        AddressData addressUpdated1 = jmx.getAddressQueue(brokerName, addressName, queueName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
+        AddressData addressUpdated2 = jmx.getAddressQueue(brokerName, addressName, queueName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 1);
+
+        assertThat(String.format("Address %s on pod %s has %d messages after filter update, expected %d.",
+                myAddress.getSpec().getAddressName(), brokerPod1.getMetadata().getName(), addressUpdated1.getMsgCount(), msgsExpected),
+                addressUpdated2.getMsgCount(), equalTo(msgsExpected));
+        assertThat(String.format("Address %s on pod %s has %d messages after filter update, expected %d.",
+                myAddress.getSpec().getAddressName(), brokerPod2.getMetadata().getName(), addressUpdated2.getMsgCount(), msgsExpected),
+                addressUpdated2.getMsgCount(), equalTo(msgsExpected));
+
+       // ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+    @Test
     @Disabled
     //see ENTMQBR-8586
     void acceptorNameClashTest() {
@@ -754,7 +852,6 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 null,
                 false);
         ActiveMQArtemis broker = validateAcceptorClash(acceptor1, acceptor2);
-        ResourceManager.deleteArtemis(testNamespace, broker);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 

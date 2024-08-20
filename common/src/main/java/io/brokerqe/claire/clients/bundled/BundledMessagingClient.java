@@ -26,6 +26,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private final String protocol;
     private final String username;
     private final String password;
+    private Boolean isMulticast;
     private Boolean persistenceDisabled;
     // -1 is usually used for infinite number of messages, so use -2 as default unset value
     private int messageCount = -2;
@@ -46,6 +47,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
         this.password = options.password;
         this.username = options.username;
         this.persistenceDisabled = options.persistenceDisabled;
+        this.isMulticast = options.multicast;
     }
 
     abstract String getProtocol();
@@ -96,10 +98,14 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private String[] constructClientCommand(String clientType) {
         // ./amq-broker/bin/artemis producer --url tcp://10.129.2.15:61616 --destination queue://demoQueue --message-count=50
         // ./amq-broker/bin/artemis consumer --url tcp://10.129.2.129:61616 --destination queue://demoQueue --message-count=50
-        if (destinationAddress.equals(destinationQueue)) {
-            clientDestination = "queue://" + destinationAddress;
+        if (isMulticast) {
+            clientDestination = "topic://" + destinationAddress;
         } else {
-            clientDestination = String.format("fqqn://%s::%s", destinationAddress, destinationQueue);
+            if (destinationAddress.equals(destinationQueue)) {
+                clientDestination = "queue://" + destinationAddress;
+            } else {
+                clientDestination = String.format("fqqn://%s::%s", destinationAddress, destinationQueue);
+            }
         }
 
         String command = String.format("%s/artemis %s --url tcp://%s:%s --protocol %s --destination %s",

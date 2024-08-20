@@ -5,6 +5,7 @@
 package io.brokerqe.claire.smoke;
 
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
@@ -101,7 +102,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                "anycast", "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""
@@ -130,7 +131,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                "anycast", "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""
@@ -159,7 +160,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                "anycast", "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""
@@ -187,7 +188,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                "anycast", "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""

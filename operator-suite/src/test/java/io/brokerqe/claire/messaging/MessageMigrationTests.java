@@ -6,12 +6,16 @@ package io.brokerqe.claire.messaging;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Env;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.helpers.AddressData;
+import io.brokerqe.claire.helpers.JMXHelper;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -45,6 +49,83 @@ public class MessageMigrationTests extends AbstractSystemTests {
     @AfterEach
     void cleanResources() {
         cleanResourcesAfterTest(testNamespace);
+    }
+
+
+    @Test
+    public void multicastMigrationTest() {
+        int initialSize = 2;
+        int msgsExpected = 100;
+        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migrmulti", "test", ArtemisConstants.ROUTING_TYPE_MULTICAST);
+        String brokerName = "multicast";
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, brokerName, initialSize, false, false, true, true);
+        List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
+        Pod brokerPod0 = brokerPods.get(0);
+        Pod brokerPod1 = brokerPods.get(1);
+        String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
+        MessagingClient messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod1, allDefaultPort, myAddress, msgsExpected, false, true);
+        LOGGER.info("[{}] Send {} messages to broker1, multicast address", testNamespace, msgsExpected);
+        int sent = messagingClient.sendMessages();
+        assertThat("Sent different amount of messages than expected", sent, equalTo(msgsExpected));
+        broker.getSpec().getDeploymentPlan().setSize(1);
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
+        LOGGER.info("[{}] Performed Broker scaledown {} -> {}", testNamespace, initialSize, 1);
+        waitForScaleDownDrainer(testNamespace, operator.getOperatorName(), brokerName, Constants.DURATION_2_MINUTES, initialSize, 1);
+        brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
+        assertThat("Broker didn't scale down to expected size (1)", brokerPods.size(), equalTo(1));
+        JMXHelper jmx = new JMXHelper().withKubeClient(getClient());
+        AddressData address1 = jmx.getAddressQueue(brokerName, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), ArtemisConstants.ROUTING_TYPE_MULTICAST, 0);
+        assertThat("Received different amount of messages than expected from post-MM", address1.getMsgCount(), equalTo(sent));
+
+        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+    @Test
+    public void multiQueueMigrationTest() {
+        int initialSize = 2;
+        int msgsExpectedPerQueue = 100;
+        String addressName = "migratory";
+        ActiveMQArtemisAddress initialAddress = ResourceManager.createArtemisAddress(testNamespace,
+                addressName, "queue0", ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        String brokerName = "multiqueue";
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "multiqueue", initialSize, false, false, true, true);
+        List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
+
+        Pod brokerPod0 = brokerPods.get(0);
+        Pod brokerPod1 = brokerPods.get(1);
+        String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
+        MessagingClient messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod1,
+                allDefaultPort, initialAddress, msgsExpectedPerQueue, false, false);
+        LOGGER.info("[{}] Send {} messages to broker1, queue \"queue0\"", testNamespace, msgsExpectedPerQueue);
+        int sent = messagingClient.sendMessages();
+        ActiveMQArtemisAddress secondAddress = new ActiveMQArtemisAddressBuilder()
+                .withNewSpec()
+                    .withAddressName(addressName)
+                    .withQueueName("queue1")
+                    .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
+                .endSpec().build();
+        messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod1,
+                allDefaultPort, secondAddress, msgsExpectedPerQueue, false, false);
+        sent += messagingClient.sendMessages();
+        assertThat("Sent different amount of messages than expected", sent, equalTo(msgsExpectedPerQueue * 2));
+
+        broker.getSpec().getDeploymentPlan().setSize(1);
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
+        LOGGER.info("[{}] Performed Broker scaledown {} -> {}", testNamespace, initialSize, 1);
+        waitForScaleDownDrainer(testNamespace, operator.getOperatorName(), brokerName, Constants.DURATION_2_MINUTES, initialSize, 1);
+        brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
+        assertThat("Broker didn't scale down to expected size (1)", brokerPods.size(), equalTo(1));
+        JMXHelper jmx = new JMXHelper().withKubeClient(getClient());
+        AddressData address1 = jmx.getAddressQueue(brokerName, initialAddress.getSpec().getAddressName(),
+                initialAddress.getSpec().getQueueName(), ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
+        assertThat("Received different amount of messages than expected from post-MM", address1.getMsgCount(), equalTo(msgsExpectedPerQueue));
+        AddressData address2 = jmx.getAddressQueue(brokerName, secondAddress.getSpec().getAddressName(),
+                secondAddress.getSpec().getQueueName(), ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
+        assertThat("Received different amount of messages than expected from post-MM", address1.getMsgCount(), equalTo(msgsExpectedPerQueue));
+
+        ResourceManager.deleteArtemisAddress(testNamespace, initialAddress);
+        ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
     @Test

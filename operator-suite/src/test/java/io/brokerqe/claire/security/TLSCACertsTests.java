@@ -118,7 +118,7 @@ public class TLSCACertsTests extends TLSAuthorizationTests {
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
         LOGGER.info("[{}] Broker {} is up and running with CertTextLoginModule", testNamespace, brokerName);
         clients = ResourceManager.deploySecuredClientsContainer(testNamespace, List.of(producerSecretName, consumerSecretName, browserSecretName, expiredBeforeSecretName, expiredAfterSecretName, expiredSecretName));
-        forbiddenAddress = ResourceManager.createArtemisAddress(testNamespace, "forbidden-address", "forbidden-queue", "anycast");
+        forbiddenAddress = ResourceManager.createArtemisAddress(testNamespace, "forbidden-address", "forbidden-queue", ArtemisConstants.ROUTING_TYPE_ANYCAST);
         brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
         clientsPod = getClient().getFirstPodByPrefixName(testNamespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
     }

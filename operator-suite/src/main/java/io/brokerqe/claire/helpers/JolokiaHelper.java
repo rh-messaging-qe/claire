@@ -23,7 +23,7 @@ public class JolokiaHelper {
 
 
     private static URI getJolokiaAddress(String host, String requestPath) {
-        String jolokiaParams = ArtemisConstants.JOLOKIA_CALL_ENDPOINT + ArtemisConstants.JOLOKIA_BROKER_PARAM + requestPath;
+        String jolokiaParams = ArtemisConstants.JOLOKIA_EXEC_ENDPOINT + ArtemisConstants.JOLOKIA_BROKER_PARAM + requestPath;
         URI fullUrl = null;
         try {
             fullUrl = new URI("http://" + host + jolokiaParams);
