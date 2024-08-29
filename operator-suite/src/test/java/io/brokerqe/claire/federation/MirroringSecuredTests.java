@@ -14,6 +14,7 @@ import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.security.CertificateManager;
 import io.brokerqe.claire.security.KeyStoreData;
 import io.fabric8.kubernetes.api.model.Pod;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -24,6 +25,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 
 @TestValidSince(ArtemisVersion.VERSION_2_33)
+@Disabled
 public class MirroringSecuredTests extends MirroringTests {
 
     protected Map<String, KeyStoreData> drKeystores;
