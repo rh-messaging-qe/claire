@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: claire-test-suite
+  namespace: ${NAMESPACE}
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: claire-test-suite
+      image: ${IMAGE}
+      imagePullPolicy: Always
+      command: ["/app/run.sh"]
+      env:
+        - name: CONTAINER_IMAGE
+          value: ${IMAGE}
+      volumeMounts:
+        - name: run-script-volume
+          mountPath: /app/run.sh
+          readOnly: true
+          subPath: run.sh
+        - name: claire-kubeconfig-secret
+          mountPath: /app/.kube
+          readOnly: true
+        - mountPath: "/app/test-results"
+          name: claire-storage
+      securityContext:
+        privileged: false
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+  volumes:
+    - name: run-script-volume
+      configMap:
+        defaultMode: 0750
+        name: run-script
+    - name: claire-kubeconfig-secret
+      secret:
+        secretName: claire-kubeconfig
+    - name: claire-storage
+      emptyDir: {}
+

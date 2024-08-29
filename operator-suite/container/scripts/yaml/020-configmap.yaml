@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: run-script
+  namespace: ${NAMESPACE}
+data:
+  run.sh: |-
+    #!/usr/bin/env bash
+
+    TEST_RESULTS_DIR="/app/test-results"
+    OPERATOR_TEST_RESULTS_DIR="$${TEST_RESULTS_DIR}/operator-suite"
+    LOG_FILE="$${TEST_RESULTS_DIR}/tests.execution.log"
+
+    function log() {
+        if [[ "$$1" == "" ]]; then
+          echo "$$1" | tee -a "$${LOG_FILE}"
+        else
+          echo "[$$(date "+%Y-%m-%d %H:%M:%S %z")] - $$1" | tee -a "$${LOG_FILE}"
+        fi
+    }
+
+    log "Starting..."
+    sleep 15
+    
+    log ""
+    log "Running with git commit id: $${COMMIT_ID}"
+    log "Running with image: $${CONTAINER_IMAGE}"
+    log "Running with image id: $$(kubectl -n claire get pod claire-test-suite -o jsonpath='{.status.containerStatuses[*].imageID}')"
+    
+    log ""
+    log "Running with container env variables:"
+    kubectl -n claire get pod claire-test-suite -o jsonpath='{.spec.containers[*].env}'
+    log ""
+
+    log ""
+    log "All container environment variables:"
+    env
+
+    log ""
+    log "Creating test-results directory: $${OPERATOR_TEST_RESULTS_DIR}"
+    mkdir -p "$${OPERATOR_TEST_RESULTS_DIR}"
+    log ""
+    log "Starting Claire execution at $$(date)" | tee "$${TEST_RESULTS_DIR}/tests.execution.started"
+    log ""
+    log "Executing make with params: ${MAKE_TARGET}"
+    log ""
+    make ${MAKE_TARGET} | tee -a "$${LOG_FILE}"
+    log ""
+    log "Finished Claire execution $$(date)" | tee "$${TEST_RESULTS_DIR}/tests.execution.completed"
+    log ""
+    log "sleeping forever"
+    log ""
+    sleep 99d

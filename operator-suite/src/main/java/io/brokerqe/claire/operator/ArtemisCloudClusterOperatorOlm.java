@@ -24,7 +24,9 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.module.ModuleDescriptor;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator {
@@ -70,14 +72,21 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
             throw new ClaireRuntimeException("Discovered unexpected CatalogSource " + amqBrokerPM.getStatus().getCatalogSource() + "!");
         }
 
-        String defaultChannel = amqBrokerPM.getStatus().getDefaultChannel(); //non-lts
-        if (amqBrokerPM.getStatus().getChannels().get(0).getName().equals(defaultChannel)) {
-            nonLtsChannel = amqBrokerPM.getStatus().getChannels().get(0);
-            ltsChannel = amqBrokerPM.getStatus().getChannels().get(1);
-        } else {
-            nonLtsChannel = amqBrokerPM.getStatus().getChannels().get(1);
-            ltsChannel = amqBrokerPM.getStatus().getChannels().get(0);
-        }
+        List<String> channels = amqBrokerPM.getStatus().getChannels().stream()
+                .map(PackageChannel::getName).toList();
+        List<String> orderedChannels = channels.stream().map(ModuleDescriptor.Version::parse).sorted().map(ModuleDescriptor.Version::toString).toList();
+        List<String> reverseOrderedChannels = new ArrayList<>(orderedChannels);
+        Collections.reverse(reverseOrderedChannels);
+
+        nonLtsChannel = amqBrokerPM.getStatus().getChannels().stream()
+                .filter(e -> e.getName().equals(reverseOrderedChannels.get(0)))
+                .findFirst()
+                .orElseThrow();
+        ltsChannel = amqBrokerPM.getStatus().getChannels().stream()
+                .filter(e -> e.getName().equals(reverseOrderedChannels.get(1)))
+                .findFirst()
+                .orElseThrow();
+
         if (isLts) {
             olmCSV = ltsChannel.getCurrentCSV();
             this.olmChannel = ltsChannel.getName();

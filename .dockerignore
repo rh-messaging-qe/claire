@@ -1,3 +1,5 @@
+.dockerignore
+.git*
 .idea/
 *.iml
 */target/
@@ -8,6 +10,7 @@
 common.yaml
 operator-suite/artemis/
 operator-suite/certificates/
+operator-suite/container/
 operator-suite/operator-suite.log
 operator-suite/serialization-dump/
 performance/
