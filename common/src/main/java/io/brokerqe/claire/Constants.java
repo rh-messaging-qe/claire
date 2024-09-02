@@ -164,9 +164,9 @@ public interface Constants {
 //    String IMAGE_OPENLDAP = "docker.io/bitnami/openldap:latest";
     // To be mirrored!
     String IMAGE_OPENLDAP = "quay.io/rh_integration/openldap:latest";
-    String IMAGE_POSTGRES = "quay.io/rh_integration/postgresql-12:latest";
-    String IMAGE_MYSQL = "quay.io/rh_integration/mysql-80:latest";
-    String IMAGE_MARIADB = "quay.io/rh_integration/mariadb-103:latest";
+    String IMAGE_POSTGRES = "quay.io/rh_integration/postgresql:latest";
+    String IMAGE_MYSQL = "quay.io/rh_integration/mysql:latest";
+    String IMAGE_MARIADB = "quay.io/rh_integration/mariadb:latest";
     // https://hub.docker.com/_/microsoft-mssql-server
     String IMAGE_MSSQL = "mcr.microsoft.com/mssql/server:2022-latest";
     String IMAGE_ORACLE = "container-registry.oracle.com/database/free:latest";
