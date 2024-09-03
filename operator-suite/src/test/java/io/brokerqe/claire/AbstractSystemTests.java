@@ -291,8 +291,9 @@ public abstract class AbstractSystemTests implements TestSeparator {
         int expectedDrainPodsCount = previousSize - newSize;
         Pod operatorPod = getClient().getFirstPodByPrefixName(namespace, operatorName);
 
-        String podDateTime = getClient().executeCommandInPod(operatorPod, "date", Constants.DURATION_10_SECONDS).strip();
+        String podDateTime = getClient().executeCommandInPod(operatorPod, "date +\"%a %b %d %H:%M:%S %Z %Y\"", Constants.DURATION_10_SECONDS).strip();
         // format: Thu Aug 15 09:34:26 UTC 2024
+        // format: Tue Sep  3 11:15:21 UTC 2024
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
         ZonedDateTime zonedDateTime = ZonedDateTime.parse(podDateTime, formatter);
         Instant now = zonedDateTime.toInstant().minus(Duration.ofSeconds(15));
