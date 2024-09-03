@@ -65,7 +65,7 @@ public class MssqlContainer extends DatabaseContainer {
     }
 
     public void setupDatabase() {
-        String setupCommand = String.format("/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P %s -i %s", adminPassword, sqlStartupFilename);
+        String setupCommand = String.format("/opt/mssql-tools18/bin/sqlcmd -S localhost -C -U sa -P %s -i %s", adminPassword, sqlStartupFilename);
         executeCommand(setupCommand.split(" "));
     }
 }
