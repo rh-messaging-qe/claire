@@ -128,11 +128,11 @@ public class JMXHelper {
             List<String> addresses = getAllAdresses(host);
             for (String address: addresses) {
                 for (String queue: getQueueNames(host, address)) {
-                    AddressData ar = new AddressData();
-                    ar.setAddress(address);
-                    ar.setQueueName(queue);
-                    ar.setTotalMsgCount(getMessageCount(host, address, routingType, queue));
-                    result.add(ar);
+                    AddressData addressData = new AddressData();
+                    addressData.setAddress(address);
+                    addressData.setQueueName(queue);
+                    addressData.setTotalMsgCount(getMessageCount(host, address, routingType, queue));
+                    result.add(addressData);
                 }
             }
             return result;

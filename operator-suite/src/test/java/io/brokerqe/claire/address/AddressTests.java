@@ -11,8 +11,8 @@ import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
-import io.brokerqe.claire.helpers.JMXHelper;
 import io.brokerqe.claire.helpers.AddressData;
+import io.brokerqe.claire.helpers.JMXHelper;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -22,14 +22,13 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-
 import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
 
 public class AddressTests extends AbstractSystemTests {
 
@@ -78,10 +77,20 @@ public class AddressTests extends AbstractSystemTests {
         String finalCommand = "amq-broker/bin/artemis address show --url tcp://" + brokerPod.getStatus().getPodIP() + ":" + allDefaultPort;
         // Need to wait for this since address is not populated on pod boot but rather on update from operator,
         // thus executing command immediately won't return needed address
-        TestUtils.waitFor("Address to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
+        TestUtils.waitFor("Addresses to show up in artemis address call", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
             String commandOutput = getClient().executeCommandInPod(finalBrokerPod, finalCommand, Constants.DURATION_1_MINUTE);
             LOGGER.info(commandOutput);
             return commandOutput.contains(myAddress.getSpec().getAddressName());
+        });
+
+        TestUtils.waitFor("[JMX] Addresses to show up in artemis address call", Constants.DURATION_5_SECONDS, Constants.DURATION_30_SECONDS, () -> {
+            List<AddressData> updatedAddressesTmp = new ArrayList<>();
+            try {
+                updatedAddressesTmp = jmx.getAllAddressesQueues(brokerName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
+            } catch (RuntimeException e) {
+                LOGGER.warn("JMX is not fully up on broker, let's try again");
+            }
+            return !updatedAddressesTmp.isEmpty();
         });
 
         List<AddressData> updatedAddresses = jmx.getAllAddressesQueues(brokerName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
