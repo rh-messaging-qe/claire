@@ -186,19 +186,19 @@ public class TLSSecurityTests extends AbstractSystemTests {
 
     private void deployTrustManagerBundle(String bundleName, String certificateName, String namespace) {
         String trustManagerBundle = String.format(BUNDLE, bundleName, certificateName, namespace);
-        HasMetadata trustBundleObj = getKubernetesClient().resource(trustManagerBundle).inNamespace(testNamespace).create();
+        HasMetadata trustBundleObj = getKubernetesClient().resource(trustManagerBundle).inNamespace(testNamespace).createOrReplace();
         leafObjects.add(trustBundleObj);
     }
 
 
     private void deployCertManagerIssuer() {
-        HasMetadata issuerObj = getKubernetesClient().resource(SELF_SIGNED_ISSUER).inNamespace(testNamespace).create();
+        HasMetadata issuerObj = getKubernetesClient().resource(SELF_SIGNED_ISSUER).inNamespace(testNamespace).createOrReplace();
         leafObjects.add(issuerObj);
     }
 
     private void deployCertManagerRootCert() {
-        HasMetadata rootCertObj = getKubernetesClient().resource(ROOT_CERT).create();
-        HasMetadata rootCertCAObj = getKubernetesClient().resource(ROOT_CA_ISSUER).inNamespace(testNamespace).create();
+        HasMetadata rootCertObj = getKubernetesClient().resource(ROOT_CERT).createOrReplace();
+        HasMetadata rootCertCAObj = getKubernetesClient().resource(ROOT_CA_ISSUER).inNamespace(testNamespace).createOrReplace();
         leafObjects.add(rootCertObj);
         leafObjects.add(rootCertCAObj);
     }
@@ -206,21 +206,21 @@ public class TLSSecurityTests extends AbstractSystemTests {
     private void deployKeystorePassword(String password, String namespace) {
         String pass64 =  Base64.getEncoder().encodeToString(password.getBytes());
         String secret = String.format(KEYSTORE_PW_TEMPLATE, namespace, pass64);
-        HasMetadata secretObj = getKubernetesClient().resource(secret).inNamespace(namespace).create();
+        HasMetadata secretObj = getKubernetesClient().resource(secret).inNamespace(namespace).createOrReplace();
         leafObjects.add(secretObj);
 
     }
     private void deployCertManagerClientCert(String certificateName, String urls, String namespace) {
         String certificate = String.format(CLIENT_CERT_TEMPLATE, certificateName, urls, certificateName);
         //client.ts, client.ks
-        HasMetadata certObj = getKubernetesClient().resource(certificate).inNamespace(namespace).create();
+        HasMetadata certObj = getKubernetesClient().resource(certificate).inNamespace(namespace).createOrReplace();
         leafObjects.add(certObj);
     }
 
 
     private void deployCertManagerBrokerCert(String certificateName, String urls) {
         String certificate = String.format(BROKER_CERT_TEMPLATE, certificateName, urls, certificateName);
-        HasMetadata brokerCertificateObj = getKubernetesClient().resource(certificate).inNamespace(testNamespace).create();
+        HasMetadata brokerCertificateObj = getKubernetesClient().resource(certificate).inNamespace(testNamespace).createOrReplace();
         leafObjects.add(brokerCertificateObj);
     }
 
@@ -242,6 +242,11 @@ public class TLSSecurityTests extends AbstractSystemTests {
             i++;
         }
         return internalUrlBlock.toString();
+    }
+
+    private void deployTrustStoreCerts(String password, String clientSecretName, String neededUrls, String namespace) {
+        deployKeystorePassword(password, namespace);
+        deployCertManagerClientCert(clientSecretName, neededUrls, namespace);
     }
 
     public void doTestTlsMessaging(boolean singleSecret, Constants.SECRETSOURCE source, boolean mutualAuthentication) {
@@ -294,9 +299,9 @@ public class TLSSecurityTests extends AbstractSystemTests {
             String neededUrls = getInternalUrls(brokerName, brokerCount) + externalUrl;
             deployCertManagerBrokerCert(brokerSecretName, neededUrls);
             String password = "passwordthisislong";
-            deployKeystorePassword(password, testNamespace);
-            deployCertManagerClientCert(clientSecretName, neededUrls, testNamespace);
 
+            deployTrustStoreCerts(password, clientSecretName, neededUrls, testNamespace);
+            deployTrustStoreCerts(password, clientSecretName, neededUrls, "cert-manager");
 
             KeyStoreData ksData = new KeyStoreData(null, "keystore.jks", "", password);
             KeyStoreData tsData = new KeyStoreData(null, "truststore.jks", "", password);
