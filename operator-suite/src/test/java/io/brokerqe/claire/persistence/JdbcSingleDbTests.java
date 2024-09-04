@@ -131,7 +131,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
                     .endPatch()
                 .endResourceTemplate()
             .endSpec().build();
-        ResourceManager.createArtemis(testNamespace, broker, waitForDeployment, Constants.DURATION_2_MINUTES);
+        ResourceManager.createArtemis(testNamespace, broker, waitForDeployment, Constants.DURATION_3_MINUTES);
     }
 
     void undeployBrokerWithDB() {

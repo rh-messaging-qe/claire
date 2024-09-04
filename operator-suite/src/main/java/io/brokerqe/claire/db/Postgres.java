@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
@@ -35,6 +36,7 @@ public class Postgres implements Database {
     private final String secretName = "postgres-db-secret";
     private final String adminUsername = "newuser";
     private final String adminPassword = "testpassword";
+    private String databaseName;
     private StatefulSet postgresStatefulset;
     private int port = 5432;
 
@@ -66,7 +68,8 @@ public class Postgres implements Database {
     public void deployPostgres(String applicationName) {
         LOGGER.info("[{}] [Postgres] Deploying {}", namespace, name);
         kubeClient.createSecretStringData(namespace, secretName, secretData, true);
-        
+        databaseName = applicationName;
+
         postgresStatefulset = new StatefulSetBuilder()
             .withNewMetadata()
                 .withName(name)
@@ -115,6 +118,13 @@ public class Postgres implements Database {
                                         .withNewSecretKeyRef("password", secretName, false)
                                         .build())
                                 .build(),
+                                // admin 'postgres' user password
+                                new EnvVarBuilder()
+                                    .withName("POSTGRESQL_POSTGRES_PASSWORD")
+                                    .withValueFrom(new EnvVarSourceBuilder()
+                                        .withNewSecretKeyRef("password", secretName, false)
+                                        .build())
+                                    .build(),
                                 new EnvVarBuilder()
                                     .withName("POSTGRESQL_DATABASE")
                                     .withValue(applicationName)
@@ -129,6 +139,11 @@ public class Postgres implements Database {
         postgresStatefulset = kubeClient.getKubernetesClient().resource(postgresStatefulset).inNamespace(namespace).createOrReplace();
         DataStorer.dumpResourceToFile(postgresStatefulset);
         kubeClient.getKubernetesClient().resource(postgresStatefulset).waitUntilReady(60, TimeUnit.SECONDS);
+
+        Pod postresqlPod = kubeClient.getFirstPodByPrefixName(namespace, name);
+        kubeClient.executeCommandInPod(postresqlPod, "PGPASSWORD=testpassword psql -h localhost " +
+                "-d db-jar-plugin -U postgres -n -c \"GRANT ALL ON SCHEMA public TO newuser\";", Constants.DURATION_10_SECONDS);
+
         service = kubeClient.getKubernetesClient().services().inNamespace(namespace).resource(service).createOrReplace();
         DataStorer.dumpResourceToFile(service);
     }
@@ -142,7 +157,7 @@ public class Postgres implements Database {
 
     @Override
     public String getJdbcUrl() {
-        return "jdbc:postgresql://%s:%s/postgres?user=%s&password=%s".formatted(getName(), port, getUsername(), getPassword());
+        return "jdbc:postgresql://%s:%s/%s?user=%s&password=%s".formatted(getName(), port, getDatabaseName(), getUsername(), getPassword());
     }
 
     @Override
@@ -176,7 +191,7 @@ public class Postgres implements Database {
 
     @Override
     public String getDatabaseName() {
-        return null;
+        return databaseName;
     }
 
     @Override
