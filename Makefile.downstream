@@ -136,6 +136,9 @@ operator_get_dependencies: operator_prepare
 operator_test_smoke:
 	${MVN_TEST_CMD} --projects :operator-suite -Dgroups="smoke"
 
+operator_copy_test_results:
+	- cp -axv ${ROOT_DIR}/operator-suite/target/failsafe-reports/* ${ROOT_DIR}/test-results/operator-suite/
+
 operator_test:
 	${MVN_TEST_CMD} --projects :operator-suite ${MVN_TESTS_PARAM} ${MVN_GROUPS_PARAM}
 

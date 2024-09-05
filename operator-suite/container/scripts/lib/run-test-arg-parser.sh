@@ -38,7 +38,7 @@ _arg_image_namespace="rhmessagingqe"
 _arg_image_tag="activemq-artemis-1.1.0"
 _arg_make_envvar=()
 _arg_kubeconfig=
-_arg_make_target="operator_test_smoke"
+_arg_make_target="operator_test_smoke operator_copy_test_results"
 _arg_namespace="claire"
 _arg_test_completion_wait_check="60"
 
