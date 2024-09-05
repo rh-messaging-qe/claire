@@ -40,6 +40,28 @@ make operator_test
 If you would like to start only some tests, set `TESTS` environment variable, which is passed as
 `-Dtest=<TESTS>` argument into maven. Execute same command as above.
 
+## How to build container image
+
+To build container image executed the command:
+```bash
+make -f Makefile.downstream container_build
+```
+
+once the image is built you can push it to quay.io:
+```bash
+podman login --username you_user_name https://quay.io
+make -f Makefile.downstream container_push
+```
+
+To execute the tests using the container you can use the command:
+```bash
+operator-suite/container/scripts/run-test.sh --make-envvar OLM=true --image-tag amq-broker-lpt
+```
+
+You may check the run-test.sh help with:
+```bash
+operator-suite/container/scripts/run-test.sh --help
+```
 
 ## List of shared Environment Variables
 
