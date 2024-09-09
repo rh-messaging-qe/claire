@@ -157,7 +157,7 @@ container_prepare:
 
 container_build: clean operator_prepare container_prepare
 	echo "Preparing host for multi arch build"
-	sudo podman run --privileged --rm docker.io/tonistiigi/binfmt --install all
+	sudo podman run --privileged --rm quay.io/rhmessagingqe/binfmt:latest --install all
 	echo "Building container"
 	podman manifest rm quay.io/rhmessagingqe/claire:${OPR_VERSION} 2> /dev/null || true
 	podman build \
