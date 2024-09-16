@@ -170,6 +170,7 @@ public interface Constants {
     // https://hub.docker.com/_/microsoft-mssql-server
     String IMAGE_MSSQL = "mcr.microsoft.com/mssql/server:2022-latest";
     String IMAGE_ORACLE = "container-registry.oracle.com/database/free:latest";
+    String IMAGE_RAPIDAST = "quay.io/redhatproductsecurity/rapidast:latest";
 
     // Openshift related
     String MONITORING_NAMESPACE = "openshift-monitoring";
