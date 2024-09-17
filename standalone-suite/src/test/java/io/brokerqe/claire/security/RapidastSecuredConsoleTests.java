@@ -14,20 +14,22 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.container.ArtemisContainer;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.testcontainers.containers.BindMode;
 
+@Tag(Constants.TAG_RAPIDAST)
+public class RapidastSecuredConsoleTests extends RapidastDefaultConsoleTests {
 
-public class RapidastSecuredTests extends RapidastDefaultTests {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(RapidastSecuredTests.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RapidastSecuredConsoleTests.class);
 
 
     protected String getScanName() {
         return "secured-spider";
     }
+
     @BeforeAll
     void setupEnv() {
         String artemisName = "artemis";
