@@ -67,6 +67,19 @@ Standalone test suite provides support for databases in two ways:
 
 In deployed DB way, relevant _bitnami mariadb/mysql/postgresql_, _container-registry.oracle.com/database/free_ or _mcr.microsoft.com/mssql/server:2022_  container will be spawned and used for testing.
 
+## YACFG Artemis configuration genration tool
+- If needed to use custom yacfg, use following exported variables & example command
+    ```shell
+    export YACFG_TEMPLATES=<repos>/yacfg_artemis/templates
+    export YACFG_PROFILES=<repos>/yacfg_artemis/profiles
+    cd <repo-yacfg_artemis>
+    <path-to-bin>yacfg --profile artemis/<profile>.yaml.jinja2 --tune <path-to>/<test-tune-file>.yaml.jinja2 --output <tuned-artemis-config-dir>
+
+    yacfg --profile artemis/claire-default-profile-2.34.0.yaml.jinja2 \
+          --tune claire/standalone-suite/yacfg-profiles/tests/upgrade/HAReplicationUpgradeTests/primary-tune.yaml.jinja2 \
+          --output primary-lala
+  ```
+
 ## Development Hints
 - Keep the code clean :-)
 - If you are going to implement a container verify if it already exists on testcontainer modules (go to the modules 
@@ -75,5 +88,4 @@ section on testcontainers main page)
 the tests. These classes have some important comments on it
 - The `helper` package contains useful classes which helps to create tests specially the `ArtemisJmxHelper` class
 - The `client.jms` package contains the client implementations (currently, in an early stage)
-- Remember to add the initial header on new files/classes, otherwise the build will fail on checkstyle checks (you may 
-configure your IDE to automatically add the header on new files)
+- Remember to add the initial header on new files/classes, otherwise the build will fail on checkstyle checks (you may configure your IDE to automatically add the header on new files)

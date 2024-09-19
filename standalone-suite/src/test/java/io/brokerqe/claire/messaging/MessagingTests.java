@@ -206,7 +206,7 @@ public class MessagingTests extends AbstractSystemTests {
                 "conn-heartbeat", "180"
         ));
 
-        Duration timeout = calculateStartupTimeout(size, unit, messageCount);
+        Duration timeout = calculateArtemisStartupTimeout(size, unit, messageCount);
         if (messageContent != null) {
             senderOptions.put("msg-content", messageContent);
             receiverOptions.put("timeout", String.valueOf(timeout.toSeconds()));
@@ -241,21 +241,6 @@ public class MessagingTests extends AbstractSystemTests {
 
         artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.QUEUE_DELETE, artemisDeleteQueueOptions);
         artemisClient.executeCommand();
-    }
-
-    private Duration calculateStartupTimeout(int size, String unit, int messageCount) {
-        int seconds = messageCount;
-        if (size != 0) {
-            seconds *= size;
-        }
-        if (unit != null) {
-            switch (unit) {
-                case "KiB" -> seconds *= 0.5;
-                case "MiB" -> seconds *= 15;
-                case "GiB" -> seconds *= 100;
-            }
-        }
-        return Duration.ofSeconds(seconds);
     }
 
     private int getMessageCount(int defaultCount) {

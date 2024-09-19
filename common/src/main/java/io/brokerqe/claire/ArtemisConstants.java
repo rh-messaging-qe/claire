@@ -166,6 +166,20 @@ public interface ArtemisConstants {
 
 
     // Log Strings
+    static String getArtemisVersionString(String version) {
+        // Red Hat AMQ Broker 7.11.1.GA
+        return String.format("Red Hat AMQ Broker %s.GA", version);
+    }
+
+    static String getArtemisVersionStringOld(String version) {
+        // Red Hat AMQ 7.10.1.GA
+        return String.format("Red Hat AMQ %s.GA", version);
+    }
+
+    static String getArtemisStartingServerVersionString(String version) {
+        return String.format("Starting ActiveMQ Artemis Server version %s", version);
+    }
+
     String IS_LIVE_LOG_MSG = " INFO  [org.apache.activemq.artemis.core.server] AMQ221007: Server is now";
     String USING_CUSTOM_LOG_MSG = "There is a custom logger configuration defined in JAVA_ARGS_APPEND: -Dlog4j2.configurationFile=";
     String USING_DEFAULT_LOG_MSG = "Using default logging configuration(console only)";

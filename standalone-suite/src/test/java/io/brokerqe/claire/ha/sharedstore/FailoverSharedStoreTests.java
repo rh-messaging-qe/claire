@@ -74,7 +74,7 @@ public class FailoverSharedStoreTests extends AbstractSystemTests {
         String artemisBackupName = "artemisBackup";
         LOGGER.info("Creating artemis instance: " + artemisBackupName);
         String backupTuneFile = generateYacfgProfilesContainerTestDir("backup-tune.yaml.jinja2");
-        artemisBackup = getArtemisInstance(artemisBackupName, backupTuneFile, yacfgOpts, artemisBackupEnvVars, true);
+        artemisBackup = getArtemisInstance(artemisBackupName, backupTuneFile, yacfgOpts, artemisBackupEnvVars, null, true);
 
         LOGGER.info("Setting client configurations");
         DeployableClient stDeployableClient = new StJavaClientDeployment();

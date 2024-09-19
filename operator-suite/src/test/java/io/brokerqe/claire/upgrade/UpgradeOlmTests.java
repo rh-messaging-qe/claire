@@ -7,6 +7,7 @@ package io.brokerqe.claire.upgrade;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
@@ -124,8 +125,8 @@ public class UpgradeOlmTests extends AbstractSystemTests {
         assertThat(operatorLogs, containsString(operatorVersionString));
 
         // Red Hat AMQ 7.10.1.GA
-        String brokerVersionOldString = "Red Hat AMQ " + version + ".GA";
-        String brokerVersionNewString = "Red Hat AMQ Broker " + version + ".GA";
+        String brokerVersionOldString = ArtemisConstants.getArtemisVersionString(version);
+        String brokerVersionNewString = ArtemisConstants.getArtemisVersionStringOld(version);
         for (Pod brokerUpgradePod : brokerUpgradePods) {
             LOGGER.info("[{}] Check expected version {} in {} pod logs", testNamespace, version, brokerUpgradePod.getMetadata().getName());
             String brokerLogs = getClient().getLogsFromPod(brokerUpgradePod);

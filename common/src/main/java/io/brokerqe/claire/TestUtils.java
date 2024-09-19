@@ -51,6 +51,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,7 +63,9 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -81,6 +84,21 @@ public final class TestUtils {
 
     public static Path getProjectRelativeFilePath(String projectRelativeFile) {
         return  Paths.get(Constants.PROJECT_USER_DIR, projectRelativeFile).toAbsolutePath();
+    }
+
+    // ========== Execute command Operations ==========
+
+    public static String executeLocalCommand(String cmd) {
+        return executeLocalCommand(cmd.split(" "));
+    }
+
+    public static String executeLocalCommand(String... cmd) {
+        LocalExecutor executor = new LocalExecutor();
+        LOGGER.debug("[CMD][local] {}", Arrays.stream(cmd).toArray());
+        executor.executeCommand(cmd);
+        String output = executor.getCommandData(Duration.ofSeconds(10).toSeconds());
+        LOGGER.debug("[CMD][local] Output\n{}", output);
+        return output;
     }
 
     // ========== Junit Test Operations ==========
@@ -312,9 +330,12 @@ public final class TestUtils {
     // ========== Network Operations ==========
     public static void getFileFromUrl(String stringUrl, String outputFile) {
         if (!Files.exists(Paths.get(outputFile))) {
-            LOGGER.debug("Downloading {} to {}", stringUrl, outputFile);
+            LOGGER.debug("[Download] {} to {}", stringUrl, outputFile);
             try {
                 URL url = new URL(stringUrl);
+                if (stringUrl.startsWith("https")) {
+                    makeInsecureHttpsRequest(stringUrl);
+                }
                 ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
                 FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
                 fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
@@ -470,6 +491,34 @@ public final class TestUtils {
         }
     }
 
+    public static void copyDirectories(String source, String target) {
+        try {
+            Path sourceDir = Paths.get(source);
+            Path targetDir = Paths.get(target);
+            LOGGER.debug("[Copy] Recursively {} -> {}", source, target);
+            Files.walk(sourceDir)
+                .forEach(sourcePath -> {
+                    try {
+                        Path targetPath = targetDir.resolve(sourceDir.relativize(sourcePath));
+                        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void moveDirectory(String srcDir, String newDir) {
+        try {
+            LOGGER.debug("[Move] {} -> {}", srcDir, newDir);
+            FileUtils.moveDirectory(new File(srcDir), new File(newDir));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void copyFile(String source, String target) {
         try {
             Files.copy(Path.of(source), Path.of(target), StandardCopyOption.REPLACE_EXISTING);
@@ -488,8 +537,24 @@ public final class TestUtils {
         }
     }
 
-    public static String replaceFileContent(String filePath, String toReplace, String replaceWith) {
-        String newFilePath = filePath + "_tmpFile" + TestUtils.getRandomString(3);
+    public static List<Path> searchForGlobFile(String directory, String globPattern, int maxDepth) {
+        List<Path> paths;
+        try {
+            paths = Files.find(Paths.get(directory), maxDepth, (path, attr) -> {
+                LOGGER.debug(path.toString());
+                return FileSystems.getDefault().getPathMatcher(globPattern).matches(path);
+            }).toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return paths;
+    }
+
+    public static String replaceFileContent(String filePath, String toReplace, String replaceWith, boolean inPlace) {
+        String newFilePath = filePath;
+        if (!inPlace) {
+            newFilePath += "_tmpFile" + TestUtils.getRandomString(3);
+        }
         String data = readFileContent(new File(filePath));
         data = data.replace(toReplace, replaceWith);
         TestUtils.createFile(newFilePath, data);
@@ -560,6 +625,7 @@ public final class TestUtils {
 
     public static void unzip(String archivePath, String unarchivePath) {
         try {
+            LOGGER.debug("[Unzip] {} -> {}", archivePath, unarchivePath);
             new ZipFile(Paths.get(archivePath).toFile()).extractAll(unarchivePath);
         } catch (IOException e) {
             throw new RuntimeException(e);

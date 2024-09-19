@@ -5,8 +5,13 @@
 package io.brokerqe.claire;
 
 import io.brokerqe.claire.clients.DeployableClient;
+import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.clients.Protocol;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
+import io.brokerqe.claire.clients.bundled.BundledAmqpMessagingClient;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
+import io.brokerqe.claire.clients.bundled.BundledClientOptions;
+import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.NfsServerContainer;
 import io.brokerqe.claire.container.YacfgArtemisContainer;
@@ -22,7 +27,9 @@ import jakarta.jms.TextMessage;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -43,6 +50,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(StandaloneTestDataCollector.class)
@@ -110,32 +118,38 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     protected ArtemisContainer getArtemisInstance(String instanceName) {
-        return getArtemisInstance(instanceName, null, new ArrayList<>(), new HashMap<>(), false, true);
+        return getArtemisInstance(instanceName, null, new ArrayList<>(), new HashMap<>(), null, false, true);
     }
 
     protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile) {
-        return getArtemisInstance(instanceName, tuneFile, new ArrayList<>(), new HashMap<>(), false, true);
+        return getArtemisInstance(instanceName, tuneFile, new ArrayList<>(), new HashMap<>(), null, false, true);
+    }
+
+    protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile, List<String> yacfgOpts) {
+        return getArtemisInstance(instanceName, tuneFile, yacfgOpts, new HashMap<>(), null, false, true);
+    }
+
+    protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile, List<String> yacfgOpts, Map<String, String> artemisData) {
+        return getArtemisInstance(instanceName, tuneFile, yacfgOpts, new HashMap<>(), artemisData, false, true);
     }
 
     protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile, boolean isBackupInstance) {
-        return getArtemisInstance(instanceName, tuneFile, new ArrayList<>(), new HashMap<>(), isBackupInstance, true);
+        return getArtemisInstance(instanceName, tuneFile, new ArrayList<>(), new HashMap<>(), null, isBackupInstance, true);
     }
 
-    protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile,
-                                                  List<String> yacfgOpts,
-                                                  Map<String, String> envVars) {
-        return getArtemisInstance(instanceName, tuneFile, yacfgOpts, envVars, false, true);
-    }
-
-    protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile,
-                                                  List<String> yacfgOpts, Map<String, String> envVars,
-                                                  boolean isBackupInstance) {
-        return getArtemisInstance(instanceName, tuneFile, yacfgOpts, envVars, isBackupInstance, true);
+    protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile, List<String> yacfgOpts, Map<String, String> envVars, Map<String, String> artemisData) {
+        return getArtemisInstance(instanceName, tuneFile, yacfgOpts, envVars, null, false, true);
     }
 
     protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile,
                                                   List<String> yacfgOpts, Map<String, String> envVars,
-                                                  boolean isBackupInstance, boolean startInstance) {
+                                                  Map<String, String> artemisData, boolean isBackupInstance) {
+        return getArtemisInstance(instanceName, tuneFile, yacfgOpts, envVars, artemisData, isBackupInstance, true);
+    }
+
+    protected ArtemisContainer getArtemisInstance(String instanceName, String tuneFile,
+                                                  List<String> yacfgOpts, Map<String, String> envVars,
+                                                  Map<String, String> artemisData, boolean isBackupInstance, boolean startInstance) {
         List<String> mutableYacfgOpts = new ArrayList<>(yacfgOpts);
         if (useArtemisWithDB()) {
             return setupArtemisWithDB();
@@ -146,7 +160,7 @@ public class AbstractSystemTests implements TestSeparator {
                 mutableYacfgOpts.add("--tune");
                 mutableYacfgOpts.add(tuneFile);
             }
-            generateArtemisCfg(artemis, mutableYacfgOpts);
+            generateArtemisCfg(artemis, artemisData, mutableYacfgOpts);
             if (isBackupInstance) {
                 artemis.withLogWait(ArtemisContainer.BACKUP_ANNOUNCED_LOG_REGEX);
             }
@@ -187,6 +201,10 @@ public class AbstractSystemTests implements TestSeparator {
         return TestUtils.getProjectRelativeFile(Constants.ARTEMIS_TEST_CFG_DIR + Constants.FILE_SEPARATOR + cfgDir);
     }
 
+    protected String getTestTempDir() {
+        return getEnvironment().getTmpDirLocation() + Constants.FILE_SEPARATOR + getPkgClassAsDir();
+    }
+
     protected void generateArtemisCfgInParallel(Map<ArtemisContainer, List<String>> configMap) {
         configMap.entrySet().stream().parallel().forEach(e -> {
             generateArtemisCfg(e.getKey(), e.getValue());
@@ -194,21 +212,35 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     protected void generateArtemisCfg(ArtemisContainer artemisInstance) {
-        generateArtemisCfg(artemisInstance, new ArrayList<>(), null);
+        generateArtemisCfg(artemisInstance, new ArrayList<>());
     }
 
     protected void generateArtemisCfg(ArtemisContainer artemisInstance, List<String> yacfgParams) {
-        generateArtemisCfg(artemisInstance, yacfgParams, null);
+        generateArtemisCfg(artemisInstance, null, yacfgParams);
     }
-
-    protected void generateArtemisCfg(ArtemisContainer artemisInstance, List<String> yacfgParams, String profileFileName) {
+    protected void generateArtemisCfg(ArtemisContainer artemisInstance, Map<String, String> artemisData, List<String> yacfgParams) {
         String instanceDir = getTestConfigDir() + Constants.FILE_SEPARATOR + artemisInstance.getName();
-        TestUtils.createDirectory(instanceDir + ArtemisConstants.BIN_DIR);
-        TestUtils.createDirectory(instanceDir + ArtemisConstants.DATA_DIR);
-        TestUtils.createDirectory(instanceDir + ArtemisConstants.ETC_DIR);
-        TestUtils.createDirectory(instanceDir + ArtemisConstants.LIB_DIR);
-        TestUtils.createDirectory(instanceDir + ArtemisConstants.LOG_DIR);
-        TestUtils.createDirectory(instanceDir + ArtemisConstants.TMP_DIR);
+        String providedInstanceDir = null;
+        String providedInstallDir = null;
+        if (artemisData != null) {
+            providedInstanceDir = artemisData.get("instanceDir");
+            providedInstallDir = artemisData.get("installDir");
+            artemisInstance.setInstallDir(providedInstallDir);
+        }
+
+        if (providedInstanceDir == null) {
+            LOGGER.debug("[Config] Using default installDir {}", instanceDir);
+            TestUtils.createDirectory(instanceDir + ArtemisConstants.BIN_DIR);
+            TestUtils.createDirectory(instanceDir + ArtemisConstants.DATA_DIR);
+            TestUtils.createDirectory(instanceDir + ArtemisConstants.ETC_DIR);
+            TestUtils.createDirectory(instanceDir + ArtemisConstants.LIB_DIR);
+            TestUtils.createDirectory(instanceDir + ArtemisConstants.LOG_DIR);
+            TestUtils.createDirectory(instanceDir + ArtemisConstants.TMP_DIR);
+        } else {
+            LOGGER.debug("[Config] Using provided instanceDir {}", providedInstanceDir);
+            TestUtils.copyDirectories(providedInstanceDir, instanceDir);
+            artemisInstance.setConfigBinDir(instanceDir + ArtemisConstants.BIN_DIR);
+        }
         artemisInstance.withInstanceDir(instanceDir);
 
         String artemisConfig = EnvironmentStandalone.getInstance().getProvidedArtemisConfig();
@@ -220,16 +252,14 @@ public class AbstractSystemTests implements TestSeparator {
             final YacfgArtemisContainer yacfg;
 
             yacfg = ResourceManager.getYacfgArtemisContainerInstance(String.format("yacfg-%s", artemisInstance.getName()));
-            String instanceYacfgOutputDir = instanceDir + Constants.FILE_SEPARATOR + ArtemisConstants.ETC_DIR;
+            String instanceYacfgOutputDir = instanceDir + ArtemisConstants.ETC_DIR;
             yacfg.withHostOutputDir(instanceYacfgOutputDir);
 
-            if (profileFileName != null && !profileFileName.isBlank() && !profileFileName.isEmpty()) {
-                yacfg.withProfile(profileFileName);
-            }
-
-            if (yacfgParams.stream().noneMatch(e -> e.contains("broker_home"))) {
+            Predicate<String> homePredicate = e -> e.contains("broker_home=");
+            yacfgParams.stream().filter(homePredicate).forEach(e -> {
                 yacfg.withParam(YacfgArtemisContainer.OPT_PARAM_KEY, String.format("broker_home=%s", ArtemisContainer.ARTEMIS_INSTALL_DIR));
-            }
+            });
+            yacfgParams.removeIf(homePredicate);
 
             if (yacfgParams.stream().noneMatch(e -> e.contains("broker_name="))) {
                 yacfg.withParam(YacfgArtemisContainer.OPT_PARAM_KEY, String.format("broker_name=%s", artemisInstance.getName()));
@@ -238,6 +268,13 @@ public class AbstractSystemTests implements TestSeparator {
             if (yacfgParams.stream().noneMatch(e -> e.contains("broker_instance="))) {
                 yacfg.withParam(YacfgArtemisContainer.OPT_PARAM_KEY, String.format("broker_instance=%s", ArtemisContainer.ARTEMIS_INSTANCE_DIR));
             }
+
+            Predicate<String> profilePredicate = e -> e.contains("profile=");
+            yacfgParams.stream().filter(profilePredicate).forEach(e -> {
+                String profile = StringUtils.substringAfter(e, "=");
+                yacfg.withProfile(profile);
+            });
+            yacfgParams.removeIf(profilePredicate);
 
             Predicate<String> tunePredicate = e -> e.contains("tune_file=");
             yacfgParams.stream().filter(tunePredicate).forEach(e -> {
@@ -343,6 +380,7 @@ public class AbstractSystemTests implements TestSeparator {
         return nfsServer;
     }
 
+    // ==== Messaging methods
     protected void deleteAddress(DeployableClient artemisDeployableClient, String name) {
         BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.ADDRESS_DELETE, Map.of("name", name));
         artemisClient.executeCommand();
@@ -351,5 +389,102 @@ public class AbstractSystemTests implements TestSeparator {
     protected void deleteQueue(DeployableClient artemisDeployableClient, String name) {
         BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.QUEUE_DELETE, Map.of("name", name));
         artemisClient.executeCommand();
+    }
+
+    public void createAddress(DeployableClient artemisDeployableClient, String name) {
+        BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.ADDRESS_CREATE, Map.of("name", name));
+        artemisClient.executeCommand();
+    }
+
+    public void createQueue(ArtemisContainer artemis, Map<String, String> artemisCreateQueueOptions) {
+        createQueue(artemis.getDeployableClient(), artemisCreateQueueOptions, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+    }
+
+    public void createQueue(DeployableClient artemisDeployableClient, Map<String, String> artemisCreateQueueOptions, String username, String password) {
+        BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.QUEUE_CREATE, username, password, artemisCreateQueueOptions);
+        artemisClient.executeCommand();
+    }
+
+    public MessagingClient createMessagingClient(BundledClientOptions options) {
+        MessagingClient messagingClient;
+
+        if (options.getProtocol().toString().startsWith(Protocol.AMQP.name())) {
+            options.getDeployableClient().getContainer();
+            messagingClient = new BundledAmqpMessagingClient(options);
+        } else {
+            messagingClient = new BundledCoreMessagingClient(options);
+        }
+        return messagingClient;
+    }
+
+    public int sendMessages(BundledClientOptions options) {
+        return sendMessages(null, options);
+    }
+
+    public int sendMessages(MessagingClient messagingClient, BundledClientOptions options) {
+        if (messagingClient == null) {
+            messagingClient = createMessagingClient(options);
+        }
+        LOGGER.info("[{}] Sending {} messages to {}.", options.getDeployableClient().getContainerName(), options.getMessageCount(), options.getDestinationQueue());
+        return messagingClient.sendMessages();
+    }
+
+    public int receiveMessages(BundledClientOptions options) {
+        return receiveMessages(null, options);
+    }
+
+    public int receiveMessages(MessagingClient messagingClient, BundledClientOptions options) {
+        if (messagingClient == null) {
+            messagingClient = createMessagingClient(options);
+        }
+        LOGGER.info("[{}] Sending {} messages to {}.", options.getDeployableClient().getContainerName(), options.getMessageCount(), options.getDestinationQueue());
+        return messagingClient.receiveMessages();
+    }
+
+    public void sendReceiveDurableMsgQueue(ArtemisContainer artemis, BundledClientOptions senderOptions, BundledClientOptions receiverOptions) {
+        Map<String, String> artemisCreateQueueOptions = new HashMap<>(Map.of(
+                "name", senderOptions.getDestinationQueue(),
+                "address", senderOptions.getDestinationAddress(),
+                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
+                "durable", "",
+                "auto-create-address", "",
+                "preserve-on-no-consumers", ""
+        ));
+        Map<String, String> artemisDeleteQueueOptions = new HashMap<>(Map.of(
+                "name", senderOptions.getDestinationAddress()
+        ));
+
+        BundledArtemisClient artemisClient = new BundledArtemisClient(artemis.getDeployableClient(), ArtemisCommand.QUEUE_CREATE, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, artemisCreateQueueOptions);
+        artemisClient.executeCommand();
+
+        MessagingClient sender = createMessagingClient(senderOptions);
+        int sent = sendMessages(sender, senderOptions);
+
+        MessagingClient receiver = createMessagingClient(receiverOptions);
+        int received = receiveMessages(receiver, senderOptions);
+        MatcherAssert.assertThat(received, equalTo(sent));
+
+        artemisClient = new BundledArtemisClient(artemis.getDeployableClient(), ArtemisCommand.QUEUE_DELETE, artemisDeleteQueueOptions);
+        artemisClient.executeCommand();
+    }
+
+    public Duration calculateArtemisStartupTimeout(int size, String unit, int messageCount) {
+        int seconds = messageCount;
+        if (size != 0) {
+            seconds *= size;
+        }
+        if (unit != null) {
+            switch (unit) {
+                case "KiB" -> seconds *= 0.5;
+                case "MiB" -> seconds *= 15;
+                case "GiB" -> seconds *= 100;
+            }
+        }
+        return Duration.ofSeconds(seconds);
+    }
+
+    // common assertion methods
+    public void assertContains(String log, String text) {
+        Assertions.assertTrue(log.contains(text));
     }
 }

@@ -43,7 +43,6 @@ function umount_nfs() {
 function start() {
     echo ""
     echo "Going to start artemis"
-    echo ""
     nohup /var/lib/artemis-instance/bin/artemis run 2>&1 &
     sleep 2
     pidof java > "${PID_FILE}"

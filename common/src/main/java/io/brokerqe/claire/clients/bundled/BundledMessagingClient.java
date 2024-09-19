@@ -20,7 +20,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(BundledMessagingClient.class);
 
     private final String destinationAddress;
-    private final String destinationUrl;
+    private String destinationUrl;
     private final String destinationPort;
     private final String destinationQueue;
     private final String protocol;
@@ -108,7 +108,10 @@ public abstract class BundledMessagingClient implements MessagingClient {
             }
         }
 
-        String command = String.format("%s/artemis %s --url tcp://%s:%s --protocol %s --destination %s",
+        if (!destinationUrl.contains("://")) {
+            destinationUrl = "tcp://" + destinationUrl;
+        }
+        String command = String.format("%s/artemis %s --url %s:%s --protocol %s --destination %s",
                 deployableClient.getExecutableHome(), clientType, destinationUrl, destinationPort, protocol, clientDestination);
 
         if (messageCount != -2) {

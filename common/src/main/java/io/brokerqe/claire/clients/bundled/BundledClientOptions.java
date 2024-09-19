@@ -6,6 +6,7 @@
 package io.brokerqe.claire.clients.bundled;
 
 import io.brokerqe.claire.clients.DeployableClient;
+import io.brokerqe.claire.clients.Protocol;
 
 public class BundledClientOptions {
     DeployableClient deployableClient;
@@ -18,6 +19,7 @@ public class BundledClientOptions {
     String password;
     Boolean persistenceDisabled = false;
     Boolean multicast = false;
+    Protocol protocol;
 
     public BundledClientOptions withDeployableClient(DeployableClient deployableClient) {
         this.deployableClient = deployableClient;
@@ -66,6 +68,54 @@ public class BundledClientOptions {
     public BundledClientOptions withMulticast(Boolean multicast) {
         this.multicast = multicast;
         return this;
+    }
 
+    public BundledClientOptions withProtocol(Protocol protocol) {
+        this.protocol = protocol;
+        return this;
+    }
+
+    public DeployableClient getDeployableClient() {
+        return deployableClient;
+    }
+
+    public String getDestinationUrl() {
+        return destinationUrl;
+    }
+
+    public String getDestinationPort() {
+        return destinationPort;
+    }
+
+    public String getDestinationAddress() {
+        return destinationAddress;
+    }
+
+    public String getDestinationQueue() {
+        return destinationQueue;
+    }
+
+    public int getMessageCount() {
+        return messageCount;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public Boolean getPersistenceDisabled() {
+        return persistenceDisabled;
+    }
+
+    public Boolean getMulticast() {
+        return multicast;
+    }
+
+    public Protocol getProtocol() {
+        return protocol;
     }
 }

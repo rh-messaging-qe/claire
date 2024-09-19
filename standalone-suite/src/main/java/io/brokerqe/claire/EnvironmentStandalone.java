@@ -53,6 +53,7 @@ public class EnvironmentStandalone extends Environment {
         loadProjectProperties(Constants.STANDALONE_MODULE_PROPERTIES_FILE);
         this.set(this);
         databaseFile = getConfigurationValue(Constants.EV_JDBC_DATA, Constants.PROP_JDBC_DATA, null);
+        testUpgradePlan = System.getenv().getOrDefault(Constants.EV_UPGRADE_PLAN, null);
         osInfo = getOSInfo();
         // Default value is in logback settings file
         logLevel = getConfigurationValue(Constants.EV_TEST_LOG_LEVEL, Constants.PROP_LOG_LEVEL, ArtemisConstants.DEFAULT_LOG_LEVEL);
@@ -134,6 +135,7 @@ public class EnvironmentStandalone extends Environment {
                 Constants.PROP_YACFG_ARTEMIS_PROFILES_OVERRIDE_DIR + ": " + yacfgArtemisProfilesOverrideDir + Constants.LINE_SEPARATOR +
                 Constants.PROP_YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR + ": " + yacfgArtemisTemplatesOverrideDir + Constants.LINE_SEPARATOR +
                 Constants.PROP_JDBC_DATA + ": " + databaseFile + Constants.LINE_SEPARATOR +
+                Constants.EV_UPGRADE_PLAN + ": " + testUpgradePlan + Constants.LINE_SEPARATOR +
                 Constants.PROP_USE_EXISTING_CONFIG + ": " + providedArtemisConfig;
         LOGGER.info(envVars);
     }

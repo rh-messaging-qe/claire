@@ -18,7 +18,9 @@ function start {
     echo "About to start artemis"
     echo ""
     artemis-controller.sh mount_nfs
+    echo "nfs mounted"
     artemis-controller.sh start
+    echo "artemis-controller.sh started"
 }
 
 if [ $UID -eq 0 ]; then

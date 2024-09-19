@@ -10,6 +10,7 @@ public interface Constants {
     // Platform related strings
     String LINE_SEPARATOR = System.getProperty("line.separator");
     String FILE_SEPARATOR = System.getProperty("file.separator");
+    String TMP_DIR_SYSTEM = System.getProperty("java.io.tmpdir");
     String DATE_FORMAT = "yyyy-MM-dd_HH-mm-ss";
 
     // Test tags
@@ -70,7 +71,9 @@ public interface Constants {
 
     // Networking
     String AMQP = "amqp";
+    String TCP = "tcp";
     String AMQP_URL_PREFIX = AMQP + "://";
+    String TCP_URL_PREFIX = TCP + "://";
     String HTTP = "http";
     String HTTPS = "https";
     String GET = "GET";
@@ -146,8 +149,8 @@ public interface Constants {
 
     String ARTEMIS_DEFAULT_CFG_DIR = "artemis/artemis_default_cfg";
     String ARTEMIS_TEST_CFG_DIR = "test-cfg";
-    String ARTEMIS_DEFAULT_CFG_BIN_DIR = ARTEMIS_DEFAULT_CFG_DIR + FILE_SEPARATOR + ArtemisConstants.BIN_DIR;
-    String ARTEMIS_DEFAULT_CFG_LIB_DIR = ARTEMIS_DEFAULT_CFG_DIR + FILE_SEPARATOR + ArtemisConstants.LIB_DIR;
+    String ARTEMIS_DEFAULT_CFG_BIN_DIR = ARTEMIS_DEFAULT_CFG_DIR + ArtemisConstants.BIN_DIR;
+    String ARTEMIS_DEFAULT_CFG_LIB_DIR = ARTEMIS_DEFAULT_CFG_DIR + ArtemisConstants.LIB_DIR;
 
     String PREFIX_SYSTEMTESTS_CLIENTS = "systemtests-clients";
     String PREFIX_SYSTEMTESTS_CLI_PROTON_DOTNET = "systemtests-cli-proton-dotnet";

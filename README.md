@@ -74,6 +74,8 @@ operator-suite/container/scripts/run-test.sh --help
 | COLLECT_TEST_DATA         | Whether to gather test data on error or not      | `true`                      | `true`, `false`                                  |
 | TESTS | Which tests to execute (maven syntax) | not set | <mvn-regexp> |
 
+## More information
+For more information about subprojects - refer to README.md files in `operator-suite` or `standalone-suite` folders, which contain more details about usage, more environment variables, etc.
 
 ## Hints
 - keep code clean

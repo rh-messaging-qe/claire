@@ -37,6 +37,7 @@ public abstract class Environment {
 
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     protected String databaseFile;
+    protected String testUpgradePlan;
     private Database database;
     private static Environment environment;
     private Properties appProperties;
@@ -62,7 +63,15 @@ public abstract class Environment {
         return databaseFile;
     }
 
-    protected ArtemisVersion convertArtemisVersion(String version) {
+    public String getTestUpgradePlanContent() {
+        if (testUpgradePlan != null) {
+            return TestUtils.readFileContent(new File(testUpgradePlan));
+        } else {
+            throw new IllegalArgumentException(Constants.EV_UPGRADE_PLAN + " variable has not been set!");
+        }
+    }
+
+    public ArtemisVersion convertArtemisVersion(String version) {
         ArtemisVersion versionRet;
         if (isUpstreamArtemis()) {
             return ArtemisVersion.values()[ArtemisVersion.values().length - 1];

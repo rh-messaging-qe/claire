@@ -4,6 +4,10 @@
  */
 package io.brokerqe.claire.clients.bundled;
 
+import io.brokerqe.claire.clients.Protocol;
+
+import java.util.Locale;
+
 public class BundledAmqpMessagingClient extends BundledMessagingClient {
 
     public BundledAmqpMessagingClient(BundledClientOptions options) {
@@ -12,6 +16,6 @@ public class BundledAmqpMessagingClient extends BundledMessagingClient {
 
     @Override
     String getProtocol() {
-        return "amqp";
+        return Protocol.AMQP.name().toLowerCase(Locale.ROOT);
     }
 }

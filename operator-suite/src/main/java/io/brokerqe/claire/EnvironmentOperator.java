@@ -13,7 +13,6 @@ import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageMan
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,7 +39,6 @@ public class EnvironmentOperator extends Environment {
     private final String brokerInitImage;
     private final String operatorImage;
     private final String bundleImage;
-    private final String testUpgradePlan;
     private final boolean projectManagedClusterOperator;
     private final String logsDirLocation;
     private final String tmpDirLocation;
@@ -322,13 +320,6 @@ public class EnvironmentOperator extends Environment {
 
     public String getBundleImage() {
         return bundleImage;
-    }
-    public String getTestUpgradePlanContent() {
-        if (testUpgradePlan != null) {
-            return TestUtils.readFileContent(new File(testUpgradePlan));
-        } else {
-            throw new IllegalArgumentException(Constants.EV_UPGRADE_PLAN + " variable has not been set!");
-        }
     }
 
     private String getDefaultKeycloakOperatorName() {

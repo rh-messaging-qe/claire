@@ -12,6 +12,8 @@ import com.github.dockerjava.api.command.PauseContainerCmd;
 import com.github.dockerjava.api.command.UnpauseContainerCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.ContainerNetwork;
+import com.github.dockerjava.api.model.Volume;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.EnvironmentStandalone;
@@ -36,6 +38,7 @@ import org.testcontainers.utility.MountableFile;
 
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -67,6 +70,12 @@ public abstract class AbstractGenericContainer {
         return container;
     }
 
+    public String getContainerIpAddress() {
+        Map<String, ContainerNetwork> map = getGenericContainer().getContainerInfo().getNetworkSettings().getNetworks();
+        Object mapId = map.keySet().toArray()[0];
+        return map.get(mapId).getIpAddress();
+    }
+
     public void withCustomNetwork(Network network) {
         LOGGER.debug("[Container: {}] - With custom network: {}", name, network.getId());
         container.withNetwork(network);
@@ -92,6 +101,7 @@ public abstract class AbstractGenericContainer {
                 cmd.withUser(userId);
             }
             cmd.withHostName(name);
+            cmd.withName(name);
         });
         LOGGER.trace("[Container {}] - With network alias: {}", name, name);
         container.withNetworkAliases(name);
@@ -206,8 +216,22 @@ public abstract class AbstractGenericContainer {
     }
 
     public void withFileSystemBind(String source, String destination, BindMode mode) {
+        withFileSystemBind(source, destination, mode, false);
+    }
+
+    public void withFileSystemBind(String source, String destination, BindMode mode, boolean replaceBind) {
         LOGGER.trace("[Container {}] - Binding filesystem from {} to {} with mode {}", name, source, destination, mode);
         List<Bind> currentBinds = container.getBinds();
+
+        if (replaceBind) {
+            List<Bind> tmpBinds = new ArrayList<>(List.copyOf(currentBinds));
+            LOGGER.debug("[Container {}] - Replacing bind filesystem from {} to {} with mode {}", name, source, destination, mode);
+            tmpBinds.removeIf(bind -> bind.getVolume().toString().equals(ArtemisContainer.ARTEMIS_INSTALL_DIR));
+            tmpBinds.add(new Bind(source, new Volume(destination)));
+            container.setBinds(tmpBinds);
+            return;
+        }
+
         boolean alreadyContainsBind = currentBinds.stream().anyMatch(p -> p.getVolume().getPath().equals(destination));
         if (!alreadyContainsBind) {
             container.withFileSystemBind(source, destination, mode);

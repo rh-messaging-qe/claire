@@ -4,6 +4,10 @@
  */
 package io.brokerqe.claire.clients.bundled;
 
+import io.brokerqe.claire.clients.Protocol;
+
+import java.util.Locale;
+
 public class BundledCoreMessagingClient extends BundledMessagingClient {
 
     public BundledCoreMessagingClient(BundledClientOptions options) {
@@ -11,6 +15,6 @@ public class BundledCoreMessagingClient extends BundledMessagingClient {
     }
 
     public String getProtocol() {
-        return "core";
+        return Protocol.CORE.name().toLowerCase(Locale.ROOT);
     }
 }
