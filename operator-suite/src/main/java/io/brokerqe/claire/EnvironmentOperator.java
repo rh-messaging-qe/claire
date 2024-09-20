@@ -334,7 +334,7 @@ public class EnvironmentOperator extends Environment {
         if (isUpstreamArtemis()) {
             return Constants.DEFAULT_KEYCLOAK_VERSION;
         } else {
-            if (getDefaultKubeClient().isOpenshiftPlatform()) {
+            if (!getDefaultKubeClient().isKubernetesPlatform()) {
                 return getDefaultKubeClient().getPackageManifestVersion(pm, keycloakChannel);
             } else {
                 return Constants.DEFAULT_RHSSO_VERSION;
@@ -346,7 +346,7 @@ public class EnvironmentOperator extends Environment {
         if (isUpstreamArtemis()) {
             return Constants.DEFAULT_KEYCLOAK_CHANNEL;
         } else {
-            if (getDefaultKubeClient().isOpenshiftPlatform()) {
+            if (!getDefaultKubeClient().isKubernetesPlatform()) {
                 getKeycloakOperatorName();
                 pm = getDefaultKubeClient().getPackageManifest(keycloakOperatorName);
                 return getDefaultKubeClient().getPackageManifestDefaultChannel(pm);

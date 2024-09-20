@@ -11,9 +11,11 @@ import io.amq.broker.v1beta1.activemqartemisspec.addresssettings.AddressSetting;
 import io.amq.broker.v1beta1.activemqartemisspec.addresssettings.AddressSettingBuilder;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.junit.DisabledTestPlatform;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
@@ -30,6 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+@DisabledTestPlatform(platforms = { KubernetesPlatform.MICROSHIFT })
 public class AddressMetricsTests extends PrometheusTests {
 
     static final Logger LOGGER = LoggerFactory.getLogger(AddressMetricsTests.class);

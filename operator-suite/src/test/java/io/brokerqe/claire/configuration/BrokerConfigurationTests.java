@@ -373,7 +373,14 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                     .withSize(1)
                 .endDeploymentPlan()
             .endSpec().build();
-        broker = ResourceManager.createArtemis(testNamespace, broker, true);
+
+        boolean waitForDeployment = !getClient().isMicroshiftPlatform();
+        broker = ResourceManager.createArtemis(testNamespace, broker, waitForDeployment);
+        if (!waitForDeployment) {
+            TestUtils.waitFor("Waiting for pvc creation", Constants.DURATION_1_SECOND, Constants.DURATION_3_MINUTES,
+                    () -> getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace)
+                            .withName(testBrokerName + "-" + testBrokerName + "-ss-0").get() != null);
+        }
         PersistentVolumeClaim pvc = getKubernetesClient().persistentVolumeClaims().inNamespace(testNamespace).withName(testBrokerName + "-" + testBrokerName + "-ss-0").get();
         Quantity pvcSize = pvc.getSpec().getResources().getRequests().get("storage");
         assertThat(String.format("PVC requested wrong size: %s %s", pvcSize.getAmount(), pvcSize.getFormat()), pvcSize.getAmount(), is(equalTo("1")));
@@ -411,7 +418,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .editOrNewDeploymentPlan()
                     .withPersistenceEnabled()
                     .editOrNewStorage()
-                        .withSize("1")
+                        .withSize("1Gi")
                     .endStorage()
                     .withSize(1)
                 .endDeploymentPlan()
@@ -419,7 +426,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, broker.getMetadata().getName());
         StatefulSet ss = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
-        broker.getSpec().getDeploymentPlan().getStorage().setSize("3");
+        broker.getSpec().getDeploymentPlan().getStorage().setSize("3Gi");
         broker.getSpec().getDeploymentPlan().setSize(2);
         broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
         ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod, Constants.DURATION_2_MINUTES, ss);

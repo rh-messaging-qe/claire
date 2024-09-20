@@ -12,7 +12,7 @@ import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
-import io.brokerqe.claire.junit.TestSupportedPlatform;
+import io.brokerqe.claire.junit.DisabledTestPlatform;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.junit.TestValidUntil;
 import io.brokerqe.claire.security.CertificateManager;
@@ -51,7 +51,7 @@ public class WebConsoleTests extends AbstractSystemTests {
     }
 
     @Test
-    @TestSupportedPlatform(KubernetesPlatform.OPENSHIFT)
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.KUBERNETES})
     public void unsecuredConsoleTLSExternalAccessTest() {
         String brokerName = "artemis";
 

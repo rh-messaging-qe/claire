@@ -99,7 +99,12 @@ public class KubeClient {
         try {
             // if following command works, we are on openshift cluster instance
             ((OpenShiftClient) tmpClient).routes().inNamespace("default").list();
-            tmpPlatform = KubernetesPlatform.OPENSHIFT;
+            try {
+                ((OpenShiftClient) tmpClient).config().clusterVersions().list();
+                tmpPlatform = KubernetesPlatform.OPENSHIFT;
+            } catch (ClassCastException | KubernetesClientException e) {
+                tmpPlatform = KubernetesPlatform.MICROSHIFT;
+            }
         } catch (ClassCastException | KubernetesClientException e) {
             tmpPlatform = KubernetesPlatform.KUBERNETES;
             tmpClient.close();
@@ -126,6 +131,10 @@ public class KubeClient {
 
     public boolean isOpenshiftPlatform() {
         return this.platform == KubernetesPlatform.OPENSHIFT;
+    }
+
+    public boolean isMicroshiftPlatform() {
+        return this.platform == KubernetesPlatform.MICROSHIFT;
     }
 
     public KubernetesPlatform getKubernetesPlatform(KubeClient client) {
@@ -544,7 +553,7 @@ public class KubeClient {
 
     public PackageManifest getPackageManifest(String packageName) {
         String namespace;
-        if (isOpenshiftPlatform()) {
+        if (!isKubernetesPlatform()) {
             namespace = "openshift-marketplace";
         } else {
             namespace = "olm";
@@ -953,4 +962,6 @@ public class KubeClient {
         assertThat(copyResult, is(Boolean.TRUE));
         return Path.of(dstDir + Constants.FILE_SEPARATOR + srcDir);
     }
+
+
 }

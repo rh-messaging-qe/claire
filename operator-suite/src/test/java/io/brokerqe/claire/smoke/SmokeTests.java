@@ -18,7 +18,7 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
-import io.brokerqe.claire.junit.TestSupportedPlatform;
+import io.brokerqe.claire.junit.DisabledTestPlatform;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -340,7 +340,7 @@ public class SmokeTests extends AbstractSystemTests {
     @Test
     @Tag(Constants.TAG_SMOKE)
     @TestValidSince(ArtemisVersion.VERSION_2_33)
-    @TestSupportedPlatform(KubernetesPlatform.OPENSHIFT)
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.KUBERNETES})
     void testConsoleProvidedVersion() {
         Assumptions.assumeThat(testEnvironmentOperator.isUpstreamArtemis()).isFalse();
 

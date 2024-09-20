@@ -11,10 +11,12 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.junit.DisabledTestPlatform;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
@@ -36,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+@DisabledTestPlatform(platforms = { KubernetesPlatform.MICROSHIFT })
 public class PrometheusTests extends AbstractSystemTests {
     static final Logger LOGGER = LoggerFactory.getLogger(PrometheusTests.class);
     final static String PROMETHEUS_POD_NAME = "prometheus-user-workload-0";

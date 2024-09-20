@@ -179,7 +179,7 @@ public class Keycloak {
         HasMetadata keycloak = kubeClient.getKubernetesClient().resource(keycloakCr).inNamespace(namespace).createOrReplace();
         keycloakResources.add(keycloak);
         waitForKeycloakDeployment("keycloak-0", "postgresdb-0");
-        if (kubeClient.isOpenshiftPlatform()) {
+        if (!kubeClient.isKubernetesPlatform()) {
             kubeClient.createRoute(namespace, "keycloak", "8443", kubeClient.getServiceByName(namespace, "keycloak-service"));
         }
     }
@@ -192,7 +192,6 @@ public class Keycloak {
             LOGGER.info("[{}] [KC] Deploying Keycloak {}", namespace, kcVersion);
 
             // Load and create Keycloak resources
-//            String platform = kubeClient.isOpenshiftPlatform() ? "openshift" : "kubernetes";
             String platform = "kubernetes";
             URL keycloakCrdUrl = new URL(String.format("%s/kubernetes/keycloaks.k8s.keycloak.org-v1.yml", mainKeycloakUrl));
             URL keycloakRealmImportsCrdUrl = new URL(String.format("%s/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml", mainKeycloakUrl));

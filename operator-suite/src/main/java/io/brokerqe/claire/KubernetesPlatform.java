@@ -6,5 +6,6 @@ package io.brokerqe.claire;
 
 public enum KubernetesPlatform {
     OPENSHIFT,
-    KUBERNETES
+    KUBERNETES,
+    MICROSHIFT
 }

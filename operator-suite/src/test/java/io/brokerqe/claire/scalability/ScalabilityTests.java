@@ -7,7 +7,9 @@ package io.brokerqe.claire.scalability;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.junit.DisabledTestPlatform;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ public class ScalabilityTests extends AbstractSystemTests {
     }
 
     @Test
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.MICROSHIFT })
     void simpleScalabilityTest() {
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "scale-artemis", 1, true, false, true, false);
 
