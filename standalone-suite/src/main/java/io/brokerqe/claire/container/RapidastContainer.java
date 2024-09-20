@@ -5,7 +5,6 @@
 package io.brokerqe.claire.container;
 
 import io.brokerqe.claire.TestUtils;
-import io.brokerqe.claire.container.database.DatabaseContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
@@ -16,7 +15,7 @@ import java.time.Duration;
 
 public class RapidastContainer extends AbstractGenericContainer {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(DatabaseContainer.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(RapidastContainer.class);
 
     public static final String RAPIDAST_DIR = "/tmp/rapidast";
     public static final String RESULTS_DIR = "/tmp/rapidast/results";
