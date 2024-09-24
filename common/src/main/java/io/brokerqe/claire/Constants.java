@@ -21,6 +21,7 @@ public interface Constants {
     String TAG_SMOKE_CLIENTS = "smoke-clients";
     String TAG_TLS = "tls";
     String TAG_RAPIDAST = "rapidast";
+    String TAG_UPGRADE = "upgrade";
 
     // Environment Variables
     String EV_KUBE_CONTEXT = "KUBE_CONTEXT";

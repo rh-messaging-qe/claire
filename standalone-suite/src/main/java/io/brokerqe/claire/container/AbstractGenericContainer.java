@@ -61,7 +61,7 @@ public abstract class AbstractGenericContainer {
         logConsumer = new Slf4jLogConsumer(LOGGER);
         if (dockerImage != null) {
             container = new GenericContainer<>(DockerImageName.parse(dockerImage));
-            LOGGER.debug("[Container: {}] - With default network: {}", name, ResourceManager.getDefaultNetwork());
+            LOGGER.debug("[{}] - With default network: {}", name, ResourceManager.getDefaultNetwork());
             container.withNetwork(ResourceManager.getDefaultNetwork());
         }
     }
@@ -82,7 +82,7 @@ public abstract class AbstractGenericContainer {
     }
 
     public void withLogWait(String regex) {
-        LOGGER.debug("[Container {}] - With log wait regex: {}", name, regex);
+        LOGGER.debug("[{}] - With log wait regex: {}", name, regex);
         container.setWaitStrategy(Wait.forLogMessage(regex, 1));
     }
 
@@ -95,7 +95,7 @@ public abstract class AbstractGenericContainer {
     }
 
     public void start() {
-        LOGGER.trace("[Container {}] - With hostname: {}", name, name);
+        LOGGER.trace("[{}] - With hostname: {}", name, name);
         container.withCreateContainerCmdModifier(cmd -> {
             if (userId != null) {
                 cmd.withUser(userId);
@@ -103,14 +103,14 @@ public abstract class AbstractGenericContainer {
             cmd.withHostName(name);
             cmd.withName(name);
         });
-        LOGGER.trace("[Container {}] - With network alias: {}", name, name);
+        LOGGER.trace("[{}] - With network alias: {}", name, name);
         container.withNetworkAliases(name);
         if (ENVIRONMENT_STANDALONE.isLogContainers()) {
             withStdOutLog();
         }
         withPullPolicy(PullPolicy.alwaysPull());
         withFileSystemBind(ETC_LOCALTIME, ETC_LOCALTIME, BindMode.READ_ONLY);
-        LOGGER.debug("[Container {}] - Starting", name);
+        LOGGER.debug("[{}] - Starting", name);
         container.start();
     }
 
@@ -119,12 +119,12 @@ public abstract class AbstractGenericContainer {
     }
 
     public void stop() {
-        LOGGER.debug("[Container {}] - Stopping", name);
+        LOGGER.debug("[{}] - Stopping", name);
         container.stop();
     }
 
     public void pause() {
-        LOGGER.debug("[Container {}] - Pausing", name);
+        LOGGER.debug("[{}] - Pausing", name);
         try (PauseContainerCmd pauseCmd = dockerClient.pauseContainerCmd(container.getContainerId())) {
             pauseCmd.exec();
         } catch (NotFoundException e) {
@@ -135,7 +135,7 @@ public abstract class AbstractGenericContainer {
     }
 
     public void unpause() {
-        LOGGER.debug("[Container {}] - Unpausing", name);
+        LOGGER.debug("[{}] - Unpausing", name);
         try (UnpauseContainerCmd unpauseCmd = dockerClient.unpauseContainerCmd(container.getContainerId())) {
             unpauseCmd.exec();
         } catch (NotFoundException e) {
@@ -146,7 +146,7 @@ public abstract class AbstractGenericContainer {
     }
 
     public void kill() {
-        LOGGER.debug("[Container {}] - Killing", name);
+        LOGGER.debug("[{}] - Killing", name);
         try (KillContainerCmd killCmd = dockerClient.killContainerCmd(container.getContainerId())) {
             killCmd.exec();
             container.stop();
@@ -161,7 +161,7 @@ public abstract class AbstractGenericContainer {
         restartWithStop(Duration.ofMinutes(1));
     }
     public void restartWithStop(Duration startTimeout) {
-        LOGGER.debug("[Container {}] - Stopping and restarting with timeout {}", name, startTimeout);
+        LOGGER.debug("[{}] - Stopping and restarting with timeout {}", name, startTimeout);
         container.stop();
         container.withStartupTimeout(startTimeout);
         container.start();
@@ -206,8 +206,12 @@ public abstract class AbstractGenericContainer {
         return container.getLogs();
     }
 
+    public String getLogTail(int lines) {
+        return TestUtils.getLastLines(container.getLogs(), lines).toString();
+    }
+
     private void withStdOutLog() {
-        LOGGER.debug("[Container {}] - With stdout logging", name);
+        LOGGER.debug("[{}] - With stdout logging", name);
         if (container.getLogConsumers().contains(logConsumer)) {
             return;
         }
@@ -220,12 +224,12 @@ public abstract class AbstractGenericContainer {
     }
 
     public void withFileSystemBind(String source, String destination, BindMode mode, boolean replaceBind) {
-        LOGGER.trace("[Container {}] - Binding filesystem from {} to {} with mode {}", name, source, destination, mode);
+        LOGGER.trace("[{}] - Binding filesystem from {} to {} with mode {}", name, source, destination, mode);
         List<Bind> currentBinds = container.getBinds();
 
         if (replaceBind) {
             List<Bind> tmpBinds = new ArrayList<>(List.copyOf(currentBinds));
-            LOGGER.debug("[Container {}] - Replacing bind filesystem from {} to {} with mode {}", name, source, destination, mode);
+            LOGGER.debug("[{}] - Replacing bind filesystem from {} to {} with mode {}", name, source, destination, mode);
             tmpBinds.removeIf(bind -> bind.getVolume().toString().equals(ArtemisContainer.ARTEMIS_INSTALL_DIR));
             tmpBinds.add(new Bind(source, new Volume(destination)));
             container.setBinds(tmpBinds);
@@ -236,7 +240,7 @@ public abstract class AbstractGenericContainer {
         if (!alreadyContainsBind) {
             container.withFileSystemBind(source, destination, mode);
         } else {
-            LOGGER.debug("[Container {}] - Ignoring bind {} as it already exist", name, destination);
+            LOGGER.debug("[{}] - Ignoring bind {} as it already exist", name, destination);
         }
     }
 
@@ -245,22 +249,22 @@ public abstract class AbstractGenericContainer {
     }
 
     public void withCopyFileToContainer(String source, String destination) {
-        LOGGER.debug("[Container {}] - Copying host file {} to container file {}", name, source, destination);
+        LOGGER.debug("[{}] - Copying host file {} to container file {}", name, source, destination);
         container.withCopyFileToContainer(MountableFile.forHostPath(source), destination);
     }
 
     public void copyFileFrom(String containerFile, String hostFile) {
-        LOGGER.debug("[Container {}] - Copying file {} to host file {}", name, containerFile, hostFile);
+        LOGGER.debug("[{}] - Copying file {} to host file {}", name, containerFile, hostFile);
         container.copyFileFromContainer(containerFile, hostFile);
     }
 
     public void deleteFileFrom(String file) {
-        LOGGER.debug("[Container {}] - Deleting file {}", name, file);
+        LOGGER.debug("[{}] - Deleting file {}", name, file);
         executeCommand("rm", "-rf", file);
     }
 
     public void copyDirFrom(String containerDir, String hostDir) {
-        LOGGER.debug("[Container {}] - Copying directory {} to host directory {}", name, containerDir, hostDir);
+        LOGGER.debug("[{}] - Copying directory {} to host directory {}", name, containerDir, hostDir);
         String tarDstDir = ArtemisConstants.TMP_DIR;
         String tarFilename = Constants.TAR_TMP_FILE_PREFIX + TestUtils.getRandomString(6) + ".tar";
         String tarFile = tarDstDir + tarFilename;
@@ -274,7 +278,7 @@ public abstract class AbstractGenericContainer {
     }
 
     public void withPullPolicy(ImagePullPolicy pullPolicy) {
-        LOGGER.debug("[Container {}] - Setting pull policy as {}", name, pullPolicy.getClass().getSimpleName());
+        LOGGER.debug("[{}] - Setting pull policy as {}", name, pullPolicy.getClass().getSimpleName());
         container.withImagePullPolicy(pullPolicy);
     }
 
@@ -284,11 +288,11 @@ public abstract class AbstractGenericContainer {
 
     public void waitForExit(long pollTimeout, long maxTimeout, boolean throwException) {
         TimeHelper.waitFor(e -> getStatus().equalsIgnoreCase("exited"), pollTimeout, maxTimeout);
-        LOGGER.info("[Container {}] exited with {}", getName(), getStatus());
+        LOGGER.info("[{}] exited with {}", getName(), getStatus());
         if (getExitCode() != 0L) {
-            LOGGER.debug("[Container {}] {}", getName(), getLogs());
+            LOGGER.debug("[{}] {}", getName(), getLogs());
             if (throwException) {
-                throw new ClaireRuntimeException("[Container " + getName() + "] Exited with error! \n" + getLogs());
+                throw new ClaireRuntimeException("[" + getName() + "] Exited with error! \n" + getLogs());
             }
         }
     }

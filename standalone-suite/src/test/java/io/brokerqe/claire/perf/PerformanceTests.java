@@ -8,6 +8,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
@@ -44,7 +45,7 @@ public class PerformanceTests extends AbstractSystemTests {
         String artemisName = "artemis";
         artemisVersion = Environment.get().getArtemisVersion();
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemis = getArtemisInstance(artemisName);
+        artemis = ArtemisDeployment.getArtemisInstance(artemisName);
         TestUtils.deleteDirectoryRecursively(Path.of(Constants.PERFORMANCE_DIR));
         TestUtils.createDirectory(Constants.PERFORMANCE_DIR);
     }

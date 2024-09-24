@@ -45,7 +45,7 @@ public class NfsServerContainer extends AbstractGenericContainer {
     }
 
     public void start() {
-        LOGGER.info("[Container {}] - About to start", name);
+        LOGGER.info("[{}] - About to start", name);
         container.withPrivilegedMode(true);
         exportsMap.forEach((hostDir, containerDir) -> withFileSystemBind(hostDir, containerDir, BindMode.READ_WRITE));
         container.withCommand(exportsMap.values().toArray(new String[0]));
@@ -54,7 +54,7 @@ public class NfsServerContainer extends AbstractGenericContainer {
 
     @Override
     public void stop() {
-        LOGGER.debug("[Container {}] - Stopping", name);
+        LOGGER.debug("[{}] - Stopping", name);
         if (container.isRunning()) {
             dockerClient.stopContainerCmd(container.getContainerId()).exec();
             TimeHelper.waitFor(e -> !container.isRunning(), Constants.DURATION_500_MILLISECONDS, Constants.DURATION_5_SECONDS);

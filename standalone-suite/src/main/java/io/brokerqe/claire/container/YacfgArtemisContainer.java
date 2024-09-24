@@ -75,7 +75,7 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
     }
 
     public void start() {
-        LOGGER.info("[Container {}] - About to start", name);
+        LOGGER.info("[{}] - About to start", name);
 
         List<String> yacfgCmdArgs = new ArrayList<>();
         yacfgCmdArgs.add(YACFG_COMMAND);

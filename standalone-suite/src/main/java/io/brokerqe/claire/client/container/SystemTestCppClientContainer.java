@@ -24,7 +24,7 @@ public class SystemTestCppClientContainer extends AbstractGenericContainer {
     }
 
     public void start() {
-        LOGGER.info("[Container {}] Starting", name);
+        LOGGER.info("[{}] Starting", name);
         super.start();
     }
 

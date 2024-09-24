@@ -99,7 +99,7 @@ public abstract class DatabaseContainer extends AbstractGenericContainer impleme
     }
 
     public void start() {
-        LOGGER.info("[Container {}] Starting.\nUsing jdbc properties: {}", name, jdbcData.toString());
+        LOGGER.info("[{}] Starting.\nUsing jdbc properties: {}", name, jdbcData.toString());
         if (!this.getDatabaseName().contains(Database.ORACLE) && !this.getDatabaseName().contains(Database.MSSQL)) {
             withUserId(String.valueOf(new UnixSystem().getUid()));
         }

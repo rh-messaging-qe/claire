@@ -18,6 +18,7 @@ user_cluster_connections:
   - name: 'artemis-cluster'
     connector_ref: 'cluster-connector'
     discovery_group_ref: 'cluster-discovery-group'
+    message_load_balancing: ON_DEMAND
 
 user_ha:
   policy: replication
@@ -25,3 +26,31 @@ user_ha:
   properties:
     initial_replication_sync_timeout: 9876
     retry_replication_wait: 12345
+
+user_address_settings:
+  - match: activemq.management#
+    dead_letter_address: DLQ
+    expiry_address: ExpiryQueue
+    redelivery_delay: 0
+    max_size_bytes: -1
+    message_counter_history_day_limit: 10
+    address_full_policy: PAGE
+    auto_create_queues: true
+    auto_create_addresses: true
+    redistribution_delay: 5000
+  - match: '#'
+    dead_letter_address: DLQ
+    expiry_address: ExpiryQueue
+    redelivery_delay: 0
+    max_size_bytes: -1
+    message_counter_history_day_limit: 10
+    address_full_policy: PAGE
+    auto_create_queues: true
+    auto_create_addresses: true
+    auto_delete_queues: false
+    auto_delete_addresses: false
+    max_size_messages: -1
+    page_size_bytes: 10M
+    max_read_page_messages: -1
+    max_read_page_bytes: 20M
+    redistribution_delay: 5000

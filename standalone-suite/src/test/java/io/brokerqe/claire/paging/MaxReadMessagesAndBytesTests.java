@@ -11,6 +11,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.client.JmsClient;
 import io.brokerqe.claire.client.AmqpUtil;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestValidSince;
@@ -40,8 +41,8 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        String tuneFile = generateYacfgProfilesContainerTestDir("tune.yaml.jinja2");
-        artemisInstance = getArtemisInstance(artemisName, tuneFile);
+        String tuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("tune.yaml.jinja2", getPkgClassAsDir());
+        artemisInstance = ArtemisDeployment.getArtemisInstance(artemisName, tuneFile);
     }
 
     @Test
@@ -74,13 +75,13 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
         numOfProducedMessages++;
 
         LOGGER.info("Ensure queue contains {} messages", numOfProducedMessages);
-        ensureQueueCount(artemisInstance, addressName, queueName, RoutingType.ANYCAST, numOfProducedMessages);
+        artemisInstance.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, numOfProducedMessages);
 
         // ensure address is paging
-        ensureBrokerIsPaging(artemisInstance, addressName, true);
+        artemisInstance.ensureBrokerIsPaging(addressName, true);
 
         // ensure number of pages are equal 1
-        ensureBrokerPagingCount(artemisInstance, addressName, 1);
+        artemisInstance.ensureBrokerPagingCount(addressName, 1);
 
         // try to consume a paged messages and fail
         client.consume(1, msgSelector, Constants.DURATION_1_SECOND, true);
@@ -103,10 +104,10 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
         client.consume(8, true);
 
         // ensure address not is paging
-        ensureBrokerIsPaging(artemisInstance, addressName, false);
+        artemisInstance.ensureBrokerIsPaging(addressName, false);
 
         // ensure number of pages are equal 0
-        ensureBrokerPagingCount(artemisInstance, addressName, 0);
+        artemisInstance.ensureBrokerPagingCount(addressName, 0);
 
         // ensure produced and consumed message are the same
         Map<String, Message> producedMsgs = client.getProducedMsgs();
@@ -145,13 +146,13 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
         totalProducedMessages++;
 
         LOGGER.info("Ensure queue contains {} messages", totalProducedMessages);
-        ensureQueueCount(artemisInstance, addressName, queueName, RoutingType.ANYCAST, totalProducedMessages);
+        artemisInstance.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, totalProducedMessages);
 
         // ensure address is paging
-        ensureBrokerIsPaging(artemisInstance, queueName, true);
+        artemisInstance.ensureBrokerIsPaging(queueName, true);
 
         // ensure number of pages are equal 1
-        ensureBrokerPagingCount(artemisInstance, queueName, 1);
+        artemisInstance.ensureBrokerPagingCount(queueName, 1);
 
         // try to consume a paged messages and fail
         client.consume(1, msgSelector, Constants.DURATION_1_SECOND, true);
@@ -174,10 +175,10 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
         client.consume(9, true);
 
         // ensure address not is paging
-        ensureBrokerIsPaging(artemisInstance, queueName, false);
+        artemisInstance.ensureBrokerIsPaging(queueName, false);
 
         // ensure number of pages are equal 0
-        ensureBrokerPagingCount(artemisInstance, queueName, 0);
+        artemisInstance.ensureBrokerPagingCount(queueName, 0);
 
         // ensure produced and consumed message are the same
         Map<String, Message> producedMsgs = client.getProducedMsgs();

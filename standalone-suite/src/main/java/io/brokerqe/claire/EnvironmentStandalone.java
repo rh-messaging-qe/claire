@@ -48,6 +48,10 @@ public class EnvironmentStandalone extends Environment {
     private final String artemisVersionStr;
     private final ArtemisVersion artemisVersion;
 
+    private String packageClassDir;
+    private String testTempDir;
+    private String testConfigDir;
+
     private EnvironmentStandalone() {
         String initialTimestamp = TestUtils.generateTimestamp();
         loadProjectProperties(Constants.STANDALONE_MODULE_PROPERTIES_FILE);
@@ -359,5 +363,29 @@ public class EnvironmentStandalone extends Environment {
         } else {
             return providedArtemisConfig;
         }
+    }
+
+    public void setPackageClassDir(String pkgAndClass) {
+        this.packageClassDir = pkgAndClass;
+    }
+
+    public String getPackageClassDir() {
+        return packageClassDir;
+    }
+
+    public void setTestTempDir(String testTempDir) {
+        this.testTempDir = testTempDir;
+    }
+
+    public String getTestTempDir() {
+        return testTempDir;
+    }
+
+    public String getTestConfigDir() {
+        return testConfigDir;
+    }
+
+    public void setTestConfigDir(String testConfigDir) {
+        this.testConfigDir = testConfigDir;
     }
 }

@@ -33,7 +33,7 @@ public class ExecutorStandalone implements Executor {
     }
 
     public String executeCommand(long maxExecMs, String... command) {
-        LOGGER.debug("[Container {}] Executing command {}", container.getContainerName(), String.join(" ", command));
+        LOGGER.debug("[{}] Executing command {}", container.getContainerName(), String.join(" ", command));
         try {
             Container.ExecResult execResult = container.execInContainer(command);
             int cmdReturnCode = execResult.getExitCode();

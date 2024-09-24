@@ -21,7 +21,7 @@ public class SystemTestJavaClientsContainer extends AbstractGenericContainer {
     }
 
     public void start() {
-        LOGGER.info("[Container {}] Starting", name);
+        LOGGER.info("[{}] Starting", name);
         withUserId(String.valueOf(new UnixSystem().getUid()));
         super.start();
     }

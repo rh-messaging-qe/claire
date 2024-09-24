@@ -10,6 +10,7 @@ import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
 import io.brokerqe.claire.helper.webconsole.MainPageHelper;
@@ -77,10 +78,10 @@ public class SecuredConsoleTests extends AbstractSystemTests {
         artemis = ResourceManager.getArtemisContainerInstance(ArtemisConstants.ARTEMIS_STRING);
         artemis.withFileSystemBind(keystoreBrokerData.getKeyStorePath(), keyStoreContainerPath, BindMode.READ_WRITE);
         artemis.withFileSystemBind(truststoreBrokerData.getKeyStorePath(), trustStoreContainerPath, BindMode.READ_WRITE);
-        generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));
+        ArtemisDeployment.generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));
         artemis.start();
-        ensureBrokerStarted(artemis);
-        ensureBrokerIsLive(artemis);
+        artemis.ensureBrokerStarted();
+        artemis.ensureBrokerIsLive();
         artemis.setSecured(true);
     }
 

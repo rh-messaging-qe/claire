@@ -63,6 +63,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -96,9 +97,7 @@ public final class TestUtils {
         LocalExecutor executor = new LocalExecutor();
         LOGGER.debug("[CMD][local] {}", Arrays.stream(cmd).toArray());
         executor.executeCommand(cmd);
-        String output = executor.getCommandData(Duration.ofSeconds(10).toSeconds());
-        LOGGER.debug("[CMD][local] Output\n{}", output);
-        return output;
+        return executor.getCommandData(Duration.ofSeconds(10).toSeconds());
     }
 
     // ========== Junit Test Operations ==========
@@ -390,6 +389,11 @@ public final class TestUtils {
         }
         LOGGER.debug("Parsed version: {} from {}.", versionMMM, version);
         return versionMMM;
+    }
+
+    public static List<String> getLastLines(String string, int numLines) {
+        List<String> lines = Arrays.asList(string.split("\n"));
+        return new ArrayList<>(lines.subList(Math.max(0, lines.size() - numLines), lines.size()));
     }
 
     // ========== File Operations ==========

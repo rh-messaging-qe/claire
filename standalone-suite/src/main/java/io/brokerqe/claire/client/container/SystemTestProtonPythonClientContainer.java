@@ -24,7 +24,7 @@ public class SystemTestProtonPythonClientContainer extends AbstractGenericContai
     }
 
     public void start() {
-        LOGGER.info("[Container {}] Starting", name);
+        LOGGER.info("[{}] Starting", name);
         super.start();
     }
 

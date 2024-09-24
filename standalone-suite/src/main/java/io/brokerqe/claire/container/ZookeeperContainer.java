@@ -32,17 +32,17 @@ public final class ZookeeperContainer extends AbstractGenericContainer {
     }
 
     public void withZooMyId(int id) {
-        LOGGER.debug("[Container {}] - with env var {} = {}", name, EV_ZOO_MY_ID, id);
+        LOGGER.debug("[{}] - with env var {} = {}", name, EV_ZOO_MY_ID, id);
         container.withEnv(EV_ZOO_MY_ID, String.valueOf(id));
     }
 
     public void withZooServers(String zooServers) {
-        LOGGER.debug("[Container {}] - with env var {} = {}", name, EV_ZOO_SERVERS, zooServers);
+        LOGGER.debug("[{}] - with env var {} = {}", name, EV_ZOO_SERVERS, zooServers);
         container.withEnv(EV_ZOO_SERVERS, zooServers);
     }
 
     public void withStandAloneEnabled(boolean value) {
-        LOGGER.debug("[Container {}] - with env var {} = {}", name, EV_ZOO_STANDALONE_ENABLED, value);
+        LOGGER.debug("[{}] - with env var {} = {}", name, EV_ZOO_STANDALONE_ENABLED, value);
         container.withEnv(EV_ZOO_STANDALONE_ENABLED, Boolean.toString(value));
     }
 

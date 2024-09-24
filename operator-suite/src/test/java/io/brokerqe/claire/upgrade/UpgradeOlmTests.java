@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
 import org.junit.jupiter.params.provider.Arguments;
@@ -39,6 +40,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 @DisableOnNoUpgradePlan
+@Tag(Constants.TAG_UPGRADE)
 public class UpgradeOlmTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UpgradeOlmTests.class);

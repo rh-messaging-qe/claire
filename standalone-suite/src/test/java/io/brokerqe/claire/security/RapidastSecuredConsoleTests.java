@@ -12,6 +12,7 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -69,10 +70,10 @@ public class RapidastSecuredConsoleTests extends RapidastDefaultConsoleTests {
         ArtemisContainer artemis = ResourceManager.getArtemisContainerInstance(ArtemisConstants.ARTEMIS_STRING);
         artemis.withFileSystemBind(keystoreBrokerData.getKeyStorePath(), keyStoreContainerPath, BindMode.READ_WRITE);
         artemis.withFileSystemBind(truststoreBrokerData.getKeyStorePath(), trustStoreContainerPath, BindMode.READ_WRITE);
-        generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));
+        ArtemisDeployment.generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));
         artemis.start();
-        ensureBrokerStarted(artemis);
-        ensureBrokerIsLive(artemis);
+        artemis.ensureBrokerStarted();
+        artemis.ensureBrokerIsLive();
         artemis.setSecured(true);
 
         consoleURL = artemis.getConsoleUrl();

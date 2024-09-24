@@ -8,6 +8,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.RapidastContainer;
 import org.junit.jupiter.api.AfterAll;
@@ -36,7 +37,7 @@ public class RapidastDefaultConsoleTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        ArtemisContainer artemis = getArtemisInstance(artemisName);
+        ArtemisContainer artemis = ArtemisDeployment.getArtemisInstance(artemisName);
         consoleURL = artemis.getConsoleUrl();
     }
 

@@ -10,6 +10,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.client.AmqpUtil;
 import io.brokerqe.claire.client.JmsClient;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import jakarta.jms.Message;
 import jakarta.jms.Queue;
@@ -33,7 +34,7 @@ public class SingleInstanceSmokeTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemisInstance = getArtemisInstance(artemisName);
+        artemisInstance = ArtemisDeployment.getArtemisInstance(artemisName);
     }
 
     @Test
@@ -57,7 +58,7 @@ public class SingleInstanceSmokeTests extends AbstractSystemTests {
         Map<String, Message> producedMsgs = client.getProducedMsgs();
 
         LOGGER.info("Ensure queue contains {} messages", numOfMessages);
-        ensureQueueCount(artemisInstance, addressName, queueName, RoutingType.ANYCAST, numOfMessages);
+        artemisInstance.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, numOfMessages);
 
         LOGGER.info("Consuming {} messages from queue {}", numOfMessages, queueName);
         client.consume(numOfMessages);
@@ -66,7 +67,7 @@ public class SingleInstanceSmokeTests extends AbstractSystemTests {
         client.disconnect();
 
         LOGGER.info("Ensure queue is empty");
-        ensureQueueCount(artemisInstance, addressName, queueName, RoutingType.ANYCAST, 0);
+        artemisInstance.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, 0);
 
         LOGGER.info("Ensuring produced and consumed messages are the same");
         ensureSameMessages(numOfMessages, producedMsgs, consumedMsgs);

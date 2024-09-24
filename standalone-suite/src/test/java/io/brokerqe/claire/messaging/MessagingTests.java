@@ -9,6 +9,7 @@ import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.client.deployment.StJavaClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
@@ -55,7 +56,7 @@ public class MessagingTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemis = getArtemisInstance(artemisName);
+        artemis = ArtemisDeployment.getArtemisInstance(artemisName);
         // BrokerService.getAmqpPort?
         brokerUri = Constants.AMQP_URL_PREFIX + artemis.getName() + ":" + DEFAULT_AMQP_PORT;
         stDeployableClient = new StJavaClientDeployment();
@@ -229,7 +230,7 @@ public class MessagingTests extends AbstractSystemTests {
         artemisClient.executeCommand();
 
         artemis.restartWithStop(timeout);
-        ensureBrokerIsLive(artemis);
+        artemis.ensureBrokerIsLive();
 
         artemisClient.executeCommand();
 

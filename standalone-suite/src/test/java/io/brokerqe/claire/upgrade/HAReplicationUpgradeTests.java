@@ -4,119 +4,106 @@
  */
 package io.brokerqe.claire.upgrade;
 
-import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
-import io.brokerqe.claire.ResourceManager;
-import io.brokerqe.claire.client.AmqpUtil;
-import io.brokerqe.claire.client.JmsClient;
+import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
+import io.brokerqe.claire.clients.Protocol;
+import io.brokerqe.claire.clients.bundled.BundledClientOptions;
 import io.brokerqe.claire.container.ArtemisContainer;
-import jakarta.jms.Message;
-import jakarta.jms.Queue;
-import org.apache.activemq.artemis.api.core.RoutingType;
-import org.apache.qpid.jms.JmsConnectionFactory;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-@Disabled
-public class HAReplicationUpgradeTests extends AbstractSystemTests {
+@Tag(Constants.TAG_UPGRADE)
+public class HAReplicationUpgradeTests extends UpgradeTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(HAReplicationUpgradeTests.class);
-    private ArtemisContainer artemisPrimary0;
-    private ArtemisContainer artemisPrimary1;
-    private ArtemisContainer artemisPrimary2;
-    private ArtemisContainer artemisBackup0;
-    private ArtemisContainer artemisBackup1;
-    private ArtemisContainer artemisBackup2;
+    private String primary = "primary";
+    private String backup = "backup";
+    private Map<String, ArrayList<ArtemisContainer>> artemises = new HashMap<>();
 
+    void initialDeployment(String version, String artemisVersion, String installDir, int haPairs) {
+        artemises.put(primary, new ArrayList<>());
+        artemises.put(backup, new ArrayList<>());
 
-    Stream<? extends Arguments> getUpgradePlanArguments() {
-        ArrayList<HashMap<String, String>> mapped = new Yaml().load(getEnvironment().getTestUpgradePlanContent());
-        return  mapped.stream().map(line ->
-                Arguments.of(line.get("version"), line.get("channel"), line.get("indexImageBundle"))
-        );
-    }
-
-    @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("[UpgradeTestPlan] {}", getEnvironment().getTestUpgradePlanContent());
-//        for (int i : new int[]{0, 1, 2}) {
-        String artemisPrimaryName = "artemisPrimary";
-        LOGGER.info("Creating artemis instance: " + artemisPrimaryName);
-        String primaryTuneFile = generateYacfgProfilesContainerTestDir("primary-tune.yaml.jinja2");
-        artemisPrimary0 = getArtemisInstance(artemisPrimaryName + 0, primaryTuneFile);
-        artemisPrimary1 = getArtemisInstance(artemisPrimaryName + 1, primaryTuneFile);
-//            artemisPrimary2 = getArtemisInstance(artemisPrimaryName + 2, primaryTuneFile);
-
-        String artemisBackupName = "artemisBackup";
-        LOGGER.info("Creating artemis instance: " + artemisBackupName);
-        String backupTuneFile = generateYacfgProfilesContainerTestDir("backup-tune.yaml.jinja2");
-        artemisBackup0 = getArtemisInstance(artemisBackupName + 0, backupTuneFile, true);
-        artemisBackup1 = getArtemisInstance(artemisBackupName + 1, backupTuneFile, true);
-//            artemisBackup2 = getArtemisInstance(artemisBackupName + 2, backupTuneFile, true);
-//        }
+        for (int i = 0; i < haPairs; i++) {
+            String artemisPrimaryName = primary + "-" + i;
+            String artemisBackupName = backup + "-" + i;
+            List<ArtemisContainer> tmpList = ArtemisDeployment.createArtemisHAPair(artemisPrimaryName, artemisBackupName, version, artemisVersion, installDir);
+            artemises.get(primary).add(tmpList.get(0).isPrimary() ? tmpList.get(0) : tmpList.get(1));
+            artemises.get(backup).add(tmpList.get(1).isBackup() ? tmpList.get(1) : tmpList.get(0));
+        }
     }
 
     @ParameterizedTest
     @MethodSource("getUpgradePlanArguments")
     void microUpgradeHA(ArgumentsAccessor argumentsAccessor) {
         String version = argumentsAccessor.getString(0);
-        String channel = argumentsAccessor.getString(1);
-        String iib = argumentsAccessor.getString(2);
+        String artemisVersion = argumentsAccessor.getString(1);
+        String artemisZipUrl = argumentsAccessor.getString(2);
 
-        int numOfMessages = 100;
-        String addressName = "TestQueue1";
-        String queueName = "TestQueue1";
+        String upgradeQueueName = "upgrade-queue";
+        int haPairs = 3;
+        String installDir = ArtemisDeployment.downloadPrepareArtemisInstallDir(testInfo, artemisZipUrl, version, getTestConfigDir());
 
-        // create a qpid jms client
-        String primaryAmqpHostAndPort = artemisPrimary0.getHostAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
-        String backupAmqpHostAndPort = artemisBackup0.getHostAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
-        String amqpOpts = "failover.amqpOpenServerListAction=IGNORE";
-        String url = AmqpUtil.buildAmqFailoverUrl(amqpOpts, primaryAmqpHostAndPort, backupAmqpHostAndPort);
+        if (argumentsAccessor.getInvocationIndex() <= 1) {
+            LOGGER.info("[UPGRADE] Deploying initial broker pair(s)");
+            initialDeployment(version, artemisVersion, installDir, haPairs);
+            ArtemisContainer primary0 = artemises.get(primary).get(0);
 
-        LOGGER.info("Creating client");
-        JmsClient client = ResourceManager.getJmsClient("client-1", new JmsConnectionFactory(url))
-                .withCredentials(ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS)
-                .withDestination(Queue.class, queueName);
+            LOGGER.info("[UPGRADE] Sending initial messages {}", messagesSentInitials);
+            BundledClientOptions initialSenderOptions = new BundledClientOptions()
+                    .withDeployableClient(primary0.getDeployableClient())
+                    .withDestinationAddress(upgradeQueueName)
+                    .withDestinationQueue(upgradeQueueName)
+                    .withDestinationPort(DEFAULT_ALL_PORT)
+                    .withMessageCount(messagesSentInitials)
+                    .withUsername(ArtemisConstants.ADMIN_NAME)
+                    .withPassword(ArtemisConstants.ADMIN_PASS)
+                    .withDestinationUrl(primary0.getBrokerUri(Protocol.CORE))
+                    .withProtocol(Protocol.CORE);
+            int sentInitial = sendMessages(initialSenderOptions);
+            Assertions.assertEquals(sentInitial, messagesSentInitials);
+        } else if (argumentsAccessor.getInvocationIndex() > 1) {
+            LOGGER.info("[UPGRADE] Receive partial durable messages {}", messagesReceivePartial);
+            // if is replication scenario -> upgrade backup, then primary
+            ArtemisContainer upgradePrimary = null;
+            for (int i = 0; i < haPairs; i++) {
+                ArtemisContainer upgradeBackup = artemises.get(backup).get(i);
+                upgradePrimary = artemises.get(primary).get(i);
+                LOGGER.info("[UPGRADE] Going to upgrade pair #{}", i + 1);
+                upgradeBackup = performUpgradeProcedure(upgradeBackup, installDir);
+                assertVersionLogs(upgradeBackup, version, artemisVersion);
 
-        LOGGER.info("Producing {} messages to queue {}", numOfMessages, queueName);
-        client.produce(numOfMessages);
-        Map<String, Message> producedMsgs = client.getProducedMsgs();
+                upgradePrimary = performUpgradeProcedure(upgradePrimary, installDir);
+                assertVersionLogs(upgradePrimary, version, artemisVersion);
+            }
+            BundledClientOptions durableReceiverOptions = new BundledClientOptions()
+                    .withDeployableClient(upgradePrimary.getDeployableClient())
+                    .withDestinationAddress(upgradeQueueName)
+                    .withDestinationQueue(upgradeQueueName)
+                    .withDestinationPort(DEFAULT_ALL_PORT)
+                    .withMessageCount(messagesReceivePartial)
+                    .withUsername(ArtemisConstants.ADMIN_NAME)
+                    .withPassword(ArtemisConstants.ADMIN_PASS)
+                    .withDestinationUrl(upgradePrimary.getBrokerUri(Protocol.CORE))
+                    .withProtocol(Protocol.CORE);
+            messagesReceivedTotal += receiveMessages(durableReceiverOptions);
+            LOGGER.info("[UPGRADE] Received so far {}", messagesReceivedTotal);
 
-        LOGGER.info("Ensure queue contains {} messages on primary", numOfMessages);
-        ensureQueueCount(artemisPrimary0, addressName, queueName, RoutingType.ANYCAST, numOfMessages);
-
-        // ensure replica is in sync
-        ensureBrokerReplicaIsInSync(artemisBackup0);
-
-        // stop the primary instance
-        artemisPrimary0.stop();
-
-        // ensure the backup instance became the current live
-        ensureBrokerIsLive(artemisBackup0);
-
-        LOGGER.info("Ensure queue contains {} messages on backup", numOfMessages);
-        ensureQueueCount(artemisBackup0, addressName, queueName, RoutingType.ANYCAST, numOfMessages);
-
-        LOGGER.info("Consuming {} messages from queue {} on backup", numOfMessages, queueName);
-        client.consume(numOfMessages);
-        Map<String, Message> consumedMsgs = client.getConsumedMsgs();
-
-        LOGGER.info("Ensure queue is empty");
-        ensureQueueCount(artemisBackup0, addressName, queueName, RoutingType.ANYCAST, 0);
-
-        LOGGER.info("Ensuring produced and consumed messages are the same");
-        ensureSameMessages(numOfMessages, producedMsgs, consumedMsgs);
+            if (argumentsAccessor.getInvocationIndex() == upgradeCount) {
+                LOGGER.info("[UPGRADE] Check all received messages vs all sent");
+                Assertions.assertEquals(messagesReceivedTotal, messagesSentInitials);
+            }
+        }
     }
 
 }

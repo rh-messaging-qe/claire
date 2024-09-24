@@ -12,8 +12,11 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.Protocol;
+import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.helper.ArtemisJmxHelper;
 import io.brokerqe.claire.helper.TimeHelper;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
@@ -28,6 +31,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public final class ArtemisContainer extends AbstractGenericContainer {
 
@@ -51,6 +56,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     private String configDir;
     private String libDir;
     private DeployableClient deployableClient;
+    private boolean isPrimary = false;
+    private boolean isBackup = false;
 
     public ArtemisContainer(String name) {
         super(name, ENVIRONMENT_STANDALONE.getArtemisContainerImage());
@@ -103,7 +110,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     public void setInstallDir(String installDir) {
         this.installDir = installDir;
-        setConfigLibDir(instanceDir + Constants.FILE_SEPARATOR + ArtemisConstants.LIB_DIR);
+        setConfigLibDir(installDir + Constants.FILE_SEPARATOR + ArtemisConstants.LIB_DIR);
     }
 
     public void setInstanceDir(String instanceDir) {
@@ -142,13 +149,13 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void withInstallDir(String dirPath, boolean replaceBind) {
-        LOGGER.debug("[Container {}] - with install dir {} = {}", name, dirPath, ARTEMIS_INSTALL_DIR);
+        LOGGER.debug("[{}] - with install dir {} = {}", name, dirPath, ARTEMIS_INSTALL_DIR);
         withFileSystemBind(dirPath, ARTEMIS_INSTALL_DIR, BindMode.READ_ONLY, replaceBind);
     }
 
     public void withConfigDir(String dirPath) {
         String containerConfigDir = ARTEMIS_INSTANCE_DIR + ArtemisConstants.ETC_DIR;
-        LOGGER.debug("[Container {}] with config dir {} = {}", name, dirPath, containerConfigDir);
+        LOGGER.debug("[{}] with config dir {} = {}", name, dirPath, containerConfigDir);
         setConfigDir(dirPath);
         withFileSystemBind(dirPath, containerConfigDir, BindMode.READ_ONLY);
     }
@@ -156,30 +163,30 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public void withInstanceDir(String dirPath) {
         String containerInstanceDir = ARTEMIS_INSTANCE_DIR;
         setInstanceDir(dirPath);
-        LOGGER.debug("[Container {}] with instance dir {} = {}", name, dirPath, containerInstanceDir);
+        LOGGER.debug("[{}] with instance dir {} = {}", name, dirPath, containerInstanceDir);
         withFileSystemBind(dirPath, containerInstanceDir, BindMode.READ_WRITE);
     }
 
     public void withConfigFile(String srcFilePath, String dstFileName) {
         String destination = ARTEMIS_INSTANCE_DIR + ArtemisConstants.ETC_DIR + File.separator + dstFileName;
-        LOGGER.debug("[Container {}] with config file {} = {}", name, srcFilePath, destination);
+        LOGGER.debug("[{}] with config file {} = {}", name, srcFilePath, destination);
         withFileSystemBind(srcFilePath, destination, BindMode.READ_ONLY);
     }
 
     public void withDataDir(String dirPath) {
-        LOGGER.debug("[Container {}] with data dir {} = {}", name, dirPath, ARTEMIS_INSTANCE_DATA_DIR);
+        LOGGER.debug("[{}] with data dir {} = {}", name, dirPath, ARTEMIS_INSTANCE_DATA_DIR);
         TestUtils.createDirectory(dirPath);
         withFileSystemBind(dirPath, ARTEMIS_INSTANCE_DATA_DIR, BindMode.READ_WRITE);
     }
 
     public void withJavaHome(String dirPath) {
-        LOGGER.debug("[Container {}] with env var {} = {}", name, Constants.JAVA_HOME, dirPath);
+        LOGGER.debug("[{}] with env var {} = {}", name, Constants.JAVA_HOME, dirPath);
         container.withEnv(Constants.JAVA_HOME, dirPath);
     }
 
     public void withLibFile(String srcFilePath, String dstFileName) {
         String destination = ARTEMIS_INSTANCE_DIR + ArtemisConstants.LIB_DIR + File.separator + dstFileName;
-        LOGGER.debug("[Container {}] with lib file {} = {}", name, srcFilePath, destination);
+        LOGGER.debug("[{}] with lib file {} = {}", name, srcFilePath, destination);
         withFileSystemBind(srcFilePath, destination, BindMode.READ_ONLY);
     }
 
@@ -187,8 +194,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         start(Duration.ofMinutes(1));
     }
     public void start(Duration startupTimeout) {
-        LOGGER.info("[Container {}] - About to start", name);
-        LOGGER.debug("[Container {}] - Using exposed ports: {}", name, DEFAULT_PORTS);
+        LOGGER.info("[{}] - About to start", name);
+        LOGGER.debug("[{}] - Using exposed ports: {}", name, DEFAULT_PORTS);
 
         container.addExposedPorts(Ints.toArray(DEFAULT_PORTS));
         container.withPrivilegedMode(true);
@@ -231,7 +238,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     @Override
     public void stop() {
-        LOGGER.debug("[Container {}] - Stopping", name);
+        LOGGER.debug("[{}] - Stopping", name);
         if (container.isRunning()) {
             dockerClient.stopContainerCmd(container.getContainerId()).exec();
             TimeHelper.waitFor(e -> !container.isRunning(), Constants.DURATION_500_MILLISECONDS, Constants.DURATION_5_SECONDS);
@@ -288,8 +295,80 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         }
     }
 
+    public void ensureBrokerStarted() {
+        ensureBrokerStarted(true);
+    }
+
+    public void ensureBrokerStarted(boolean checkHaStatus) {
+        boolean isStarted = ArtemisJmxHelper.isStarted(this, true, 20, Constants.DURATION_2_SECONDS);
+        assertThat(isStarted).isTrue();
+        if (checkHaStatus) {
+            if (isPrimary()) {
+                ensureBrokerIsLive();
+            }
+            if (isBackup()) {
+                ensureBrokerIsBackup();
+            }
+        }
+    }
+
+    public void ensureBrokerIsLive() {
+        LOGGER.info("Ensure broker instance {} became the broker live", name);
+        boolean isLive = ArtemisJmxHelper.isLive(this, true, 40,
+                Constants.DURATION_500_MILLISECONDS);
+        assertThat(isLive).isTrue();
+    }
+
+    public void ensureBrokerIsBackup() {
+        boolean isBackup = ArtemisJmxHelper.isBackup(this, true,
+                40, Constants.DURATION_500_MILLISECONDS);
+        assertThat(isBackup).isTrue();
+    }
+
+    public void ensureBrokerReplicaIsInSync() {
+        boolean isReplicaInSync = ArtemisJmxHelper.isReplicaInSync(this, true,
+                10, Constants.DURATION_500_MILLISECONDS);
+        assertThat(isReplicaInSync).isTrue();
+    }
+
+    public void ensureBrokerPagingCount(String addressName, int expectedResult) {
+        long pagingCount = ArtemisJmxHelper.getAddressPageCount(this, addressName, expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
+        assertThat(pagingCount).isEqualTo(expectedResult);
+    }
+
+    public void ensureBrokerIsPaging(String addressName, boolean expectedResult) {
+        boolean isPaging = ArtemisJmxHelper.isPaging(this, addressName, expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
+        assertThat(isPaging).isEqualTo(expectedResult);
+    }
+
+    public void ensureQueueCount(String addressName, String queueName, RoutingType routeType, int expectedResult) {
+        LOGGER.info("Ensure queue has {} messages", expectedResult);
+        Long countResult = ArtemisJmxHelper.getQueueCount(this, addressName, queueName, routeType,
+                expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
+        assertThat(countResult).isEqualTo(expectedResult);
+    }
+
+    public void ensureBrokerUsesJdbc(Database database) {
+        assertThat(getLogs()).containsAnyOf(database.getJdbcUrl(), database.getConnectionUrl());
+    }
+
     public enum ArtemisProcessControllerActions {
         START, STOP, FORCE_STOP
+    }
+
+
+    public boolean isPrimary() {
+        return isPrimary;
+    }
+    public void setPrimary(boolean primary) {
+        isPrimary = primary;
+    }
+
+    public void setBackup(boolean backup) {
+        isBackup = backup;
+    }
+    public boolean isBackup() {
+        return isBackup;
     }
 
     public boolean isSecured() {

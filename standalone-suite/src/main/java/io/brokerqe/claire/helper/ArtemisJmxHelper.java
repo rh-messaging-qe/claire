@@ -54,7 +54,7 @@ public final class ArtemisJmxHelper {
 
     public static Long getQueueCount(ArtemisContainer artemisContainer, String address, String queue,
                                      RoutingType routingType, long expectedResult, long retries, long pollMs) {
-        LOGGER.debug("[Container {}] - Checking address {} and queue {} for number of messages", artemisContainer.getName(),
+        LOGGER.debug("[{}] - Checking address {} and queue {} for number of messages", artemisContainer.getName(),
                 address, queue);
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         try {
@@ -70,7 +70,7 @@ public final class ArtemisJmxHelper {
 
     public static Long getAddressPageCount(ArtemisContainer artemisContainer, String address, long expectedResult,
                                            long retries, long pollMs) {
-        LOGGER.debug("[Container {}] - Checking address {} number of pages", artemisContainer.getName(), address);
+        LOGGER.debug("[{}] - Checking address {} number of pages", artemisContainer.getName(), address);
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         try {
             ObjectName ob = getObjectBuilder(artemisContainer).getAddressObjectName(SimpleString.toSimpleString(address));
@@ -83,7 +83,7 @@ public final class ArtemisJmxHelper {
 
     public static boolean isPaging(ArtemisContainer artemisContainer, String address, boolean expectedResult,
                                    long retries, long pollMs) {
-        LOGGER.debug("[Container {}] - Checking if address {} is paging", artemisContainer.getName(), address);
+        LOGGER.debug("[{}] - Checking if address {} is paging", artemisContainer.getName(), address);
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         try {
             ObjectName ob = getObjectBuilder(artemisContainer).getAddressObjectName(SimpleString.toSimpleString(address));
@@ -111,9 +111,8 @@ public final class ArtemisJmxHelper {
         return objectName;
     }
 
-    public static boolean isStarted(ArtemisContainer artemisContainer, boolean expectedResult, long retries,
-                                    long timeoutInMs) {
-        LOGGER.debug("[Container {}] - Checking if is started", artemisContainer.getName());
+    public static boolean isStarted(ArtemisContainer artemisContainer, boolean expectedResult, long retries, long timeoutInMs) {
+        LOGGER.debug("[{}] - Checking if is started", artemisContainer.getName());
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         try {
             ObjectName objectName = getArtemisObjectName(artemisContainer);
@@ -125,7 +124,7 @@ public final class ArtemisJmxHelper {
     }
 
     public static boolean isLive(ArtemisContainer artemisContainer, boolean expectedResult, long retries, long timeoutInMs) {
-        LOGGER.debug("[Container {}] - Checking if is the live", artemisContainer.getName());
+        LOGGER.debug("[{}] - Checking if is the live", artemisContainer.getName());
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         ObjectName objectName = getArtemisObjectName(artemisContainer);
         return TimeHelper.retry(() -> queryControl(serviceURI, objectName, ActiveMQServerControl::isActive,
@@ -134,7 +133,7 @@ public final class ArtemisJmxHelper {
 
     public static boolean isBackup(ArtemisContainer artemisContainer, boolean expectedResult, long retries,
                                    long timeoutInMs) {
-        LOGGER.debug("[Container {}] - Checking if is the backup", artemisContainer.getName());
+        LOGGER.debug("[{}] - Checking if is the backup", artemisContainer.getName());
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         try {
             ObjectName objectName = getArtemisObjectName(artemisContainer);
@@ -148,7 +147,7 @@ public final class ArtemisJmxHelper {
 
     public static boolean isReplicaInSync(ArtemisContainer artemisContainer, boolean expectedResult, long retries,
                                           long timeoutInMs) {
-        LOGGER.debug("[Container {}] - Checking if has replica in sync", artemisContainer.getName());
+        LOGGER.debug("[{}] - Checking if has replica in sync", artemisContainer.getName());
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         try {
             ObjectName objectName = getArtemisObjectName(artemisContainer);
@@ -164,7 +163,7 @@ public final class ArtemisJmxHelper {
                                                    ArtemisJmxHelper.ThrowableFunction<C, T> queryControl,
                                                    Class<C> controlClass, Function<Throwable, T> onThrowable) {
         try {
-            LOGGER.trace("Connecting using JMX on {}", serviceURI);
+            LOGGER.debug("Connecting using JMX on {}", serviceURI);
             try (JMXConnector jmx = JMXConnectorFactory.connect(serviceURI)) {
                 final C control = MBeanServerInvocationHandler.newProxyInstance(jmx.getMBeanServerConnection(),
                         objectName, controlClass, false);

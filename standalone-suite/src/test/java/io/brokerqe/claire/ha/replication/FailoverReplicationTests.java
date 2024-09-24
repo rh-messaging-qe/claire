@@ -10,6 +10,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.client.JmsClient;
 import io.brokerqe.claire.client.AmqpUtil;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.ZookeeperContainerCluster;
 import jakarta.jms.Message;
@@ -38,13 +39,13 @@ public class FailoverReplicationTests extends AbstractSystemTests {
 
         String artemisPrimaryName = "artemisPrimary";
         LOGGER.info("Creating artemis instance: " + artemisPrimaryName);
-        String primaryTuneFile = generateYacfgProfilesContainerTestDir("primary-tune.yaml.jinja2");
-        artemisPrimary = getArtemisInstance(artemisPrimaryName, primaryTuneFile);
+        String primaryTuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("primary-tune.yaml.jinja2", getPkgClassAsDir());
+        artemisPrimary = ArtemisDeployment.getArtemisInstance(artemisPrimaryName, primaryTuneFile);
 
         String artemisBackupName = "artemisBackup";
         LOGGER.info("Creating artemis instance: " + artemisBackupName);
-        String backupTuneFile = generateYacfgProfilesContainerTestDir("backup-tune.yaml.jinja2");
-        artemisBackup = getArtemisInstance(artemisBackupName, backupTuneFile, true);
+        String backupTuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("backup-tune.yaml.jinja2", getPkgClassAsDir());
+        artemisBackup = ArtemisDeployment.getArtemisInstance(artemisBackupName, backupTuneFile, true);
     }
 
     @Test
@@ -70,26 +71,26 @@ public class FailoverReplicationTests extends AbstractSystemTests {
         Map<String, Message> producedMsgs = client.getProducedMsgs();
 
         LOGGER.info("Ensure queue contains {} messages on primary", numOfMessages);
-        ensureQueueCount(artemisPrimary, addressName, queueName, RoutingType.ANYCAST, numOfMessages);
+        artemisPrimary.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, numOfMessages);
 
         // ensure replica is in sync
-        ensureBrokerReplicaIsInSync(artemisBackup);
+        artemisBackup.ensureBrokerReplicaIsInSync();
 
         // stop the primary instance
         artemisPrimary.stop();
 
         // ensure the backup instance became the current live
-        ensureBrokerIsLive(artemisBackup);
+        artemisBackup.ensureBrokerIsLive();
 
         LOGGER.info("Ensure queue contains {} messages on backup", numOfMessages);
-        ensureQueueCount(artemisBackup, addressName, queueName, RoutingType.ANYCAST, numOfMessages);
+        artemisBackup.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, numOfMessages);
 
         LOGGER.info("Consuming {} messages from queue {} on backup", numOfMessages, queueName);
         client.consume(numOfMessages);
         Map<String, Message> consumedMsgs = client.getConsumedMsgs();
 
         LOGGER.info("Ensure queue is empty");
-        ensureQueueCount(artemisBackup, addressName, queueName, RoutingType.ANYCAST, 0);
+        artemisBackup.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, 0);
 
         LOGGER.info("Ensuring produced and consumed messages are the same");
         ensureSameMessages(numOfMessages, producedMsgs, consumedMsgs);

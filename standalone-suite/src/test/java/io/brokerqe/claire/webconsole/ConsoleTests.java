@@ -7,6 +7,7 @@ package io.brokerqe.claire.webconsole;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
 import io.brokerqe.claire.helper.webconsole.MainPageHelper;
 import io.brokerqe.claire.helper.webconsole.WebConsoleHelper;
@@ -28,7 +29,7 @@ public class ConsoleTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemisInstance = getArtemisInstance(artemisName);
+        artemisInstance = ArtemisDeployment.getArtemisInstance(artemisName);
     }
 
     @Test
