@@ -33,7 +33,6 @@ cache:
       curl --insecure -O https://password.corp.redhat.com/RH-IT-Root-CA.crt
       curl --insecure -O https://certs.corp.redhat.com/certs/2015-IT-Root-CA.pem
       curl --insecure -O https://certs.corp.redhat.com/certs/2022-IT-Root-CA.pem
-      curl --insecure -O https://engineering.redhat.com/Eng-CA.crt
       update-ca-trust extract
       popd
     - 'curl -sSL https://archive.apache.org/dist/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz | tar xz -C /opt && ln -s /opt/apache-maven-3.9.1/bin/mvn /usr/local/bin/mvn'
