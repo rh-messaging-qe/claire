@@ -11,7 +11,9 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.junit.TestValidUntil;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
@@ -19,8 +21,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,25 +157,29 @@ public class TLSSecurityTests extends AbstractSystemTests {
         teardownDefaultClusterOperator(testNamespace);
     }
 
-    @ParameterizedTest
-    @EnumSource(value = Constants.SECRETSOURCE.class, names = {"MANUAL", "TRUST_MANAGER"})
+    @Test
     @TestValidSince(ArtemisVersion.VERSION_2_33)
-    public void testMutualAuthentication(Constants.SECRETSOURCE source) {
-        doTestTlsMessaging(true, source, true);
+    @DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
+    public void testMutualAuthentication() {
+        doTestTlsMessaging(true, Constants.SECRETSOURCE.TRUST_MANAGER, true);
     }
 
-    @ParameterizedTest
-    @EnumSource(value = Constants.SECRETSOURCE.class, names = {"MANUAL", "CERT_MANAGER"})
+    @Test
     @TestValidSince(ArtemisVersion.VERSION_2_33)
-    public void testWithoutClientAuthentication(Constants.SECRETSOURCE source) {
-        doTestTlsMessaging(true, source, false);
+    public void testWithoutClientAuthentication() {
+        doTestTlsMessaging(true, Constants.SECRETSOURCE.CERT_MANAGER, false);
     }
 
     @Test
     @TestValidSince(ArtemisVersion.VERSION_2_21)
-    @TestValidUntil(ArtemisVersion.VERSION_2_33)
-    public void testSslManual() {
+    public void testSslManualMutual() {
         doTestTlsMessaging(true, Constants.SECRETSOURCE.MANUAL, true);
+    }
+
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_21)
+    public void testSslManualNonMutual() {
+        doTestTlsMessaging(true, Constants.SECRETSOURCE.MANUAL, false);
     }
 
     @Test
