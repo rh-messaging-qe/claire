@@ -26,6 +26,10 @@ public abstract class UpgradeTests extends AbstractSystemTests {
     protected static int messagesReceivedTotal = 0;
     protected static int upgradeCount;
 
+    private static final String VERSION = "version";
+    private static final String ARTEMIS_VERSION = "artemisVersion";
+    private static final String ARTEMIS_ZIP_URL = "artemisZipUrl";
+
     Stream<? extends Arguments> getUpgradePlanArguments() {
         LOGGER.info("[UpgradeTestPlan] {}", getEnvironment().getTestUpgradePlanContent());
         ArrayList<HashMap<String, String>> mapped = new Yaml().load(getEnvironment().getTestUpgradePlanContent());
@@ -33,7 +37,7 @@ public abstract class UpgradeTests extends AbstractSystemTests {
         messagesReceivePartial = messagesSentInitials / (mapped.size() - 1);
         upgradeCount = mapped.size();
         return  mapped.stream().map(line ->
-                Arguments.of(line.get("version"), line.get("artemis_version"), line.get("artemis_zip_url"))
+                Arguments.of(line.get(VERSION), line.get(ARTEMIS_VERSION), line.get(ARTEMIS_ZIP_URL))
         );
     }
 
