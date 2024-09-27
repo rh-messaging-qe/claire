@@ -11,7 +11,6 @@ import io.brokerqe.claire.clients.Protocol;
 import io.brokerqe.claire.clients.bundled.BundledClientOptions;
 import io.brokerqe.claire.container.ArtemisContainer;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
@@ -27,11 +26,6 @@ public class SingleUpgradeTests extends UpgradeTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleUpgradeTests.class);
 
     private ArtemisContainer artemisUpgraded;
-
-    @BeforeAll
-    void setupEnvironment() {
-        LOGGER.info("[UpgradeTestPlan] {}", getEnvironment().getTestUpgradePlanContent());
-    }
 
     @ParameterizedTest
     @MethodSource("getUpgradePlanArguments")
