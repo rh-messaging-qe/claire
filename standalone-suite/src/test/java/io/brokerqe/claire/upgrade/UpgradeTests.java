@@ -7,6 +7,7 @@ package io.brokerqe.claire.upgrade;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.container.ArtemisContainer;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.provider.Arguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +31,12 @@ public abstract class UpgradeTests extends AbstractSystemTests {
     private static final String ARTEMIS_VERSION = "artemisVersion";
     private static final String ARTEMIS_ZIP_URL = "artemisZipUrl";
 
-    Stream<? extends Arguments> getUpgradePlanArguments() {
+    @BeforeAll
+    void beforeAllUpgradeTests() {
         LOGGER.info("[UpgradeTestPlan] {}", getEnvironment().getTestUpgradePlanContent());
+    }
+
+    Stream<? extends Arguments> getUpgradePlanArguments() {
         ArrayList<HashMap<String, String>> mapped = new Yaml().load(getEnvironment().getTestUpgradePlanContent());
         messagesSentInitials = 2000 * (mapped.size() - 1);
         messagesReceivePartial = messagesSentInitials / (mapped.size() - 1);
