@@ -27,6 +27,7 @@ public class RapidastDefaultConsoleTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(RapidastDefaultConsoleTests.class);
 
     protected String consoleURL;
+    protected String artemisFullName;
 
 
     protected String getScanName() {
@@ -39,6 +40,7 @@ public class RapidastDefaultConsoleTests extends AbstractSystemTests {
         LOGGER.info("Creating artemis instance: " + artemisName);
         ArtemisContainer artemis = ArtemisDeployment.getArtemisInstance(artemisName);
         consoleURL = artemis.getConsoleUrl();
+        artemisFullName = artemis.getName();
     }
 
     @AfterAll
@@ -51,10 +53,11 @@ public class RapidastDefaultConsoleTests extends AbstractSystemTests {
     void rapidastConsoleTest() {
         LOGGER.info("[RAPIDAST] {}, Spider method: {}", consoleURL, getScanName());
 
-        LOGGER.info("Creating rapidast container");
-        RapidastContainer rapidast = new RapidastContainer("rapidast", consoleURL, getScanName(), 1000);
+        String rapidastName = "rapidast-" + artemisFullName;
+        LOGGER.info("Creating rapidast container: " + rapidastName);
+        RapidastContainer rapidast = new RapidastContainer(rapidastName, consoleURL, getScanName(), 1000);
 
-        LOGGER.info("Starting rapidast container");
+        LOGGER.info("Starting rapidast container: " + rapidastName);
         rapidast.start();
 
         LOGGER.info("Ensuring results from scanner are in results directory");
