@@ -73,7 +73,6 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
             int sentInitial = sendMessages(initialSenderOptions);
             Assertions.assertEquals(sentInitial, messagesSentInitials);
         } else if (argumentsAccessor.getInvocationIndex() > 1) {
-            LOGGER.info("[UPGRADE] Receive partial durable messages {}", messagesReceivePartial);
             // if is replication scenario -> upgrade backup, then primary
             ArtemisContainer upgradePrimary = null;
             for (int i = 0; i < haPairs; i++) {
@@ -86,6 +85,7 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
                 upgradePrimary = performUpgradeProcedure(upgradePrimary, installDir);
                 assertVersionLogs(upgradePrimary, version, artemisVersion);
             }
+            LOGGER.info("[UPGRADE] Receive partial durable messages {}", messagesReceivePartial);
             BundledClientOptions durableReceiverOptions = new BundledClientOptions()
                     .withDeployableClient(upgradePrimary.getDeployableClient())
                     .withDestinationAddress(upgradeQueueName)

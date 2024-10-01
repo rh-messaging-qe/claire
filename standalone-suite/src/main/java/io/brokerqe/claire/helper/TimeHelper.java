@@ -50,7 +50,7 @@ public final class TimeHelper {
 
     public static void waitFor(ThrowablePredicate<Boolean> predicate, long pollMs, long timeoutInMs) {
         long realTimeout = System.currentTimeMillis() + timeoutInMs;
-        LOGGER.debug("Waiting for during {} ms with polls of {} ms", timeoutInMs, pollMs);
+        LOGGER.debug("Waiting for {} ms with polls of {} ms", timeoutInMs, pollMs);
         while (System.currentTimeMillis() < realTimeout) {
             try {
                 if (predicate.test(true)) {

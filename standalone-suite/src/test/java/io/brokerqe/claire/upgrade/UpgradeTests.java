@@ -34,6 +34,11 @@ public abstract class UpgradeTests extends AbstractSystemTests {
     @BeforeAll
     void beforeAllUpgradeTests() {
         LOGGER.info("[UpgradeTestPlan] {}", getEnvironment().getTestUpgradePlanContent());
+        // reset counters
+        messagesSentInitials = 0;
+        messagesReceivedTotal = 0;
+        messagesReceivePartial = 0;
+        upgradeCount = 0;
     }
 
     Stream<? extends Arguments> getUpgradePlanArguments() {
@@ -47,6 +52,7 @@ public abstract class UpgradeTests extends AbstractSystemTests {
     }
 
     ArtemisContainer performUpgradeProcedure(ArtemisContainer artemisUpgraded, String upgradeInstallDir) {
+        LOGGER.info("[UPGRADE] upgrading {} from {}", artemisUpgraded.getName(), upgradeInstallDir);
         // apache-artemis-2.33.0.redhat-00013/bin/artemis upgrade /tmp/upgrade-lala/
         String createCmd = upgradeInstallDir + "/bin/artemis upgrade " + artemisUpgraded.getInstanceDir();
         TestUtils.executeLocalCommand(createCmd);
