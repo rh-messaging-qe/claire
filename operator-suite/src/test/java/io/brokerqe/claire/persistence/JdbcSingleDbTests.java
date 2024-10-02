@@ -18,6 +18,8 @@ import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.db.Postgres;
 import io.brokerqe.claire.junit.TestValidSince;
+import io.brokerqe.claire.KubernetesArchitecture;
+import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
@@ -38,6 +40,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
 @TestValidSince(ArtemisVersion.VERSION_2_32)
+@DisabledTestArchitecture(archs = {KubernetesArchitecture.S390X, KubernetesArchitecture.PPC64LE})
 public class JdbcSingleDbTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSingleDbTests.class);
