@@ -8,6 +8,8 @@ import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.clients.Protocol;
+import io.brokerqe.claire.clients.bundled.ArtemisCommand;
+import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
 import io.brokerqe.claire.clients.bundled.BundledClientOptions;
 import io.brokerqe.claire.container.ArtemisContainer;
 import org.junit.jupiter.api.Assertions;
@@ -30,6 +32,13 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
     private String backup = "backup";
     private Map<String, ArrayList<ArtemisContainer>> artemises = new HashMap<>();
 
+    String upgradeQueueName = "upgrade-queue";
+    Map<String, String> artemisQueueStatOptions = new HashMap<>(Map.of(
+            "maxColumnSize", "-1",
+            "maxRows", "1000",
+            "queueName", upgradeQueueName
+    ));
+
     void initialDeployment(String version, String artemisVersion, String installDir, int haPairs) {
         artemises.put(primary, new ArrayList<>());
         artemises.put(backup, new ArrayList<>());
@@ -50,7 +59,6 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
         String artemisVersion = argumentsAccessor.getString(1);
         String artemisZipUrl = argumentsAccessor.getString(2);
 
-        String upgradeQueueName = "upgrade-queue";
         int haPairs = 3;
         String installDir = ArtemisDeployment.downloadPrepareArtemisInstallDir(testInfo, artemisZipUrl, version, getTestConfigDir());
 
@@ -69,15 +77,15 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
                     .withUsername(ArtemisConstants.ADMIN_NAME)
                     .withPassword(ArtemisConstants.ADMIN_PASS)
                     .withDestinationUrl(primary0.getBrokerUri(Protocol.CORE))
-                    .withProtocol(Protocol.CORE);
+                    .withProtocol(Protocol.CORE)
+                    .withTimeout(600);
             int sentInitial = sendMessages(initialSenderOptions);
             Assertions.assertEquals(sentInitial, messagesSentInitials);
         } else if (argumentsAccessor.getInvocationIndex() > 1) {
             // if is replication scenario -> upgrade backup, then primary
-            ArtemisContainer upgradePrimary = null;
             for (int i = 0; i < haPairs; i++) {
                 ArtemisContainer upgradeBackup = artemises.get(backup).get(i);
-                upgradePrimary = artemises.get(primary).get(i);
+                ArtemisContainer upgradePrimary = artemises.get(primary).get(i);
                 LOGGER.info("[UPGRADE] Going to upgrade pair #{}", i + 1);
                 upgradeBackup = performUpgradeProcedure(upgradeBackup, installDir);
                 assertVersionLogs(upgradeBackup, version, artemisVersion);
@@ -85,16 +93,18 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
                 upgradePrimary = performUpgradeProcedure(upgradePrimary, installDir);
                 assertVersionLogs(upgradePrimary, version, artemisVersion);
             }
-            LOGGER.info("[UPGRADE] Receive partial durable messages {}", messagesReceivePartial);
+            ArtemisContainer randomPrimary = artemises.get(primary).get(argumentsAccessor.getInvocationIndex() % 3);
+
+            LOGGER.info("[UPGRADE] Receive partial {} durable messages from {}", messagesReceivePartial, randomPrimary.getName());
             BundledClientOptions durableReceiverOptions = new BundledClientOptions()
-                    .withDeployableClient(upgradePrimary.getDeployableClient())
+                    .withDeployableClient(randomPrimary.getDeployableClient())
                     .withDestinationAddress(upgradeQueueName)
                     .withDestinationQueue(upgradeQueueName)
                     .withDestinationPort(DEFAULT_ALL_PORT)
                     .withMessageCount(messagesReceivePartial)
                     .withUsername(ArtemisConstants.ADMIN_NAME)
                     .withPassword(ArtemisConstants.ADMIN_PASS)
-                    .withDestinationUrl(upgradePrimary.getBrokerUri(Protocol.CORE))
+                    .withDestinationUrl(randomPrimary.getBrokerUri(Protocol.CORE))
                     .withProtocol(Protocol.CORE);
             messagesReceivedTotal += receiveMessages(durableReceiverOptions);
             LOGGER.info("[UPGRADE] Received so far {}", messagesReceivedTotal);
@@ -104,6 +114,11 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
                 Assertions.assertEquals(messagesReceivedTotal, messagesSentInitials);
             }
         }
+
+        LOGGER.info("[END-UPGRADE] Queue stats");
+        BundledArtemisClient artemisClient = new BundledArtemisClient(artemises.get(primary).get(0).getDeployableClient(), ArtemisCommand.QUEUE_STAT, artemisQueueStatOptions);
+//        BundledArtemisClient artemisBackupClient = new BundledArtemisClient(artemises.get(backup).get(0).getDeployableClient(), ArtemisCommand.QUEUE_STAT, artemisQueueStatOptions);
+        artemisClient.executeCommand();
     }
 
 }

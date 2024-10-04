@@ -34,6 +34,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private int receivedMessages = 0;
     private int sentMessages = 0;
     private Executor subscriberExecutor;
+    private int timeout;
 
 
     public BundledMessagingClient(BundledClientOptions options) {
@@ -48,6 +49,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
         this.username = options.username;
         this.persistenceDisabled = options.persistenceDisabled;
         this.isMulticast = options.multicast;
+        this.timeout = options.timeout;
     }
 
     abstract String getProtocol();
@@ -96,8 +98,8 @@ public abstract class BundledMessagingClient implements MessagingClient {
     }
 
     private String[] constructClientCommand(String clientType) {
-        // ./amq-broker/bin/artemis producer --url tcp://10.129.2.15:61616 --destination queue://demoQueue --message-count=50
-        // ./amq-broker/bin/artemis consumer --url tcp://10.129.2.129:61616 --destination queue://demoQueue --message-count=50
+        // timeout 90s ./amq-broker/bin/artemis producer --url tcp://10.129.2.15:61616 --destination queue://demoQueue --message-count=50
+        // timeout 90s ./amq-broker/bin/artemis consumer --url tcp://10.129.2.129:61616 --destination queue://demoQueue --message-count=50
         if (isMulticast) {
             clientDestination = "topic://" + destinationAddress;
         } else {
@@ -111,8 +113,13 @@ public abstract class BundledMessagingClient implements MessagingClient {
         if (!destinationUrl.contains("://")) {
             destinationUrl = "tcp://" + destinationUrl;
         }
-        String command = String.format("%s/artemis %s --url %s:%s --protocol %s --destination %s",
-                deployableClient.getExecutableHome(), clientType, destinationUrl, destinationPort, protocol, clientDestination);
+
+        String timeoutCmd = "";
+        if (timeout != 0) {
+            timeoutCmd = String.format("timeout %ds ", timeout);
+        }
+        String command = String.format("%s%s/artemis %s --url %s:%s --protocol %s --destination %s",
+                timeoutCmd, deployableClient.getExecutableHome(), clientType, destinationUrl, destinationPort, protocol, clientDestination);
 
         if (messageCount != -2) {
             command += " --message-count " + messageCount;

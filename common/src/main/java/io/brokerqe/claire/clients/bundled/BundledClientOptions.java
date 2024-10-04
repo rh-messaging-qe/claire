@@ -20,6 +20,7 @@ public class BundledClientOptions {
     Boolean persistenceDisabled = false;
     Boolean multicast = false;
     Protocol protocol;
+    int timeout = 90;
 
     public BundledClientOptions withDeployableClient(DeployableClient deployableClient) {
         this.deployableClient = deployableClient;
@@ -75,6 +76,11 @@ public class BundledClientOptions {
         return this;
     }
 
+    public BundledClientOptions withTimeout(int timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
     public DeployableClient getDeployableClient() {
         return deployableClient;
     }
@@ -117,5 +123,8 @@ public class BundledClientOptions {
 
     public Protocol getProtocol() {
         return protocol;
+    }
+    public int getTimeout() {
+        return timeout;
     }
 }

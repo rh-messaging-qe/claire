@@ -222,7 +222,8 @@ public class ClientsMessagingTests extends AbstractSystemTests {
                 .withPassword(password)
                 .withUsername(username)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemis.getName());
+                .withDestinationUrl(artemis.getName())
+                .withTimeout(0);
         MessagingClient bundledClient = new BundledCoreMessagingClient(options);
         int sent = bundledClient.sendMessages();
         int received = bundledClient.receiveMessages();
@@ -244,7 +245,8 @@ public class ClientsMessagingTests extends AbstractSystemTests {
                 .withPassword(password)
                 .withUsername(username)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemis.getName());
+                .withDestinationUrl(artemis.getName())
+                .withTimeout(0);
         MessagingClient bundledClient = new BundledAmqpMessagingClient(options);
         int sent = bundledClient.sendMessages();
         int received = bundledClient.receiveMessages();
