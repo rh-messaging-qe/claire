@@ -230,7 +230,7 @@ public class MessagingTests extends AbstractSystemTests {
         artemisClient.executeCommand();
 
         artemis.restartWithStop(timeout);
-        artemis.ensureBrokerIsLive();
+        artemis.ensureBrokerIsActive();
 
         artemisClient.executeCommand();
 

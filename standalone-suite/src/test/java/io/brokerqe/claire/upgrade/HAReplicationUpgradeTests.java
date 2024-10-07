@@ -52,6 +52,39 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
         }
     }
 
+    void preUpgradeProcedure(ArtemisContainer artemis) {
+        LOGGER.info("[UPGRADE] Sending initial messages {}", messagesSentInitials);
+        BundledClientOptions initialSenderOptions = new BundledClientOptions()
+                .withDeployableClient(artemis.getDeployableClient())
+                .withDestinationAddress(upgradeQueueName)
+                .withDestinationQueue(upgradeQueueName)
+                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withMessageCount(messagesSentInitials)
+                .withUsername(ArtemisConstants.ADMIN_NAME)
+                .withPassword(ArtemisConstants.ADMIN_PASS)
+                .withDestinationUrl(artemis.getBrokerUri(Protocol.CORE))
+                .withProtocol(Protocol.CORE)
+                .withTimeout(600);
+        int sentInitial = sendMessages(initialSenderOptions);
+        Assertions.assertEquals(sentInitial, messagesSentInitials);
+    }
+
+    void postUpgradeProcedure(ArtemisContainer artemis) {
+        LOGGER.info("[UPGRADE] Receive partial {} durable messages from {}", messagesReceivePartial, artemis.getName());
+        BundledClientOptions durableReceiverOptions = new BundledClientOptions()
+                .withDeployableClient(artemis.getDeployableClient())
+                .withDestinationAddress(upgradeQueueName)
+                .withDestinationQueue(upgradeQueueName)
+                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withMessageCount(messagesReceivePartial)
+                .withUsername(ArtemisConstants.ADMIN_NAME)
+                .withPassword(ArtemisConstants.ADMIN_PASS)
+                .withDestinationUrl(artemis.getBrokerUri(Protocol.CORE))
+                .withProtocol(Protocol.CORE);
+        messagesReceivedTotal += receiveMessages(durableReceiverOptions);
+        LOGGER.info("[UPGRADE] Received so far {}", messagesReceivedTotal);
+    }
+
     @ParameterizedTest
     @MethodSource("getUpgradePlanArguments")
     void microUpgradeHA(ArgumentsAccessor argumentsAccessor) {
@@ -66,21 +99,8 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
             LOGGER.info("[UPGRADE] Deploying initial broker pair(s)");
             initialDeployment(version, artemisVersion, installDir, haPairs);
             ArtemisContainer primary0 = artemises.get(primary).get(0);
+            preUpgradeProcedure(primary0);
 
-            LOGGER.info("[UPGRADE] Sending initial messages {}", messagesSentInitials);
-            BundledClientOptions initialSenderOptions = new BundledClientOptions()
-                    .withDeployableClient(primary0.getDeployableClient())
-                    .withDestinationAddress(upgradeQueueName)
-                    .withDestinationQueue(upgradeQueueName)
-                    .withDestinationPort(DEFAULT_ALL_PORT)
-                    .withMessageCount(messagesSentInitials)
-                    .withUsername(ArtemisConstants.ADMIN_NAME)
-                    .withPassword(ArtemisConstants.ADMIN_PASS)
-                    .withDestinationUrl(primary0.getBrokerUri(Protocol.CORE))
-                    .withProtocol(Protocol.CORE)
-                    .withTimeout(600);
-            int sentInitial = sendMessages(initialSenderOptions);
-            Assertions.assertEquals(sentInitial, messagesSentInitials);
         } else if (argumentsAccessor.getInvocationIndex() > 1) {
             // if is replication scenario -> upgrade backup, then primary
             for (int i = 0; i < haPairs; i++) {
@@ -94,20 +114,7 @@ public class HAReplicationUpgradeTests extends UpgradeTests {
                 assertVersionLogs(upgradePrimary, version, artemisVersion);
             }
             ArtemisContainer randomPrimary = artemises.get(primary).get(argumentsAccessor.getInvocationIndex() % 3);
-
-            LOGGER.info("[UPGRADE] Receive partial {} durable messages from {}", messagesReceivePartial, randomPrimary.getName());
-            BundledClientOptions durableReceiverOptions = new BundledClientOptions()
-                    .withDeployableClient(randomPrimary.getDeployableClient())
-                    .withDestinationAddress(upgradeQueueName)
-                    .withDestinationQueue(upgradeQueueName)
-                    .withDestinationPort(DEFAULT_ALL_PORT)
-                    .withMessageCount(messagesReceivePartial)
-                    .withUsername(ArtemisConstants.ADMIN_NAME)
-                    .withPassword(ArtemisConstants.ADMIN_PASS)
-                    .withDestinationUrl(randomPrimary.getBrokerUri(Protocol.CORE))
-                    .withProtocol(Protocol.CORE);
-            messagesReceivedTotal += receiveMessages(durableReceiverOptions);
-            LOGGER.info("[UPGRADE] Received so far {}", messagesReceivedTotal);
+            postUpgradeProcedure(randomPrimary);
 
             if (argumentsAccessor.getInvocationIndex() == upgradeCount) {
                 LOGGER.info("[UPGRADE] Check all received messages vs all sent");

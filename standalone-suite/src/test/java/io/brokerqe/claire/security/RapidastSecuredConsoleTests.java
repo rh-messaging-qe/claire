@@ -73,7 +73,7 @@ public class RapidastSecuredConsoleTests extends RapidastDefaultConsoleTests {
         ArtemisDeployment.generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));
         artemis.start();
         artemis.ensureBrokerStarted();
-        artemis.ensureBrokerIsLive();
+        artemis.ensureBrokerIsActive();
         artemis.setSecured(true);
 
         consoleURL = artemis.getConsoleUrl();

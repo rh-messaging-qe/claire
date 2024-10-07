@@ -80,7 +80,7 @@ public class FailoverReplicationTests extends AbstractSystemTests {
         artemisPrimary.stop();
 
         // ensure the backup instance became the current live
-        artemisBackup.ensureBrokerIsLive();
+        artemisBackup.ensureBrokerIsActive();
 
         LOGGER.info("Ensure queue contains {} messages on backup", numOfMessages);
         artemisBackup.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, numOfMessages);

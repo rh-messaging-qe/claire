@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.junit;
 
+import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.security.CertificateManager;
@@ -51,5 +52,7 @@ public interface TestSeparator {
         LOGGER.info((char) 27 + "[34m" + String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + (char) 27 + "[0m");
         TestUtils.deleteEmptyDirectories(Environment.get().getCertificatesLocation());
         TestUtils.deleteEmptyDirectories(Environment.get().getTmpDirLocation());
+        TestUtils.createDirectory(Environment.get().getLogsDirLocation() + Constants.FILE_SEPARATOR);
+        TestUtils.copyFile(Constants.LOGS_DEFAULT_DIR + "/claire.log", Environment.get().getLogsDirLocation() + Constants.FILE_SEPARATOR +  "claire.log");
     }
 }

@@ -10,7 +10,7 @@
 common.yaml
 operator-suite/artemis/
 operator-suite/certificates/
-operator-suite/operator-suite.log
+operator-suite/claire.log
 operator-suite/serialization-dump/
 performance/
 pom.xml.versionsBackup
@@ -20,7 +20,7 @@ standalone-suite/certificates/
 standalone-suite/dockerfiles/artemis/*.gz
 standalone-suite/dockerfiles/artemis/*.xz
 standalone-suite/https_console_tune.yaml
-standalone-suite/standalone-suite.log
+standalone-suite/claire.log
 standalone-suite/test-cfg/
 test_upgrade_plan.yaml
 test-results/

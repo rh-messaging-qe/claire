@@ -154,7 +154,7 @@ public class ArtemisDeployment {
         // DB should be empty, so no need to wait login time to establish connection and prepare db for usage
         artemis.start(Duration.ofMinutes(10));
         artemis.ensureBrokerStarted();
-        artemis.ensureBrokerIsLive();
+        artemis.ensureBrokerIsActive();
         artemis.ensureBrokerUsesJdbc(database);
         return artemis;
     }
@@ -308,7 +308,7 @@ public class ArtemisDeployment {
                     Constants.DURATION_5_SECONDS);
             artemisInstance.withConfigDir(instanceYacfgOutputDir);
             if (yacfg.getExitCode() != 0) {
-                LOGGER.debug("[{}] {}", yacfg.getName(), yacfg.getLogTail(20));
+                LOGGER.warn("[{}] {}", yacfg.getName(), yacfg.getLogTail(20));
             } else {
                 LOGGER.debug("[{}] Exited properly", yacfg.getName());
             }

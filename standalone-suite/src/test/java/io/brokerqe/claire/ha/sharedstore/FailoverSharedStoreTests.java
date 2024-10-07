@@ -10,10 +10,10 @@ import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
+import io.brokerqe.claire.client.deployment.StJavaClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.container.AmqpQpidClient;
-import io.brokerqe.claire.client.deployment.StJavaClientDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.NfsServerContainer;
 import io.brokerqe.claire.container.ToxiProxyContainer;
@@ -70,7 +70,7 @@ public class FailoverSharedStoreTests extends AbstractSystemTests {
         LOGGER.info("Creating artemis instance: " + artemisPrimaryName);
         String primaryTuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("primary-tune.yaml.jinja2", getPkgClassAsDir());
         List<String> yacfgOpts = List.of("--opt", "journal_base_data_dir=" + artemisNfsMountDir);
-        artemisPrimary = ArtemisDeployment.getArtemisInstance(artemisPrimaryName, primaryTuneFile, yacfgOpts, artemisPrimaryEnvVars);
+        artemisPrimary = ArtemisDeployment.getArtemisInstance(artemisPrimaryName, primaryTuneFile, yacfgOpts, artemisPrimaryEnvVars, null);
 
         String artemisBackupName = "artemisBackup";
         LOGGER.info("Creating artemis instance: " + artemisBackupName);
@@ -101,8 +101,8 @@ public class FailoverSharedStoreTests extends AbstractSystemTests {
 
 
     @ParameterizedTest(name = "{index} => stopAction=''{0}''")
-    @EnumSource(value = ArtemisContainer.ArtemisProcessControllerActions.class, names = {"STOP", "FORCE_STOP"})
-    void produceAndConsumeOnPrimaryAndOnBackupTest(ArtemisContainer.ArtemisProcessControllerActions stopAction) {
+    @EnumSource(value = ArtemisContainer.ArtemisProcessControllerAction.class, names = {"STOP", "FORCE_STOP"})
+    void produceAndConsumeOnPrimaryAndOnBackupTest(ArtemisContainer.ArtemisProcessControllerAction stopAction) {
         LOGGER.info("Sending {} messages to broker primary {}", SEND_CHUNK, artemisPrimary.getName());
         int sent = primaryMessagingClient.sendMessages();
 
@@ -110,7 +110,7 @@ public class FailoverSharedStoreTests extends AbstractSystemTests {
         int received = primaryMessagingClient.receiveMessages();
 
         artemisPrimary.artemisProcessController(stopAction);
-        artemisBackup.ensureBrokerIsLive();
+        artemisBackup.ensureBrokerIsActive();
 
         LOGGER.info("Sending {} messages to broker backup {}", SEND_CHUNK, artemisBackup.getName());
         sent += backupMessagingClient.sendMessages();
@@ -118,8 +118,8 @@ public class FailoverSharedStoreTests extends AbstractSystemTests {
         LOGGER.info("Receiving {} messages from broker backup {}", RECEIVE_CHUNK, artemisBackup.getName());
         received += backupMessagingClient.receiveMessages();
 
-        artemisPrimary.artemisProcessController(ArtemisContainer.ArtemisProcessControllerActions.START);
-        artemisPrimary.ensureBrokerIsLive();
+        artemisPrimary.artemisProcessController(ArtemisContainer.ArtemisProcessControllerAction.START);
+        artemisPrimary.ensureBrokerIsActive();
 
         LOGGER.info("Receiving {} messages from broker primary {}", RECEIVE_CHUNK, artemisPrimary.getName());
         received += primaryMessagingClient.receiveMessages();

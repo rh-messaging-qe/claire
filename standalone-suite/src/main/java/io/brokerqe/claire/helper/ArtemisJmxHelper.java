@@ -123,7 +123,7 @@ public final class ArtemisJmxHelper {
         }
     }
 
-    public static boolean isLive(ArtemisContainer artemisContainer, boolean expectedResult, long retries, long timeoutInMs) {
+    public static boolean isActive(ArtemisContainer artemisContainer, boolean expectedResult, long retries, long timeoutInMs) {
         LOGGER.debug("[{}] - Checking if is the live", artemisContainer.getName());
         JMXServiceURL serviceURI = getJmxUrl(artemisContainer);
         ObjectName objectName = getArtemisObjectName(artemisContainer);
@@ -163,10 +163,10 @@ public final class ArtemisJmxHelper {
                                                    ArtemisJmxHelper.ThrowableFunction<C, T> queryControl,
                                                    Class<C> controlClass, Function<Throwable, T> onThrowable) {
         try {
-            LOGGER.debug("Connecting using JMX on {}", serviceURI);
             try (JMXConnector jmx = JMXConnectorFactory.connect(serviceURI)) {
                 final C control = MBeanServerInvocationHandler.newProxyInstance(jmx.getMBeanServerConnection(),
                         objectName, controlClass, false);
+                LOGGER.debug("[JMX] Connection '{} {} {}'", serviceURI, objectName.getCanonicalName(), controlClass);
                 return Optional.ofNullable(queryControl.apply(control));
             }
         } catch (Exception e) {
@@ -176,7 +176,7 @@ public final class ArtemisJmxHelper {
                 if (e instanceof UndeclaredThrowableException) {
                     ex = ((UndeclaredThrowableException) e).getUndeclaredThrowable();
                 }
-                String errMsg = String.format("Error on getting JMX info: %s", ex.getMessage());
+                String errMsg = String.format("[JMX] Error on getting: %s", ex.getMessage());
                 Objects.requireNonNull(LOGGER).error(errMsg);
                 throw new ClaireRuntimeException(ex.getMessage(), ex);
             }
@@ -190,7 +190,7 @@ public final class ArtemisJmxHelper {
         try {
             url = new JMXServiceURL(JMX_URL_BASE + hostAndPort + JMX_URL_SUFFIX);
         } catch (MalformedURLException e) {
-            String errMsg = String.format("Error on getting JMX url: %s", e.getMessage());
+            String errMsg = String.format("[JMX] Error on getting JMX url: %s", e.getMessage());
             LOGGER.error(errMsg, e);
             throw new ClaireRuntimeException(errMsg, e);
         }

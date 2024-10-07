@@ -81,7 +81,7 @@ public class SecuredConsoleTests extends AbstractSystemTests {
         ArtemisDeployment.generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));
         artemis.start();
         artemis.ensureBrokerStarted();
-        artemis.ensureBrokerIsLive();
+        artemis.ensureBrokerIsActive();
         artemis.setSecured(true);
     }
 

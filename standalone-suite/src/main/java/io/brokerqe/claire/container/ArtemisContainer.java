@@ -36,6 +36,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public final class ArtemisContainer extends AbstractGenericContainer {
 
+    public enum ArtemisProcessControllerAction {
+        START, STOP, FORCE_STOP
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ArtemisContainer.class);
 
     public static final String BACKUP_ANNOUNCED_LOG_REGEX = ".*AMQ221031: backup announced\\n";
@@ -58,6 +62,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     private DeployableClient deployableClient;
     private boolean isPrimary = false;
     private boolean isBackup = false;
+    private boolean isActive = false;
 
     public ArtemisContainer(String name) {
         super(name, ENVIRONMENT_STANDALONE.getArtemisContainerImage());
@@ -193,6 +198,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public void start() {
         start(Duration.ofMinutes(1));
     }
+
     public void start(Duration startupTimeout) {
         LOGGER.info("[{}] - About to start", name);
         LOGGER.debug("[{}] - Using exposed ports: {}", name, DEFAULT_PORTS);
@@ -246,7 +252,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         container.stop();
     }
 
-    public String artemisProcessController(ArtemisProcessControllerActions action) {
+    public String artemisProcessController(ArtemisProcessControllerAction action) {
         String[] command = {ARTEMIS_INSTANCE_CONTROLLER_CMD, action.toString().toLowerCase(Locale.ROOT)};
         LOGGER.info("Executing artemis_controller with action {} on broker instance {}", action.toString().toLowerCase(Locale.ROOT), name);
         ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(container.getContainerId())
@@ -304,7 +310,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         assertThat(isStarted).isTrue();
         if (checkHaStatus) {
             if (isPrimary()) {
-                ensureBrokerIsLive();
+                ensureBrokerIsActive();
             }
             if (isBackup()) {
                 ensureBrokerIsBackup();
@@ -312,11 +318,11 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         }
     }
 
-    public void ensureBrokerIsLive() {
+    public void ensureBrokerIsActive() {
         LOGGER.info("Ensure broker instance {} became the broker live", name);
-        boolean isLive = ArtemisJmxHelper.isLive(this, true, 40,
+        isActive = ArtemisJmxHelper.isActive(this, true, 40,
                 Constants.DURATION_500_MILLISECONDS);
-        assertThat(isLive).isTrue();
+        assertThat(isActive).isTrue();
     }
 
     public void ensureBrokerIsBackup() {
@@ -352,11 +358,6 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         assertThat(getLogs()).containsAnyOf(database.getJdbcUrl(), database.getConnectionUrl());
     }
 
-    public enum ArtemisProcessControllerActions {
-        START, STOP, FORCE_STOP
-    }
-
-
     public boolean isPrimary() {
         return isPrimary;
     }
@@ -369,6 +370,13 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
     public boolean isBackup() {
         return isBackup;
+    }
+
+    public void setActive(boolean active) {
+        this.isActive = active;
+    }
+    public boolean isActive() {
+        return isActive();
     }
 
     public boolean isSecured() {
