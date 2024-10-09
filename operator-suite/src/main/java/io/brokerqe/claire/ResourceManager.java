@@ -847,7 +847,8 @@ public class ResourceManager {
                 .withPersistenceDisabled(persistenceDisabled)
                 .withDestinationQueue(queue)
                 .withDestinationUrl(serviceUrl)
-                .withMulticast(multicast);
+                .withMulticast(multicast)
+                .withDisabledOutput(true);
         if (clientType.equals(ClientType.BUNDLED_AMQP)) {
             messagingClient = new BundledAmqpMessagingClient(options);
         } else if (clientType.equals(ClientType.BUNDLED_CORE)) {

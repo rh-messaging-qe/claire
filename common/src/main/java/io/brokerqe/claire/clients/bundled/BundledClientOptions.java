@@ -21,6 +21,7 @@ public class BundledClientOptions {
     Boolean multicast = false;
     Protocol protocol;
     int timeout = 90;
+    public boolean disableOutput;
 
     public BundledClientOptions withDeployableClient(DeployableClient deployableClient) {
         this.deployableClient = deployableClient;
@@ -78,6 +79,11 @@ public class BundledClientOptions {
 
     public BundledClientOptions withTimeout(int timeout) {
         this.timeout = timeout;
+        return this;
+    }
+
+    public BundledClientOptions withDisabledOutput(boolean disableOutput) {
+        this.disableOutput = disableOutput;
         return this;
     }
 

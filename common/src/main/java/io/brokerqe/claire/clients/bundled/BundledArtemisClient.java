@@ -74,7 +74,15 @@ public class BundledArtemisClient {
         return executeCommand(Constants.DURATION_3_MINUTES);
     }
 
+    public Object executeCommand(boolean disableOutput) {
+        return executeCommand(Constants.DURATION_3_MINUTES, disableOutput);
+    }
+
     public Object executeCommand(long maxTimeout) {
+        return executeCommand(maxTimeout, false);
+    }
+
+    public Object executeCommand(long maxTimeout, boolean disableOutput) {
         String cmdOutput;
         String[] command = constructClientCommand();
         cmdOutput = (String) deployableClient.getExecutor().executeCommand(maxTimeout, command);
@@ -82,7 +90,9 @@ public class BundledArtemisClient {
             LOGGER.debug("[PERF] Client detected, to see it's output use trace logging.");
             LOGGER.trace(cmdOutput);
         } else {
-            LOGGER.debug(cmdOutput);
+            if (!disableOutput) {
+                LOGGER.debug(cmdOutput);
+            }
         }
         return parseOutput(cmdOutput);
     }

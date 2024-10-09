@@ -35,6 +35,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private int sentMessages = 0;
     private Executor subscriberExecutor;
     private int timeout;
+    private boolean disableOutput;
 
 
     public BundledMessagingClient(BundledClientOptions options) {
@@ -50,6 +51,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
         this.persistenceDisabled = options.persistenceDisabled;
         this.isMulticast = options.multicast;
         this.timeout = options.timeout;
+        this.disableOutput = options.disableOutput;
     }
 
     abstract String getProtocol();
@@ -163,7 +165,9 @@ public abstract class BundledMessagingClient implements MessagingClient {
             String cmdOutput;
             String[] command = constructClientCommand(CONSUMER);
             cmdOutput = (String) deployableClient.getExecutor().executeCommand(duration, command);
-            LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
+            if (!disableOutput) {
+                LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
+            }
             return parseMessageCount(cmdOutput, CONSUMER);
         }
     }

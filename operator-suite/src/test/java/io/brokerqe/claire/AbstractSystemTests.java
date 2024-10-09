@@ -618,7 +618,6 @@ public abstract class AbstractSystemTests implements TestSeparator {
 
     public Map<Integer, String> browseMessages(Pod brokerPod, String fqqn, int messageCount, String username, String password) {
         String namespace = brokerPod.getMetadata().getNamespace();
-        LOGGER.debug("[{}] Browse messages in {} on {}", namespace, fqqn, brokerPod.getMetadata().getName());
         Map<String, String> commandOptions = new HashMap<>(Map.of(
                 "destination", fqqn,
                 "url", "tcp://" + brokerPod.getMetadata().getName() + ":61616"
@@ -630,7 +629,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
 
         DeployableClient<Deployment, Pod> deployableClient = new BundledClientDeployment(brokerPod.getMetadata().getNamespace(), brokerPod);
         BundledArtemisClient browserClient = new BundledArtemisClient(deployableClient, ArtemisCommand.BROWSE_CLIENT, username, password, commandOptions);
-        Map<Integer, String> browsedMessages = (Map<Integer, String>) browserClient.executeCommand();
+        Map<Integer, String> browsedMessages = (Map<Integer, String>) browserClient.executeCommand(true);
         LOGGER.debug("[{}] Browsed {} messages from {} on {}", namespace, browsedMessages.get(-1), fqqn, brokerPod.getMetadata().getName());
         return browsedMessages;
     }
