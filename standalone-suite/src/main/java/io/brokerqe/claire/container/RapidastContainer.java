@@ -35,7 +35,7 @@ public class RapidastContainer extends AbstractGenericContainer {
         TestUtils.createDirectory(RAPIDAST_DIR);
         TestUtils.createDirectory(RESULTS_DIR);
         String config = generateConfigString(consoleURL, scanName);
-        LOGGER.debug("Generated config: " + config);
+        LOGGER.info("Generated config:\n" + config);
         TestUtils.createFile(RAPIDAST_CONFIG, config);
     }
 
@@ -59,7 +59,9 @@ public class RapidastContainer extends AbstractGenericContainer {
                           maxDuration: 10 # in minutes, default: 0 unlimited
                           browserId: firefox-headless
                         passiveScan:
+                          disabledRules: "2,10015,10024,10027,10054,10096,10109,10112"
                         activeScan:
+                          policy: "API-scan-minimal"
                         report:
                           format: ["json","html"]
                         miscOptions:

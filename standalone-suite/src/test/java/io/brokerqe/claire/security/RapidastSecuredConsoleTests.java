@@ -77,6 +77,7 @@ public class RapidastSecuredConsoleTests extends RapidastDefaultConsoleTests {
         artemis.setSecured(true);
 
         consoleURL = artemis.getConsoleUrl();
+        artemisFullName = artemis.getName();
     }
 
 }
