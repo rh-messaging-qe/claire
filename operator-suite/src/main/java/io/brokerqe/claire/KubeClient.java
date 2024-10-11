@@ -766,7 +766,10 @@ public class KubeClient {
         if (sinceInstant == null && sinceSeconds == -1) {
             return getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).resource(pod).getLog();
         } else if (sinceInstant != null) {
-            // TODO problem with time zones (UTC is not guaranteed)
+            // If seconds is zero, atOffset().toString() will truncate the string
+            // which the pod cannot parse, causing an error
+            if (sinceInstant.atOffset(ZoneOffset.UTC).getSecond() == 0)
+                sinceInstant = sinceInstant.minusSeconds(1);
             return getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).resource(pod)
                     .sinceTime(sinceInstant.atOffset(ZoneOffset.UTC).toString()).getLog();
         } else {
