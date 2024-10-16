@@ -117,6 +117,7 @@ public interface ArtemisConstants {
     String CONDITION_STATUS_READY = "AllPodsReady";
     String CONDITION_REASON_VALIDATION = "ValidationSucceded";
     String CONDITION_REASON_ALL_PODS_READY = "AllPodsReady";
+    String CONDITION_REASON_RESOURCE_READY = "ResourceReady";
     String CONDITION_REASON_APPLIED = "Applied";
     String CONDITION_REASON_APPLIED_WITH_ERROR = "AppliedWithError";
     String CONDITION_TRUE = "True";
