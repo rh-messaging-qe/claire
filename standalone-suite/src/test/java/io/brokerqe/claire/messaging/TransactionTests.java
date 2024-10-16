@@ -49,7 +49,7 @@ public class TransactionTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemis = ArtemisDeployment.getArtemisInstance(artemisName);
+        artemis = ArtemisDeployment.createArtemis(artemisName);
         deployableClient = new StJavaClientDeployment();
         brokerUri = Constants.AMQP_URL_PREFIX + artemis.getName() + ":" + DEFAULT_AMQP_PORT;
     }

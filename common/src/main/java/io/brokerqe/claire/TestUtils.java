@@ -417,7 +417,7 @@ public final class TestUtils {
     public static void createFile(String fileName, String content) {
         try {
             LOGGER.trace("Creating file: {}", fileName);
-            Files.write(Paths.get(fileName), content.getBytes());
+            Files.write(Paths.get(fileName), content.getBytes(), StandardOpenOption.CREATE);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

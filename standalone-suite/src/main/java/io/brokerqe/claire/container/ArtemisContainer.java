@@ -9,6 +9,7 @@ import com.sun.security.auth.module.UnixSystem;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.Protocol;
@@ -43,6 +44,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArtemisContainer.class);
 
     public static final String BACKUP_ANNOUNCED_LOG_REGEX = ".*AMQ221031: backup announced\\n";
+    public static final String PRIMARY_OBTAINED_LOCK_REGEX = ".*AMQ221035: Primary Server Obtained primary lock\\n";
+    public static final String PRIMARY_LIVE_LOG_REGEX = ".*AMQ221007: Server is now (live|active)\\n";
     public static final List<Integer> DEFAULT_PORTS = List.of(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT, ArtemisConstants.DEFAULT_AMQP_PORT,
             ArtemisConstants.DEFAULT_MQTT_PORT, ArtemisConstants.DEFAULT_STOMP_PORT, ArtemisConstants.DEFAULT_HORNETQ_PORT, ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT, ArtemisConstants.DEFAULT_JMX_PORT);
     public static final String ARTEMIS_INSTALL_DIR = ArtemisConstants.OPT_DIR + Constants.FILE_SEPARATOR + ArtemisConstants.ARTEMIS_STRING;
@@ -51,8 +54,6 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public static final String ARTEMIS_INSTANCE_DATA_DIR = ARTEMIS_INSTANCE_DIR + ArtemisConstants.DATA_DIR;
     private static final String ARTEMIS_INSTANCE_CONTROLLER_CMD = "/usr/local/bin/artemis-controller.sh";
 
-    public static final String INSTANCE_DIR_KEY = "instanceDir";
-    public static final String INSTALL_DIR_KEY = "installDir";
     private boolean secured = false;
     private String installDir;
     private String instanceDir;
@@ -63,6 +64,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     private boolean isPrimary = false;
     private boolean isBackup = false;
     private boolean isActive = false;
+    private ArtemisConfigData artemisConfigData;
 
     public ArtemisContainer(String name) {
         super(name, ENVIRONMENT_STANDALONE.getArtemisContainerImage());
@@ -107,6 +109,14 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         // TODO use port as well?
 //        brokerUri = String.format(brokerUri, getInstanceNameAndPort(port));
         return brokerUri;
+    }
+
+    public ArtemisConfigData getArtemisData() {
+        return artemisConfigData;
+    }
+
+    public void setArtemisData(ArtemisConfigData artemisConfigData) {
+        this.artemisConfigData = artemisConfigData;
     }
 
     public String getInstallDir() {
@@ -154,7 +164,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void withInstallDir(String dirPath, boolean replaceBind) {
-        LOGGER.debug("[{}] - with install dir {} = {}", name, dirPath, ARTEMIS_INSTALL_DIR);
+        LOGGER.debug("[{}] with install dir {} = {}", name, dirPath, ARTEMIS_INSTALL_DIR);
         withFileSystemBind(dirPath, ARTEMIS_INSTALL_DIR, BindMode.READ_ONLY, replaceBind);
     }
 
@@ -200,8 +210,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void start(Duration startupTimeout) {
-        LOGGER.info("[{}] - About to start", name);
-        LOGGER.debug("[{}] - Using exposed ports: {}", name, DEFAULT_PORTS);
+        LOGGER.info("[{}] About to start", name);
+        LOGGER.debug("[{}] Using exposed ports: {}", name, DEFAULT_PORTS);
 
         container.addExposedPorts(Ints.toArray(DEFAULT_PORTS));
         container.withPrivilegedMode(true);
@@ -244,7 +254,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     @Override
     public void stop() {
-        LOGGER.debug("[{}] - Stopping", name);
+        LOGGER.debug("[{}] Stopping", name);
         if (container.isRunning()) {
             dockerClient.stopContainerCmd(container.getContainerId()).exec();
             TimeHelper.waitFor(e -> !container.isRunning(), Constants.DURATION_500_MILLISECONDS, Constants.DURATION_5_SECONDS);
@@ -349,8 +359,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     public void ensureQueueCount(String addressName, String queueName, RoutingType routeType, int expectedResult) {
         LOGGER.info("Ensure queue has {} messages", expectedResult);
-        Long countResult = ArtemisJmxHelper.getQueueCount(this, addressName, queueName, routeType,
-                expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
+        Long countResult = ArtemisJmxHelper.getQueueCount(this, addressName, queueName, routeType, expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
         assertThat(countResult).isEqualTo(expectedResult);
     }
 

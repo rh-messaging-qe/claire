@@ -21,7 +21,8 @@ import java.util.Map;
 public class NfsServerContainer extends AbstractGenericContainer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NfsServerContainer.class);
-    public static final String DEFAULT_CLIENT_OPTIONS = "vers=4,proto=tcp,sync,noac,soft,lookupcache=none,timeo=15,retrans=1";
+    // increase timeo,retrans if needed - slower NFS etc.
+    public static final String DEFAULT_CLIENT_OPTIONS = "vers=4,proto=tcp,sync,intr,noac,soft,lookupcache=none,timeo=15,retrans=20";
 
     private final Map<String, String> exportsMap = new HashMap<>();
 
@@ -45,7 +46,7 @@ public class NfsServerContainer extends AbstractGenericContainer {
     }
 
     public void start() {
-        LOGGER.info("[{}] - About to start", name);
+        LOGGER.info("[{}] About to start", name);
         container.withPrivilegedMode(true);
         exportsMap.forEach((hostDir, containerDir) -> withFileSystemBind(hostDir, containerDir, BindMode.READ_WRITE));
         container.withCommand(exportsMap.values().toArray(new String[0]));
@@ -54,7 +55,7 @@ public class NfsServerContainer extends AbstractGenericContainer {
 
     @Override
     public void stop() {
-        LOGGER.debug("[{}] - Stopping", name);
+        LOGGER.debug("[{}] Stopping", name);
         if (container.isRunning()) {
             dockerClient.stopContainerCmd(container.getContainerId()).exec();
             TimeHelper.waitFor(e -> !container.isRunning(), Constants.DURATION_500_MILLISECONDS, Constants.DURATION_5_SECONDS);

@@ -45,7 +45,7 @@ public class PerformanceTests extends AbstractSystemTests {
         String artemisName = "artemis";
         artemisVersion = Environment.get().getArtemisVersion();
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemis = ArtemisDeployment.getArtemisInstance(artemisName);
+        artemis = ArtemisDeployment.createArtemis(artemisName);
         TestUtils.deleteDirectoryRecursively(Path.of(Constants.PERFORMANCE_DIR));
         TestUtils.createDirectory(Constants.PERFORMANCE_DIR);
     }

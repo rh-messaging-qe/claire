@@ -36,7 +36,7 @@ public class ZookeeperContainerCluster {
     }
 
     public void start() {
-        LOGGER.debug("[Zookeeper] - Creating cluster");
+        LOGGER.debug("[Zookeeper] Creating cluster");
         nodesMap.forEach((String name, ZookeeperContainer node) -> node.withZooServers(String.join(" ", zooServers)));
         ContainerHelper.startContainersInParallel(nodesMap.values().toArray(new ZookeeperContainer[0]));
     }
@@ -47,7 +47,7 @@ public class ZookeeperContainerCluster {
 
     private void createNode(int id, String name) {
         String nodeName = name + id;
-        LOGGER.trace("[Zookeeper node {}] - Creating", nodeName);
+        LOGGER.trace("[Zookeeper {}] Creating node", nodeName);
         ZookeeperContainer node = ResourceManager.getZookeeperContainerInstance(nodeName);
         node.withNetworkAlias(nodeName);
         node.withZooMyId(id);

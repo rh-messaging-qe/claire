@@ -24,7 +24,7 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
     public static final String OPT_PARAM_KEY = "--opt";
     public static final String TUNE_PARAM_KEY = "--tune";
 
-    private static final String CLAIRE_STANDALONE_YACFG_PROFILES = "yacfg-profiles";
+    public static final String CLAIRE_STANDALONE_YACFG_PROFILES = "yacfg-profiles";
     private static final String YACFG_CONTAINER_DATA_DIR = "/data";
     private static final String YACFG_CONTAINER_OUTPUT_DIR = YACFG_CONTAINER_DATA_DIR + "/output";
     private static final String YACFG_CONTAINER_PROFILES_DIR = YACFG_CONTAINER_DATA_DIR + "/profiles";
@@ -75,7 +75,7 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
     }
 
     public void start() {
-        LOGGER.info("[{}] - About to start", name);
+        LOGGER.info("[{}] About to start", name);
 
         List<String> yacfgCmdArgs = new ArrayList<>();
         yacfgCmdArgs.add(YACFG_COMMAND);

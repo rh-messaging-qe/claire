@@ -56,7 +56,7 @@ public class MessagingTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemis = ArtemisDeployment.getArtemisInstance(artemisName);
+        artemis = ArtemisDeployment.createArtemis(artemisName);
         // BrokerService.getAmqpPort?
         brokerUri = Constants.AMQP_URL_PREFIX + artemis.getName() + ":" + DEFAULT_AMQP_PORT;
         stDeployableClient = new StJavaClientDeployment();

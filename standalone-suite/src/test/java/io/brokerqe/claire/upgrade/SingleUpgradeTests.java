@@ -6,6 +6,7 @@ package io.brokerqe.claire.upgrade;
 
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.clients.Protocol;
 import io.brokerqe.claire.clients.bundled.BundledClientOptions;
@@ -17,8 +18,6 @@ import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 @Tag(Constants.TAG_UPGRADE)
 public class SingleUpgradeTests extends UpgradeTests {
@@ -41,7 +40,7 @@ public class SingleUpgradeTests extends UpgradeTests {
 
         String installDir = ArtemisDeployment.downloadPrepareArtemisInstallDir(testInfo, artemisZipUrl, version, getTestConfigDir());
 
-        Map<String, String> artemisUpgradedData = ArtemisDeployment.createArtemisInstanceFromInstallDir(installDir, artemisUpgradedName, artemisUpgradedInstanceDir);
+        ArtemisConfigData artemisUpgradedData = ArtemisDeployment.createArtemisInstanceFromInstallDir(installDir, artemisUpgradedName, artemisUpgradedInstanceDir);
 
         if (argumentsAccessor.getInvocationIndex() > 1) {
             LOGGER.info("[UPGRADE] Receive partial durable messages {}", messagesReceivePartial);
@@ -66,7 +65,8 @@ public class SingleUpgradeTests extends UpgradeTests {
 
         } else {
             LOGGER.info("[UPGRADE] Deploying initial broker {}", artemisUpgradedName);
-            artemisUpgraded = ArtemisDeployment.createArtemis(artemisUpgradedName, artemisVersion, artemisUpgradedData);
+            artemisUpgradedData.withArtemisVersionString(artemisVersion);
+            artemisUpgraded = ArtemisDeployment.createArtemis(artemisUpgradedName, artemisUpgradedData);
 
             LOGGER.info("[UPGRADE] Sending initial messages {}", messagesSentInitials);
             BundledClientOptions initialSenderOptions = new BundledClientOptions()
@@ -84,7 +84,8 @@ public class SingleUpgradeTests extends UpgradeTests {
         }
 
         LOGGER.info("[UPGRADE] Deploying versioned broker {}", artemisUpgradedName);
-        ArtemisContainer artemisVersioned = ArtemisDeployment.createArtemis(artemisVersionedName, artemisVersion, artemisUpgradedData);
+        artemisUpgradedData.withArtemisVersionString(artemisVersion);
+        ArtemisContainer artemisVersioned = ArtemisDeployment.createArtemis(artemisVersionedName, artemisUpgradedData);
 
         assertVersionLogs(artemisUpgraded, version, artemisVersion);
         assertVersionLogs(artemisVersioned, version, artemisVersion);

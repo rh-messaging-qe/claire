@@ -71,6 +71,10 @@ public abstract class Environment {
         }
     }
 
+    public String getArtemisMajorMinorMicroVersion(String strVersion) {
+        return strVersion.replaceAll("(^[0-9]+\\.[0-9]+\\.[0-9]+).*", "$1");
+    }
+
     public ArtemisVersion convertArtemisVersion(String version) {
         ArtemisVersion versionRet;
         if (isUpstreamArtemis()) {

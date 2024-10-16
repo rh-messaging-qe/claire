@@ -10,6 +10,7 @@ import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.client.deployment.StJavaClientDeployment;
@@ -72,14 +73,15 @@ public class AuditLogTests extends AbstractSystemTests {
     @BeforeAll
     void setupEnv() {
         String artemisName = "artemis";
+        ArtemisConfigData artemisConfigData = new ArtemisConfigData();
         String tuneFile;
         LOGGER.info("Creating artemis instance: " + artemisName);
         if (isMinimumTestVersion(ArtemisVersion.VERSION_2_28)) {
-            tuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("tune.yaml.jinja2", getPkgClassAsDir());
+            artemisConfigData.withTuneFile("tune.yaml.jinja2");
         } else {
-            tuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("tune-2.21.0.yaml.jinja2", getPkgClassAsDir());
+            artemisConfigData.withTuneFile("tune-2.21.0.yaml.jinja2");
         }
-        artemis = ArtemisDeployment.getArtemisInstance(artemisName, tuneFile);
+        artemis = ArtemisDeployment.createArtemis(artemisName, artemisConfigData);
         artemisDeployableClient = new BundledClientDeployment();
         stDeployableClient = new StJavaClientDeployment();
         brokerUri = Constants.AMQP_URL_PREFIX + artemis.getName() + ":" + DEFAULT_AMQP_PORT;

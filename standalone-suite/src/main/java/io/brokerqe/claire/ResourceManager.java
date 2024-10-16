@@ -77,43 +77,43 @@ public final class ResourceManager {
     }
 
     public static NfsServerContainer getNfsServerContainerInstance(String name) {
-        return getContainerInstance(NfsServerContainer.class, name);
+        return getContainerInstance(NfsServerContainer.class, name, true);
     }
 
     public static ToxiProxyContainer getToxiProxyContainerInstance(String name) {
-        return getContainerInstance(ToxiProxyContainer.class, name);
+        return getContainerInstance(ToxiProxyContainer.class, name, true);
     }
 
     public static ArtemisContainer getArtemisContainerInstance(String name) {
-        return getContainerInstance(ArtemisContainer.class, name);
+        return getContainerInstance(ArtemisContainer.class, name, true);
     }
 
     public static ZookeeperContainer getZookeeperContainerInstance(String name) {
-        return getContainerInstance(ZookeeperContainer.class, name);
+        return getContainerInstance(ZookeeperContainer.class, name, true);
     }
 
     public static YacfgArtemisContainer getYacfgArtemisContainerInstance(String name) {
-        return getContainerInstance(YacfgArtemisContainer.class, name);
+        return getContainerInstance(YacfgArtemisContainer.class, name, false);
     }
 
     public static SystemTestJavaClientsContainer getSystemTestJavaClientsContainerInstance(String name) {
-        return getContainerInstance(SystemTestJavaClientsContainer.class, name);
+        return getContainerInstance(SystemTestJavaClientsContainer.class, name, true);
     }
 
     public static SystemTestProtonDotnetClientContainer getSystemTestProtonDotnetClientContainerInstance(String name) {
-        return getContainerInstance(SystemTestProtonDotnetClientContainer.class, name);
+        return getContainerInstance(SystemTestProtonDotnetClientContainer.class, name, true);
     }
 
     public static SystemTestCppClientContainer getSystemTestCppClientContainerInstance(String name) {
-        return getContainerInstance(SystemTestCppClientContainer.class, name);
+        return getContainerInstance(SystemTestCppClientContainer.class, name, true);
     }
 
     public static SystemTestProtonPythonClientContainer getSystemTestProtonPythonClientContainerInstance(String name) {
-        return getContainerInstance(SystemTestProtonPythonClientContainer.class, name);
+        return getContainerInstance(SystemTestProtonPythonClientContainer.class, name, true);
     }
 
     public static SystemTestRheaClientContainer getSystemTestRheaClientContainerInstance(String name) {
-        return getContainerInstance(SystemTestRheaClientContainer.class, name);
+        return getContainerInstance(SystemTestRheaClientContainer.class, name, true);
     }
 
     public static RemoteWebDriver getChromeRemoteDriver(String name) {
@@ -142,7 +142,7 @@ public final class ResourceManager {
     }
 
     public static void disconnectAllClients() {
-        if (CLIENTS.size() > 0) {
+        if (!CLIENTS.isEmpty()) {
             LOGGER.info("Stopping any remaining clients");
             CLIENTS.values().forEach(JmsClient::disconnect);
             CLIENTS.clear();
@@ -161,14 +161,16 @@ public final class ResourceManager {
     }
 
     private static WebDriverContainer getWebDriverContainerInstance(String name, Capabilities capabilities) {
-        WebDriverContainer webDriverContainer = getContainerInstance(WebDriverContainer.class, name);
+        WebDriverContainer webDriverContainer = getContainerInstance(WebDriverContainer.class, name, true);
         webDriverContainer.setCapabilities(capabilities);
         webDriverContainer.start();
         return webDriverContainer;
     }
 
-    private static <T extends AbstractGenericContainer> T getContainerInstance(Class<T> clazz, String name) {
-        name = name + "-" + TestUtils.generateRandomName();
+    private static <T extends AbstractGenericContainer> T getContainerInstance(Class<T> clazz, String name, boolean generateName) {
+        if (generateName) {
+            name = name + "-" + TestUtils.generateRandomName();
+        }
         LOGGER.trace("Adding container to ResourceManager map: {}", name);
         if (CONTAINERS.containsKey(name)) {
             throw new ClaireRuntimeException("Error: Container name already exists. Container name must be unique.");

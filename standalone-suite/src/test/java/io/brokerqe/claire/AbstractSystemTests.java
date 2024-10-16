@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire;
 
+import io.brokerqe.claire.client.deployment.StJavaClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.Protocol;
@@ -12,13 +13,14 @@ import io.brokerqe.claire.clients.bundled.BundledAmqpMessagingClient;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
 import io.brokerqe.claire.clients.bundled.BundledClientOptions;
 import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
+import io.brokerqe.claire.clients.container.AmqpQpidClient;
 import io.brokerqe.claire.container.ArtemisContainer;
-import io.brokerqe.claire.container.NfsServerContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestSeparator;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
@@ -114,6 +116,21 @@ public class AbstractSystemTests implements TestSeparator {
         return getEnvironment().getTmpDirLocation() + Constants.FILE_SEPARATOR + getPkgClassAsDir();
     }
 
+    protected String getSecuredConsoleTemplate() {
+        return """
+                boostrap_xml_bindings:
+                  - name: 'artemis'
+                    uri: https://0.0.0.0:8161
+                    sniHostCheck: "false"
+                    sniRequired: "false"
+                    clientAuth: "false"
+                    keyStorePath: %s
+                    keyStorePassword: brokerPass
+                    trustStorePath: %s
+                    trustStorePassword: brokerPass
+                """;
+    }
+
     public static void ensureSameMessages(int totalProducedMessages, Map<String, Message> producedMsgs, Map<String, Message> consumedMsgs) {
         // ensure produced messages number is correct
         assertThat(producedMsgs).isNotEmpty().hasSize(totalProducedMessages);
@@ -141,17 +158,6 @@ public class AbstractSystemTests implements TestSeparator {
                 throw new ClaireRuntimeException(errMsg);
             }
         }
-    }
-
-    protected NfsServerContainer getNfsServerInstance(String exportDirName) {
-        NfsServerContainer nfsServer = ResourceManager.getNfsServerContainerInstance("nfsServer");
-        String nfsServerName = nfsServer.getName();
-        String exportBaseDir = "exports" + Constants.FILE_SEPARATOR + exportDirName;
-        String hostExportDir = getTestConfigDir() + Constants.FILE_SEPARATOR + nfsServerName + Constants.FILE_SEPARATOR + exportBaseDir;
-        String containerExportDir = Constants.FILE_SEPARATOR + exportBaseDir;
-        nfsServer.withExportDir(hostExportDir, containerExportDir);
-        nfsServer.start();
-        return nfsServer;
     }
 
     // ==== Messaging methods
@@ -240,6 +246,60 @@ public class AbstractSystemTests implements TestSeparator {
 
         artemisClient = new BundledArtemisClient(artemis.getDeployableClient(), ArtemisCommand.QUEUE_DELETE, artemisDeleteQueueOptions);
         artemisClient.executeCommand();
+    }
+
+    public void produceAndConsumeOnPrimaryAndOnBackupTest(ArtemisContainer.ArtemisProcessControllerAction stopAction,
+                                                          ArtemisContainer artemisPrimary, ArtemisContainer artemisBackup) {
+        LOGGER.info("Setting client configurations");
+        DeployableClient stDeployableClient = new StJavaClientDeployment();
+        int sendMessages = 10;
+        int receiveMessages = 5;
+
+        String addressName = getTestRandomName();
+        Map<String, String> senderOpts = new HashMap<>(Map.of(
+                "conn-username", ArtemisConstants.ADMIN_NAME,
+                "conn-password", ArtemisConstants.ADMIN_PASS,
+                "address", addressName,
+                "count", String.valueOf(sendMessages)
+        ));
+        Map<String, String> receiverOpts = new HashMap<>(Map.of(
+                "conn-username", ArtemisConstants.ADMIN_NAME,
+                "conn-password", ArtemisConstants.ADMIN_PASS,
+                "address", addressName,
+                "count", String.valueOf(receiveMessages)
+        ));
+        String primaryAmqpHostAndPort = artemisPrimary.getInstanceNameAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
+        String backupAmqpHostAndPort = artemisBackup.getInstanceNameAndPort(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
+        MessagingClient primaryMessagingClient = new AmqpQpidClient(stDeployableClient, primaryAmqpHostAndPort, senderOpts, receiverOpts);
+        MessagingClient backupMessagingClient = new AmqpQpidClient(stDeployableClient, backupAmqpHostAndPort, senderOpts, receiverOpts);
+
+        LOGGER.info("Sending {} messages to broker primary {}", sendMessages, artemisPrimary.getName());
+        int sent = primaryMessagingClient.sendMessages();
+
+        LOGGER.info("Receiving {} messages from broker primary {}", receiveMessages, artemisPrimary.getName());
+        int received = primaryMessagingClient.receiveMessages();
+
+        artemisPrimary.artemisProcessController(stopAction);
+        artemisBackup.ensureBrokerIsActive();
+
+        LOGGER.info("Sending {} messages to broker backup {}", sendMessages, artemisBackup.getName());
+        sent += backupMessagingClient.sendMessages();
+
+        LOGGER.info("Receiving {} messages from broker backup {}", receiveMessages, artemisBackup.getName());
+        received += backupMessagingClient.receiveMessages();
+
+        artemisPrimary.artemisProcessController(ArtemisContainer.ArtemisProcessControllerAction.START);
+        artemisPrimary.ensureBrokerIsActive();
+
+        LOGGER.info("Receiving {} messages from broker primary {}", receiveMessages, artemisPrimary.getName());
+        received += primaryMessagingClient.receiveMessages();
+        LOGGER.info("Receiving {} messages from broker primary {}", receiveMessages, artemisPrimary.getName());
+        received += primaryMessagingClient.receiveMessages();
+
+        LOGGER.info("Ensure broker number of sent messages are equal received ones");
+        MatcherAssert.assertThat(sent, equalTo(received));
+
+        artemisPrimary.ensureQueueCount(addressName, addressName, RoutingType.ANYCAST, 0);
     }
 
     public Duration calculateArtemisStartupTimeout(int size, String unit, int messageCount) {

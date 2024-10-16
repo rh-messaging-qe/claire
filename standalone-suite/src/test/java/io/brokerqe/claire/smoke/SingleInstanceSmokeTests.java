@@ -34,7 +34,7 @@ public class SingleInstanceSmokeTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemisInstance = ArtemisDeployment.getArtemisInstance(artemisName);
+        artemisInstance = ArtemisDeployment.createArtemis(artemisName);
     }
 
     @Test

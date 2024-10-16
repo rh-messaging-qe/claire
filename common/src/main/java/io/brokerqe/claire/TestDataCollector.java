@@ -5,15 +5,17 @@
 package io.brokerqe.claire;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.platform.commons.PreconditionViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 
 
-public abstract class TestDataCollector implements TestWatcher, TestExecutionExceptionHandler {
+public abstract class TestDataCollector implements TestWatcher, TestExecutionExceptionHandler, LifecycleMethodExecutionExceptionHandler {
 
     static final Logger LOGGER = LoggerFactory.getLogger(TestDataCollector.class);
     static String archiveDir;
@@ -23,22 +25,63 @@ public abstract class TestDataCollector implements TestWatcher, TestExecutionExc
     Object testInstance;
 
     @Override
+    public void handleBeforeAllMethodExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+        prepareCollectLogProperties(context, throwable);
+        collectTestData();
+        throw throwable;
+    }
+
+    @Override
+    public void handleBeforeEachMethodExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+        prepareCollectLogProperties(context, throwable);
+        collectTestData();
+        throw throwable;
+    }
+
+    @Override
+    public void handleAfterEachMethodExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+        prepareCollectLogProperties(context, throwable);
+        collectTestData();
+        throw throwable;
+    }
+
+    @Override
+    public void handleAfterAllMethodExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+        prepareCollectLogProperties(context, throwable);
+        collectTestData();
+        throw throwable;
+    }
+
+    @Override
     public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
-        testClass = extensionContext.getRequiredTestClass().getName();
-        testMethod = extensionContext.getRequiredTestMethod().getName();
-        testInstance = extensionContext.getRequiredTestInstance();
+        prepareCollectLogProperties(extensionContext, throwable);
+        collectTestData();
+        throw throwable;
+    }
+
+    private void prepareCollectLogProperties(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         environment = Environment.get();
         if (!environment.isCollectTestData()) {
             LOGGER.info("Gathering of debug data is disabled!");
             throw throwable;
         }
+        testClass = extensionContext.getRequiredTestClass().getName();
+        try {
+            testMethod = extensionContext.getRequiredTestMethod().getName();
+        } catch (PreconditionViolationException e) {
+            testMethod = "no-test-method";
+        }
+        testInstance = extensionContext.getRequiredTestInstance();
 
         String classDir = TestUtils.getClassName(extensionContext);
         String testDir = TestUtils.getTestName(extensionContext);
         archiveDir = environment.getLogsDirLocation() + Constants.FILE_SEPARATOR + testDir.replaceFirst("io.brokerqe.claire.", "");
         String certificatesDir = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR + testDir;
         String certificatesDirClass = Environment.get().getCertificatesLocation() + Constants.FILE_SEPARATOR + classDir;
+        createDirectory(archiveDir, certificatesDir, certificatesDirClass);
+    }
 
+    private void createDirectory(String archiveDir, String certificatesDir, String certificatesDirClass) {
         TestUtils.createDirectory(archiveDir);
         String certificatesArchiveDirectory = archiveDir + Constants.FILE_SEPARATOR + "certificates";
         String certificatesArchiveDirectoryClass = archiveDir + Constants.FILE_SEPARATOR + "class_certificates";
@@ -50,8 +93,6 @@ public abstract class TestDataCollector implements TestWatcher, TestExecutionExc
                 TestUtils.copyDirectoryFlat(certificatesDirClass, certificatesArchiveDirectoryClass);
             }
         }
-        collectTestData();
-        throw throwable;
     }
 
     /**

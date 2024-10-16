@@ -11,6 +11,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.client.JmsClient;
 import io.brokerqe.claire.client.AmqpUtil;
+import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
@@ -41,8 +42,7 @@ public class MaxReadMessagesAndBytesTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        String tuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("tune.yaml.jinja2", getPkgClassAsDir());
-        artemisInstance = ArtemisDeployment.getArtemisInstance(artemisName, tuneFile);
+        artemisInstance = ArtemisDeployment.createArtemis(artemisName, new ArtemisConfigData().withTuneFile("tune.yaml.jinja2"));
     }
 
     @Test

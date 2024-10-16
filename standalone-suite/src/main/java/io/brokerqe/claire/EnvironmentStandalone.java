@@ -181,10 +181,6 @@ public class EnvironmentStandalone extends Environment {
         return ArtemisVersion.valueOf(enumFormat);
     }
 
-    public String getArtemisMajorMinorMicroVersion(String strVersion) {
-        return strVersion.replaceAll("(^[0-9]+\\.[0-9]+\\.[0-9]+).*", "$1");
-    }
-
     private String getOSInfo() {
         String distro;
         String version;

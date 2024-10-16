@@ -53,7 +53,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemis = ArtemisDeployment.getArtemisInstance(artemisName);
+        artemis = ArtemisDeployment.createArtemis(artemisName);
     }
 
     @Test

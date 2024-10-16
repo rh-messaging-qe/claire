@@ -13,19 +13,23 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ToxiproxyContainer;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ToxiProxyContainer extends AbstractGenericContainer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ToxiProxyContainer.class);
 
     private ToxiproxyClient toxiproxyClient;
+    private List<Proxy> proxyList;
 
     public ToxiProxyContainer(String name) {
         super(name, null);
         container = new ToxiproxyContainer(ENVIRONMENT_STANDALONE.getToxiProxyContainerImage());
-        LOGGER.debug("[Container: {}] - With default network: {}", name, ResourceManager.getDefaultNetwork());
+        LOGGER.debug("[{}] With default network: {}", name, ResourceManager.getDefaultNetwork());
         container.withNetwork(ResourceManager.getDefaultNetwork());
         type = ContainerType.TOXI_PROXY;
+        proxyList = new ArrayList<>();
     }
 
     public void start() {
@@ -33,9 +37,10 @@ public class ToxiProxyContainer extends AbstractGenericContainer {
         toxiproxyClient = new ToxiproxyClient(container.getHost(), ((ToxiproxyContainer) container).getControlPort());
     }
 
-    public Proxy getProxy(String name, String listenAddress, String upstreamAddress) {
+    public void createProxy(String name, String listenAddress, String upstreamAddress) {
         try {
-            return toxiproxyClient.createProxy(name, listenAddress, upstreamAddress);
+            Proxy proxy = toxiproxyClient.createProxy(name, listenAddress, upstreamAddress);
+            proxyList.add(proxy);
         } catch (IOException e) {
             String errMsg = String.format("Error on creating proxy %s", e.getMessage());
             LOGGER.error(errMsg);

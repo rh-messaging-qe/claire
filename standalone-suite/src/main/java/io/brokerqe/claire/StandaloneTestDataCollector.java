@@ -4,9 +4,9 @@
  */
 package io.brokerqe.claire;
 
-import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.ContainerType;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

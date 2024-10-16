@@ -5,11 +5,11 @@
 package io.brokerqe.claire.webconsole;
 
 import io.brokerqe.claire.AbstractSystemTests;
-import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
@@ -27,8 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @TestValidSince(ArtemisVersion.VERSION_2_28)
@@ -59,26 +57,17 @@ public class SecuredConsoleTests extends AbstractSystemTests {
         KeyStoreData keystoreBrokerData = keystores.get(Constants.BROKER_KEYSTORE_ID);
         String keyStoreContainerPath = ArtemisContainer.ARTEMIS_INSTANCE_DIR + "/" + keystoreBrokerData.getKeyStorePathFileName();
         String trustStoreContainerPath = ArtemisContainer.ARTEMIS_INSTANCE_DIR + "/" + truststoreBrokerData.getKeyStorePathFileName();
-        LOGGER.info("Creating artemis instance: " + artemisName);
-        String tuneFileName = TestUtils.getProjectRelativeFile("https_console_tune.yaml");
-        String tuneFileContent = String.format("""
-                boostrap_xml_bindings:
-                  - name: 'artemis'
-                    uri: https://0.0.0.0:8161
-                    sniHostCheck: "false"
-                    sniRequired: "false"
-                    clientAuth: "false"
-                    keyStorePath: %s
-                    keyStorePassword: brokerPass
-                    trustStorePath: %s
-                    trustStorePassword: brokerPass
-                """, keyStoreContainerPath,  trustStoreContainerPath);
 
+        LOGGER.info("Creating custom tune file: " + artemisName);
+        TestUtils.createDirectory(getTestTempDir());
+        String tuneFileName = getTestTempDir() + Constants.FILE_SEPARATOR + "https_console_tune.yaml";
+        String tuneFileContent = String.format(getSecuredConsoleTemplate(), keyStoreContainerPath,  trustStoreContainerPath);
         TestUtils.createFile(tuneFileName, tuneFileContent);
-        artemis = ResourceManager.getArtemisContainerInstance(ArtemisConstants.ARTEMIS_STRING);
+
+        LOGGER.info("Creating artemis instance: " + artemisName);
+        artemis = ArtemisDeployment.createArtemis("artemis-secured", new ArtemisConfigData().withCustomTuneFile(tuneFileName).withStart(false));
         artemis.withFileSystemBind(keystoreBrokerData.getKeyStorePath(), keyStoreContainerPath, BindMode.READ_WRITE);
         artemis.withFileSystemBind(truststoreBrokerData.getKeyStorePath(), trustStoreContainerPath, BindMode.READ_WRITE);
-        ArtemisDeployment.generateArtemisCfg(artemis, new ArrayList<>(List.of("tune_file=" + tuneFileName)));
         artemis.start();
         artemis.ensureBrokerStarted();
         artemis.ensureBrokerIsActive();

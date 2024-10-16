@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 
 public class FailoverReplicationTests extends AbstractSystemTests {
@@ -38,14 +39,10 @@ public class FailoverReplicationTests extends AbstractSystemTests {
         zkCluster.start();
 
         String artemisPrimaryName = "artemisPrimary";
-        LOGGER.info("Creating artemis instance: " + artemisPrimaryName);
-        String primaryTuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("primary-tune.yaml.jinja2", getPkgClassAsDir());
-        artemisPrimary = ArtemisDeployment.getArtemisInstance(artemisPrimaryName, primaryTuneFile);
-
         String artemisBackupName = "artemisBackup";
-        LOGGER.info("Creating artemis instance: " + artemisBackupName);
-        String backupTuneFile = ArtemisDeployment.generateYacfgProfilesContainerTestDir("backup-tune.yaml.jinja2", getPkgClassAsDir());
-        artemisBackup = ArtemisDeployment.getArtemisInstance(artemisBackupName, backupTuneFile, true);
+        List<ArtemisContainer> tmpList = ArtemisDeployment.createArtemisHAPair(artemisPrimaryName, artemisBackupName);
+        artemisPrimary = tmpList.get(0);
+        artemisBackup = tmpList.get(1);
     }
 
     @Test
@@ -82,14 +79,14 @@ public class FailoverReplicationTests extends AbstractSystemTests {
         // ensure the backup instance became the current live
         artemisBackup.ensureBrokerIsActive();
 
-        LOGGER.info("Ensure queue contains {} messages on backup", numOfMessages);
+        LOGGER.info("[BACKUP] Ensure queue contains {} messages", numOfMessages);
         artemisBackup.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, numOfMessages);
 
-        LOGGER.info("Consuming {} messages from queue {} on backup", numOfMessages, queueName);
+        LOGGER.info("[BACKUP] Consuming {} messages from queue {}", numOfMessages, queueName);
         client.consume(numOfMessages);
         Map<String, Message> consumedMsgs = client.getConsumedMsgs();
 
-        LOGGER.info("Ensure queue is empty");
+        LOGGER.info("[BACKUP] Ensure queue is empty");
         artemisBackup.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, 0);
 
         LOGGER.info("Ensuring produced and consumed messages are the same");

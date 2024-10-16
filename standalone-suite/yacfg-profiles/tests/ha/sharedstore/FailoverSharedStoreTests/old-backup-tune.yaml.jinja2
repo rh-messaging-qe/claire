@@ -1,0 +1,36 @@
+---
+user_critical_analyzer:
+  timeout: 2000
+  check_period: 1000
+
+user_connectors:
+  - name: 'cluster-connector'
+
+user_broadcast_groups:
+  - name: 'cluster-broadcast-group'
+    broadcast_period: 500
+    connectors_ref:
+      - 'cluster-connector'
+
+user_discovery_groups:
+  - name: 'cluster-discovery-group'
+    refresh_timeout: 1000
+
+user_cluster:
+  user: 'clusterUser'
+  password: 'clusterPassword'
+
+user_cluster_connections:
+  - name: 'artemis-cluster'
+    check_period: 500
+    connection_ttl: 1000
+    connector_ref: 'cluster-connector'
+    discovery_group_ref: 'cluster-discovery-group'
+
+user_ha:
+  policy: shared-store
+  role: slave
+  properties:
+    allow_failback: true
+    failover_on_shutdown: true
+    restart_backup: true

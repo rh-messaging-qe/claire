@@ -38,7 +38,7 @@ public class RapidastDefaultConsoleTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        ArtemisContainer artemis = ArtemisDeployment.getArtemisInstance(artemisName);
+        ArtemisContainer artemis = ArtemisDeployment.createArtemis(artemisName);
         consoleURL = artemis.getConsoleUrl();
         artemisFullName = artemis.getName();
     }
