@@ -333,14 +333,15 @@ public class KubeClient {
         });
 
         for (Pod podTmp : listPodsByPrefixName(namespace, podName)) {
+            if (podTmp.getMetadata().getUid().equals(originalUid)) {
+                waitUntilPodIsDeleted(namespace, podTmp);
+            }
             if (!podTmp.getMetadata().getUid().equals(originalUid)) {
-                this.waitUntilPodIsReady(namespace, podTmp);
-                LOGGER.trace("[{}] Returning reloaded pod {}", namespace, podName);
-                return getPod(namespace, podTmp.getMetadata().getName());
+                waitUntilPodIsReady(namespace, podTmp);
             }
         }
-        LOGGER.error("[{}] Reloaded pod {} has not been found!", namespace, podName);
-        return null;
+        LOGGER.debug("[{}] Returning reloaded pod {}", namespace, podName);
+        return getFirstPodByPrefixName(namespace, podName);
     }
 
     public String executeCommandInPod(Pod pod, String cmd, long timeout) {

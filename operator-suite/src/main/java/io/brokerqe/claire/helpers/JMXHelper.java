@@ -8,7 +8,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
+import io.brokerqe.claire.TestUtils;
 import io.fabric8.openshift.api.model.Route;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,7 +21,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -59,9 +60,7 @@ public class JMXHelper {
     }
 
     private String performJmxCall(String host, String jmxPath) throws IOException {
-        URL url = new URL("http://" + host + jmxPath);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
+        HttpURLConnection con = (HttpURLConnection) TestUtils.makeHttpRequest("http://" + host + jmxPath, Constants.GET);
         con.setRequestProperty("Authorization", getBasicAuth());
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(con.getInputStream()));
@@ -75,7 +74,7 @@ public class JMXHelper {
         return content.toString();
     }
 
-    private List<String> getAllAdresses(String host) throws IOException {
+    private List<String> getAllAddresses(String host) throws IOException {
         String jmxPath = JMX_CALL_BASE + "/AddressNames";
         String content = performJmxCall(host, jmxPath);
         JSONObject json = new JSONObject(content);
@@ -125,7 +124,7 @@ public class JMXHelper {
         try {
             Route route = getRoute(deployName, pod);
             String host = route.getSpec().getHost();
-            List<String> addresses = getAllAdresses(host);
+            List<String> addresses = getAllAddresses(host);
             for (String address: addresses) {
                 for (String queue: getQueueNames(host, address)) {
                     AddressData addressData = new AddressData();

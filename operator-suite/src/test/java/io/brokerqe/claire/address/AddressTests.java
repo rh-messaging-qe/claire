@@ -67,8 +67,10 @@ public class AddressTests extends AbstractSystemTests {
         LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
         List<AddressData> allAddresses = jmx.getAllAddressesQueues(brokerName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
         verifyAddresses(allAddresses, myAddress);
+
         getClient().reloadPodWithWait(testNamespace, operatorPod, operatorName);
-        getClient().reloadPodWithWait(testNamespace, brokerPod, brokerName);
+        getClient().deletePod(testNamespace, brokerPod, false);
+        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod);
 
         brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         LOGGER.info("[{}] Getting info from {} with uid {}", testNamespace, brokerPod.getMetadata().getName(), brokerPod.getMetadata().getUid());
@@ -83,7 +85,7 @@ public class AddressTests extends AbstractSystemTests {
             return commandOutput.contains(myAddress.getSpec().getAddressName());
         });
 
-        TestUtils.waitFor("[JMX] Addresses to show up in artemis address call", Constants.DURATION_5_SECONDS, Constants.DURATION_30_SECONDS, () -> {
+        TestUtils.waitFor("[JMX] Updated addresses to show up in artemis address call", Constants.DURATION_5_SECONDS, Constants.DURATION_30_SECONDS, () -> {
             List<AddressData> updatedAddressesTmp = new ArrayList<>();
             try {
                 updatedAddressesTmp = jmx.getAllAddressesQueues(brokerName, ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
