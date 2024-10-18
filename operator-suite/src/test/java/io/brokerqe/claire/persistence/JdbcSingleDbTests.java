@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -63,6 +64,13 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
         ResourceManager.deleteArtemis(testNamespace, broker);
         teardownDefaultClusterOperator(testNamespace);
         postgres.undeployPostgres();
+
+    }
+
+    @AfterEach
+    void undeployBrokerWithDB() {
+        ResourceManager.deleteArtemis(testNamespace, broker);
+        getClient().deleteSecret(testNamespace, LOGGER_SECRET_NAME);
     }
 
     protected void deployPostgres() {
@@ -137,11 +145,6 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
         ResourceManager.createArtemis(testNamespace, broker, waitForDeployment, Constants.DURATION_3_MINUTES);
     }
 
-    void undeployBrokerWithDB() {
-        ResourceManager.deleteArtemis(testNamespace, broker);
-        getClient().deleteSecret(testNamespace, LOGGER_SECRET_NAME);
-    }
-
     @Test
     void testSingleBrokerMessaging() {
         deployBrokerWithDB(1, true);
@@ -166,7 +169,6 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
         assertThat("Send & received messages are not same!", sent, equalTo(recv));
 
         ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
-        undeployBrokerWithDB();
     }
 
     @Test
@@ -213,12 +215,10 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
         LOGGER.info("[{}] Delete pod 0 and check DB lock on pod 1", testNamespace);
         getClient().deletePod(testNamespace, getClient().getPod(testNamespace, brokerName + "-ss-0"), false);
         TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
-        TestUtils.waitFor(acquiredLockLog + " to show up", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
+        TestUtils.waitFor(acquiredLockLog + " to show up on " + brokerName + "-ss-1", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
             Pod brokerPod1 = getClient().getPod(testNamespace, brokerName + "-ss-1");
             return getClient().getLogsFromPod(brokerPod1).contains(acquiredLockLog);
         });
-
-        undeployBrokerWithDB();
     }
 
 }

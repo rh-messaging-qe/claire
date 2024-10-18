@@ -223,6 +223,17 @@ public class ResourceManager {
      *  ActiveMQArtemis Usage of generated typed API
      ******************************************************************************************************************/
 
+    public static long calculateWaitTime(ActiveMQArtemis artemisBroker) {
+        long waitTime = Constants.DURATION_1_MINUTE + Constants.DURATION_30_SECONDS;
+        if (artemisBroker.getSpec() != null && artemisBroker.getSpec().getDeploymentPlan() != null && artemisBroker.getSpec().getDeploymentPlan().getSize() != null) {
+            int size = artemisBroker.getSpec().getDeploymentPlan().getSize();
+            if (size > 1) {
+                waitTime += Constants.DURATION_1_MINUTE * size;
+            }
+        }
+        return waitTime;
+    }
+
     public static ActiveMQArtemis createArtemis(String namespace, String name) {
         return createArtemis(namespace, name, 1);
     }
@@ -254,12 +265,7 @@ public class ResourceManager {
                 .endConsole()
             .endSpec()
             .build();
-
-        long waitTime = Constants.DURATION_1_MINUTE + Constants.DURATION_30_SECONDS;
-        if (size > 1) {
-            waitTime += Constants.DURATION_1_MINUTE * size;
-        }
-        return createArtemis(namespace, broker, true, waitTime);
+        return createArtemis(namespace, broker, true, calculateWaitTime(broker));
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, Path filePath) {
@@ -313,11 +319,11 @@ public class ResourceManager {
     }
 
     public static void deleteArtemis(ActiveMQArtemis broker) {
-        deleteArtemis(broker.getMetadata().getNamespace(), broker, true, Constants.DURATION_1_MINUTE);
+        deleteArtemis(broker.getMetadata().getNamespace(), broker, true, calculateWaitTime(broker));
     }
 
     public static void deleteArtemis(String namespace, ActiveMQArtemis broker) {
-        deleteArtemis(namespace, broker, true, Constants.DURATION_1_MINUTE);
+        deleteArtemis(namespace, broker, true, calculateWaitTime(broker));
     }
 
     public static void deleteArtemis(String namespace, ActiveMQArtemis broker, boolean waitForDeletion, long maxTimeout) {
