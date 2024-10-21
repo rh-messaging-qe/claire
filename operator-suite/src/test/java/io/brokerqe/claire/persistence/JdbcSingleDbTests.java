@@ -78,7 +78,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
         postgres.deployPostgres("db-jar-plugin");
     }
 
-    void deployBrokerWithDB(int brokerSize, boolean waitForDeployment) {
+    void deployBrokerWithDatabase(int brokerSize, boolean waitForDeployment) {
         getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
 
         String downloadDriverCommand = "mkdir -p /amq/init/config/extra-libs && wget -O /amq/init/config/extra-libs/postgresql.jar %s".formatted(Constants.POSTGRESQL_DRIVER_URL);
@@ -147,7 +147,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
 
     @Test
     void testSingleBrokerMessaging() {
-        deployBrokerWithDB(1, true);
+        deployBrokerWithDatabase(1, true);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "testx", "testx");
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         int msgsExpected = 10;
@@ -176,7 +176,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
         String acquiredLockLog = "AMQ221035: Primary Server Obtained primary lock";
         String waitingForLockLog = "AMQ221034: Waiting indefinitely to obtain primary lock";
 
-        deployBrokerWithDB(2, false);
+        deployBrokerWithDatabase(2, false);
         TestUtils.waitFor("First broker pod to run", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
             List<Pod> pods = getClient().listPodsByPrefixName(testNamespace, brokerName);
             Boolean[] bools = {false, false};

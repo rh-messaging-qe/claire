@@ -25,6 +25,11 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobList;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import io.fabric8.kubernetes.api.model.metrics.v1beta1.ContainerMetrics;
+import io.fabric8.kubernetes.api.model.metrics.v1beta1.NodeMetrics;
+import io.fabric8.kubernetes.api.model.metrics.v1beta1.NodeMetricsList;
+import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetrics;
+import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetricsList;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -55,9 +60,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Base64;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -66,6 +71,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KubeClient {
     private final KubernetesClient client;
     private final KubernetesPlatform platform;
@@ -955,6 +961,51 @@ public class KubeClient {
                     () -> client.configMaps().inNamespace(namespaceName).withName(configMapName).get() == null);
         }
         LOGGER.info("[{}] Deleted config map {}", namespaceName, configMapName);
+    }
+
+    // ========================================================
+    // ---------> Kubernetes cluster metrics methods <---------
+    // ========================================================
+    public NodeMetricsList getKubernetesNodesMetrics() {
+        return getKubernetesClient().top().nodes().metrics();
+    }
+
+    public NodeMetrics getKubernetesNodeMetrics(String nodeName) {
+        return getKubernetesClient().top().nodes().withName(nodeName).metric();
+    }
+
+    public void printKubernetesNodesMetrics() {
+        NodeMetricsList nodeMetricsList = getKubernetesNodesMetrics();
+        StringBuilder metricsLine = new StringBuilder();
+        nodeMetricsList.getItems().forEach(nodeMetrics -> {
+            String name = nodeMetrics.getMetadata().getName();
+            String usage = nodeMetrics.getUsage().toString();
+            metricsLine.append(name).append(":").append(usage).append("\n");
+        });
+        LOGGER.info("Currently used node resources:\n{}", metricsLine);
+    }
+
+    public PodMetricsList getKubernetesPodsMetrics(String namespace) {
+        return getKubernetesClient().top().pods().inNamespace(namespace).metrics();
+    }
+
+    public PodMetrics getKubernetesPodMetrics(String namespace, String podName) {
+        return getKubernetesClient().top().pods().metrics(namespace, podName);
+    }
+
+    public void printKubernetesPodsMetrics(String namespace) {
+        PodMetricsList podMetricsList = getKubernetesPodsMetrics(namespace);
+        StringBuilder metricsLine = new StringBuilder();
+        podMetricsList.getItems().forEach(podMetrics -> {
+            String name = podMetrics.getMetadata().getName();
+            metricsLine.append("pod: ").append(name);
+            for (ContainerMetrics c : podMetrics.getContainers()) {
+                String cname = c.getName();
+                String usage = c.getUsage().toString();
+                metricsLine.append("container: ").append(cname).append(":").append(usage).append("\n");
+            }
+        });
+        LOGGER.info("[{}] Currently used pod resources:\n{}", namespace, metricsLine);
     }
 
     // =============================

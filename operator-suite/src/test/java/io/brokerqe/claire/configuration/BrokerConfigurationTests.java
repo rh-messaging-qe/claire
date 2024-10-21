@@ -232,9 +232,11 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     void verifyResourceLimits() {
+        getClient().printKubernetesNodesMetrics();
+        getClient().printKubernetesPodsMetrics(testNamespace);
         Map<String, IntOrString> requestedResourceLimits = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("400m");
-        IntOrString memValue = new IntOrString("512M");
+        IntOrString cpuValue = new IntOrString("250m");
+        IntOrString memValue = new IntOrString("300Mi");
         requestedResourceLimits.put("cpu", cpuValue);
         requestedResourceLimits.put("memory", memValue);
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
@@ -250,7 +252,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                     .endDeploymentplanResources()
                 .endDeploymentPlan()
                 .endSpec().build();
-        ResourceManager.createArtemis(testNamespace, broker, true);
+        ResourceManager.createArtemis(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
         Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
         Map<String, Quantity> limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
         verifyResourceRequestValues("limit", limits, cpuValue, memValue);
@@ -260,9 +262,10 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     void verifyResourceUpdates() {
+        getClient().printKubernetesNodesMetrics();
         Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("400m");
-        IntOrString memValue = new IntOrString("512M");
+        IntOrString cpuValue = new IntOrString("300m");
+        IntOrString memValue = new IntOrString("350Mi");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
@@ -279,15 +282,16 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                     .endDeploymentplanResources()
                 .endDeploymentPlan()
                 .endSpec().build();
-        broker = ResourceManager.createArtemis(testNamespace, broker, true);
+        broker = ResourceManager.createArtemis(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
         Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
         Map<String, Quantity> limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
         Map<String, Quantity> requests = brokerPod.getSpec().getContainers().get(0).getResources().getRequests();
         verifyResourceRequestValues("limit", limits, cpuValue, memValue);
         verifyResourceRequestValues("request", requests, cpuValue, memValue);
+        getClient().printKubernetesPodsMetrics(testNamespace);
 
-        cpuValue = new IntOrString("500m");
-        memValue = new IntOrString("768M");
+        cpuValue = new IntOrString("400m");
+        memValue = new IntOrString("400Mi");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);
         broker.getSpec().getDeploymentPlan().getResources().setLimits(requestedResources);
@@ -306,6 +310,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     void verifyDefaultResourceRequests() {
+        getClient().printKubernetesNodesMetrics();
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, testBrokerName);
         Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
         Map<String, Quantity> limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
@@ -314,9 +319,10 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         assertThat(String.format("Resource limits were applied by default: %s", limits), limits, aMapWithSize(0));
         assertThat(String.format("Resource requests were applied by default: %s", requests), requests, aMapWithSize(0));
 
+        getClient().printKubernetesPodsMetrics(testNamespace);
         Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("400m");
-        IntOrString memValue = new IntOrString("512M");
+        IntOrString cpuValue = new IntOrString("250m");
+        IntOrString memValue = new IntOrString("256Mi");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);
         Resources resources = new Resources();
