@@ -62,7 +62,7 @@ public class OperatorTestDataCollector extends TestDataCollector {
             }
 
             for (String testNamespace : testNamespaces) {
-                archiveDirTmp += Constants.FILE_SEPARATOR + testNamespace;
+                archiveDirTmp += testNamespace;
                 TestUtils.createDirectory(archiveDirTmp);
                 LOGGER.debug("[{}] Gathering debug data for failed {}#{} into {}", testNamespace, testClass, testMethod, archiveDirTmp);
 
@@ -95,8 +95,19 @@ public class OperatorTestDataCollector extends TestDataCollector {
                 writeEvents(events, archiveDirTmp);
                 collectPodLogs(pods, archiveDirTmp);
                 collectBrokerPodFiles(pods, archiveDirTmp);
+                collectResourceStats(testNamespace, archiveDirTmp);
             }
         }
+    }
+
+    private void collectResourceStats(String namespace, String dirName) {
+        LOGGER.debug("[{}] Gathering node/pod resources into files.", namespace);
+        String topNode = TestUtils.executeLocalCommand("oc adm top node");
+        String namespacePod = TestUtils.executeLocalCommand("oc adm top pod -n " + namespace);
+        String nodeFileName = dirName + Constants.FILE_SEPARATOR + "stats_node.log";
+        String podFileName = dirName + Constants.FILE_SEPARATOR + "stats_pod.log";
+        TestUtils.createFile(nodeFileName, topNode);
+        TestUtils.createFile(podFileName, namespacePod);
     }
 
     private void collectBrokerPodFiles(List<Pod> pods, String archiveLocation) {

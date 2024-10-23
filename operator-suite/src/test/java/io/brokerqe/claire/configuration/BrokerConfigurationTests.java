@@ -235,7 +235,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         getClient().printKubernetesNodesMetrics();
         getClient().printKubernetesPodsMetrics(testNamespace);
         Map<String, IntOrString> requestedResourceLimits = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("250m");
+        IntOrString cpuValue = new IntOrString("300m");
         IntOrString memValue = new IntOrString("300Mi");
         requestedResourceLimits.put("cpu", cpuValue);
         requestedResourceLimits.put("memory", memValue);
@@ -321,8 +321,8 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
         getClient().printKubernetesPodsMetrics(testNamespace);
         Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("250m");
-        IntOrString memValue = new IntOrString("256Mi");
+        IntOrString cpuValue = new IntOrString("300m");
+        IntOrString memValue = new IntOrString("350Mi");
         requestedResources.put("cpu", cpuValue);
         requestedResources.put("memory", memValue);
         Resources resources = new Resources();

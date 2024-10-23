@@ -95,7 +95,7 @@ public final class TestUtils {
 
     public static String executeLocalCommand(String... cmd) {
         LocalExecutor executor = new LocalExecutor();
-        LOGGER.debug("[CMD][local] {}", Arrays.stream(cmd).toArray());
+        LOGGER.debug("[CMD][local] {}", String.join(" ", cmd));
         executor.executeCommand(cmd);
         return executor.getCommandData(Duration.ofSeconds(10).toSeconds());
     }

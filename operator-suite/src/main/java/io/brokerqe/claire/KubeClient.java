@@ -289,7 +289,7 @@ public class KubeClient {
 
     public void restartPod(String namespace, Pod pod) {
         getKubernetesClient().pods().inNamespace(namespace).resource(pod).delete();
-        waitForPodReload(namespace, pod, pod.getMetadata().getName(), Constants.DURATION_1_MINUTE);
+        waitForPodReload(namespace, pod, pod.getMetadata().getName(), Constants.DURATION_90_SECONDS);
     }
 
     public Pod getFirstPodByPrefixName(String namespaceName, String podNamePrefix) {

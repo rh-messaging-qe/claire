@@ -9,13 +9,14 @@ import io.brokerqe.claire.executor.Executor;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Duration;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 
 public class LocalExecutor implements Executor {
@@ -33,15 +34,14 @@ public class LocalExecutor implements Executor {
         builder.directory(new File(System.getProperty("user.home")));
         try {
             Process process = builder.start();
-            StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
-            streamGobbler.run();
+            ExecutorRunnable executorRunnable = new ExecutorRunnable(process.getInputStream());
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(streamGobbler);
+            Future<String> future = executor.submit(executorRunnable);
             exitCode = process.waitFor();
             executor.shutdown();
-            commandDataOutput = streamGobbler.toString();
-        } catch (IOException | InterruptedException e) {
+            commandDataOutput = future.get();
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -69,17 +69,15 @@ public class LocalExecutor implements Executor {
     }
 }
 
-class StreamGobbler implements Runnable {
+class ExecutorRunnable implements Callable {
     private InputStream inputStream;
-    private Consumer<String> consumer;
 
-    public StreamGobbler(InputStream inputStream, Consumer<String> consumer) {
+    public ExecutorRunnable(InputStream inputStream) {
         this.inputStream = inputStream;
-        this.consumer = consumer;
     }
 
     @Override
-    public void run() {
-        new BufferedReader(new InputStreamReader(inputStream)).lines().forEach(consumer);
+    public Object call() throws Exception {
+        return new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
     }
 }
