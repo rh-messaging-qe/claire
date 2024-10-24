@@ -143,6 +143,7 @@ public class AuditLogTests extends AbstractSystemTests {
         LOGGER.info("Copying file {} -> {}. \nRestarting broker", auditLogPath.toString(), auditLogCopy);
         TestUtils.copyFile(auditLogPath.toString(), auditLogCopy);
         artemis.restartWithStop();
+        artemis.ensureBrokerIsActive();
     }
 
     @Test
