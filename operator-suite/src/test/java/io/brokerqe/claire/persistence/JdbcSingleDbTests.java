@@ -47,7 +47,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSingleDbTests.class);
     //    private final String testNamespace = getRandomNamespaceName("jdbc-tests", 2);
     private final String testNamespace = "jdbc-tests";
-    private final String brokerName = "jdbc-brk";
+    private String brokerName = "jdbc-brk";
     private Postgres postgres;
     private ActiveMQArtemis broker;
     private static final String LOGGER_SECRET_NAME = "artemis-secret-logging-config";
@@ -142,11 +142,13 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
                     .endPatch()
                 .endResourceTemplate()
             .endSpec().build();
+
         ResourceManager.createArtemis(testNamespace, broker, waitForDeployment, Constants.DURATION_3_MINUTES);
     }
 
     @Test
     void testSingleBrokerMessaging() {
+        brokerName = "jdbc-brk-single";
         deployBrokerWithDatabase(1, true);
         ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "testx", "testx");
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);

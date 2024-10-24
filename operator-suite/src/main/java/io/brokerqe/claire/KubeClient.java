@@ -305,11 +305,12 @@ public class KubeClient {
     }
 
     public Pod reloadPodWithWait(String namespaceName, Pod pod, String podName) {
-        this.getKubernetesClient().resource(pod).inNamespace(namespaceName).delete();
+        getKubernetesClient().resource(pod).inNamespace(namespaceName).delete();
         return waitForPodReload(namespaceName, pod, podName);
     }
 
     public void waitUntilPodIsReady(String namespaceName, Pod pod) {
+        LOGGER.debug("[{}] Waiting for readiness of pod {}", namespaceName, pod.getMetadata().getName());
         client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(3, TimeUnit.MINUTES);
     }
 
@@ -339,6 +340,7 @@ public class KubeClient {
         });
 
         for (Pod podTmp : listPodsByPrefixName(namespace, podName)) {
+            LOGGER.info("[{}] Checking pod {}", namespace, podTmp.getMetadata().getName());
             if (podTmp.getMetadata().getUid().equals(originalUid)) {
                 waitUntilPodIsDeleted(namespace, podTmp);
             }
