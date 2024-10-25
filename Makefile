@@ -7,7 +7,7 @@ MVN_DEFAULT_CMD                                   = mvn -T 1.5C --no-transfer-pr
 MVN_TEST_CMD                                      = ${MVN_DEFAULT_CMD} -Dfailsafe.rerunFailingTestsCount=3 failsafe:integration-test
 WGET_CMD                                          = wget -nv -c
 
-ARTEMIS_VERSION                                  ?= 2.37.0
+ARTEMIS_VERSION                                  ?= 2.38.0
 OPERATOR_VERSION                                 ?= main
 
 OPERATOR_ROOT_DIR                                 = ${ROOT_DIR}/operator-suite
