@@ -74,7 +74,6 @@ public class AuditLogTests extends AbstractSystemTests {
     void setupEnv() {
         String artemisName = "artemis";
         ArtemisConfigData artemisConfigData = new ArtemisConfigData();
-        String tuneFile;
         LOGGER.info("Creating artemis instance: " + artemisName);
         if (isMinimumTestVersion(ArtemisVersion.VERSION_2_28)) {
             artemisConfigData.withTuneFile("tune.yaml.jinja2");
@@ -100,7 +99,7 @@ public class AuditLogTests extends AbstractSystemTests {
 
         bobFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS);
         bobFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, queue);
-        bobFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, ArtemisConstants.BOB_NAME, address);
+        bobFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, ArtemisConstants.BOB_NAME, queue, address);
         adminFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN);
         adminFormattedAddressCore = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN_CORE, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
         adminFormattedAddressAmqp = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN_AMQP, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
@@ -131,8 +130,9 @@ public class AuditLogTests extends AbstractSystemTests {
 
     protected void checkAuditLogs(List<String> checkPatternLogs) {
         String auditLog = TestUtils.readFileContent(auditLogPath.toFile());
-        LOGGER.debug("auditLog: {}", auditLog);
+        LOGGER.trace("auditLog: {}", auditLog);
         for (String patternLog : checkPatternLogs) {
+            LOGGER.debug("Checking audit log: {}", patternLog);
             assertThat(auditLog).containsPattern(patternLog);
         }
     }
