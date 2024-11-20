@@ -20,6 +20,7 @@ import io.brokerqe.claire.scalability.ScalabilityTests;
 import io.brokerqe.claire.security.CertificateManager;
 import io.brokerqe.claire.security.KeyStoreData;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -64,6 +65,15 @@ public class CrossPlatformTests extends AbstractSystemTests {
                 teardownDefaultClusterOperator(testNamespace);
             }
             getClient().deleteNamespace(testNamespace);
+        }
+    }
+
+    @AfterEach
+    void cleanResources() {
+        LOGGER.info("[{}] Cleaning resources after test", testNamespace);
+        for (KubeClient kubeclient : List.of(kubeclient0, kubeclient1)) {
+            setClient(kubeclient);
+            cleanResourcesAfterTest(testNamespace);
         }
     }
 
