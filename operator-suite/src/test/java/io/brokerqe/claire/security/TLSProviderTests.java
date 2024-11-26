@@ -5,7 +5,6 @@
 package io.brokerqe.claire.security;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
@@ -14,7 +13,7 @@ import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -95,6 +94,7 @@ public class TLSProviderTests extends AbstractSystemTests {
 
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true,
                 brokerSecretName, true, sslProvider);
+        BPActiveMQArtemisAddress tlsAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
 
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
@@ -107,6 +107,7 @@ public class TLSProviderTests extends AbstractSystemTests {
                         .withImage("placeholder")
                     .endDeploymentPlan()
                     .withAcceptors(amqpAcceptors)
+                    .withBrokerProperties(tlsAddress.getPropertiesList())
                 .endSpec()
                 .build();
 
@@ -124,7 +125,6 @@ public class TLSProviderTests extends AbstractSystemTests {
         getClient().createSecretEncodedData(testNamespace, clientSecret, CertificateManager.createClientKeystoreSecret(keystores));
 
         broker = ResourceManager.createArtemis(testNamespace, broker);
-        ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         List<String> brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
         LOGGER.info("[{}] Broker {} is up and running with TLS", testNamespace, brokerName);
@@ -137,7 +137,6 @@ public class TLSProviderTests extends AbstractSystemTests {
                 Constants.CLIENT_TRUSTSTORE_ID, keystores.get(Constants.CLIENT_TRUSTSTORE_ID).getPassword());
         ResourceManager.undeployClientsContainer(testNamespace, clients);
         getClient().deletePod(testNamespace, clientsPod);
-        ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
         getClient().deleteSecret(testNamespace, brokerSecretName);
         getClient().deleteSecret(testNamespace, clientSecret);

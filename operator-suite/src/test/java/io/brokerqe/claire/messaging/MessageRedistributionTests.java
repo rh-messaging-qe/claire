@@ -5,12 +5,12 @@
 package io.brokerqe.claire.messaging;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,8 +41,9 @@ public class MessageRedistributionTests extends AbstractSystemTests {
 
     @Test
     void simpleRedistributionTest() {
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "my-broker", 2);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
+
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "my-broker", 2, myAddress.getPropertiesList());
 
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -63,7 +64,6 @@ public class MessageRedistributionTests extends AbstractSystemTests {
         assertThat(sent, equalTo(received));
         assertTrue(messagingClientCore.compareMessages(sent, received));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 }

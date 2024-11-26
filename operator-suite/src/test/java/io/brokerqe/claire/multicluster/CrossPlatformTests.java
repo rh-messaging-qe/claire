@@ -5,17 +5,17 @@
 package io.brokerqe.claire.multicluster;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestMinimumKubernetesCount;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.brokerqe.claire.scalability.ScalabilityTests;
 import io.brokerqe.claire.security.CertificateManager;
 import io.brokerqe.claire.security.KeyStoreData;
@@ -86,7 +86,8 @@ public class CrossPlatformTests extends AbstractSystemTests {
         String owireAcceptorName = "my-owire";
 
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "tls-broker");
-        ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        //ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        BPActiveMQArtemisAddress tlsAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, true);
         Acceptors owireAcceptors = createAcceptor(owireAcceptorName, "openwire", 61618, true, true, brokerSecretName, true);
         Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
@@ -98,7 +99,7 @@ public class CrossPlatformTests extends AbstractSystemTests {
 
         // One Way TLS
         getClient().createSecretEncodedData(testNamespace, brokerSecretName, CertificateManager.createBrokerKeystoreSecret(keystores));
-
+        maybeAddSpec(broker).getSpec().setBrokerProperties(tlsAddress.getPropertiesList());
         broker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors, owireAcceptors), broker);
         String brokerName = broker.getMetadata().getName();
         List<String> brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
@@ -115,7 +116,6 @@ public class CrossPlatformTests extends AbstractSystemTests {
         getClient().deleteSecret(testNamespace, clientSecret);
         setClient(kubeclient0);
         ResourceManager.deleteArtemis(testNamespace, broker);
-        ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress);
         getClient().deleteSecret(testNamespace, brokerSecretName);
     }
 
@@ -132,7 +132,7 @@ public class CrossPlatformTests extends AbstractSystemTests {
 
         // Deployment on kubernetes0
         setClient(kubeclient0);
-        ActiveMQArtemisAddress tlsAddress0 = ResourceManager.createArtemisAddress(testNamespace, "testq", "testq");
+        BPActiveMQArtemisAddress tlsAddress0 = ResourceManager.createBPArtemisAddress("testq", ArtemisConstants.ROUTING_TYPE_ANYCAST);
         ActiveMQArtemis broker0 = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
                     .withName(broker0Name)
@@ -150,6 +150,7 @@ public class CrossPlatformTests extends AbstractSystemTests {
                         .withExpose(true)
                         .withSslEnabled(false)
                     .endConsole()
+                    .withBrokerProperties(tlsAddress0.getPropertiesList())
                 .endSpec()
                 .build();
 
@@ -168,7 +169,7 @@ public class CrossPlatformTests extends AbstractSystemTests {
 
         // Deployment on kubernetes1
         setClient(kubeclient1);
-        ActiveMQArtemisAddress tlsAddress1 = ResourceManager.createArtemisAddress(testNamespace, "testq", "testq");
+        BPActiveMQArtemisAddress tlsAddress1 = ResourceManager.createBPArtemisAddress("testq", ArtemisConstants.ROUTING_TYPE_ANYCAST);
         ActiveMQArtemis broker1 = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
                     .withName(broker1Name)
@@ -184,6 +185,7 @@ public class CrossPlatformTests extends AbstractSystemTests {
                         .withExpose(true)
                         .withSslEnabled(false)
                     .endConsole()
+                    .withBrokerProperties(tlsAddress1.getPropertiesList())
                 .endSpec()
                 .build();
 
@@ -222,13 +224,11 @@ public class CrossPlatformTests extends AbstractSystemTests {
         LOGGER.info("[{}] Cross Messaging tests finished successfully. Tearing down environment", testNamespace);
         setClient(kubeclient1);
         ResourceManager.deleteArtemis(testNamespace, broker1);
-        ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress1);
         getClient().deleteSecret(testNamespace, clientSecret);
         getClient().deleteSecret(testNamespace, broker1SecretName);
 
         setClient(kubeclient0);
         ResourceManager.deleteArtemis(testNamespace, broker0);
-        ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress0);
         getClient().deleteSecret(testNamespace, clientSecret);
         getClient().deleteSecret(testNamespace, broker0SecretName);
     }

@@ -5,16 +5,15 @@
 package io.brokerqe.claire.upgrade;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.DisableOnNoUpgradePlan;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorOlm;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import org.junit.jupiter.api.AfterAll;
@@ -102,8 +101,6 @@ public class UpgradeOlmTests extends AbstractSystemTests {
             brokerUpgradeStatefulSet = getClient().getStatefulSet(testNamespace, brokerUpgradableName);
             brokerUpgradePods = getClient().listPodsByPrefixName(testNamespace, brokerUpgradableName);
             operatorPod = getClient().getFirstPodByPrefixName(testNamespace, upgradeOlmOperator.getOperatorName());
-
-            ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         } else {
             LOGGER.info("[{}] Reloading ClusterOperator and Broker {} ", testNamespace, brokerUpgradableName);
             operatorPod = getClient().waitForPodReload(testNamespace, operatorPod, upgradeOlmOperator.getOperatorName(), Constants.DURATION_5_MINUTES);
@@ -142,7 +139,11 @@ public class UpgradeOlmTests extends AbstractSystemTests {
         assertThat(brokerVersionLogs, anyOf(containsString(brokerVersionOldString), containsString(brokerVersionNewString)));
 
         LOGGER.info("[{}] Test messaging on this new broker {}", testNamespace, brokerVersionPod);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        brokerUpgrade.getSpec().setBrokerProperties(myAddress.getPropertiesList());
+        ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(brokerUpgrade).createOrReplace();
+        ResourceManager.waitForBrokerDeployment(testNamespace, brokerUpgrade);
+                //ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         int msgsExpected = 10;
         String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, brokerVersion), "all");
         MessagingClient messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerVersionPod, allDefaultPort, myAddress, msgsExpected);

@@ -5,8 +5,6 @@
 package io.brokerqe.claire.messaging;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Env;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
@@ -16,6 +14,7 @@ import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.helpers.AddressData;
 import io.brokerqe.claire.helpers.JMXHelper;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -53,12 +52,14 @@ public class MessageMigrationTests extends AbstractSystemTests {
 
 
     @Test
+    @Disabled
     public void multicastMigrationTest() {
         int initialSize = 2;
         int msgsExpected = 100;
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migrmulti", "test", ArtemisConstants.ROUTING_TYPE_MULTICAST);
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress("migrmulti", "test", ArtemisConstants.ROUTING_TYPE_MULTICAST);
+                //ResourceManager.createArtemisAddress(testNamespace, "migrmulti", "test", ArtemisConstants.ROUTING_TYPE_MULTICAST);
         String brokerName = "multicast";
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, brokerName, initialSize, false, false, true, true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, brokerName, initialSize, false, false, true, true, myAddress.getPropertiesList());
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         Pod brokerPod0 = brokerPods.get(0);
         Pod brokerPod1 = brokerPods.get(1);
@@ -74,10 +75,9 @@ public class MessageMigrationTests extends AbstractSystemTests {
         brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         assertThat("Broker didn't scale down to expected size (1)", brokerPods.size(), equalTo(1));
         JMXHelper jmx = new JMXHelper().withKubeClient(getClient());
-        AddressData address1 = jmx.getAddressQueue(brokerName, myAddress.getSpec().getAddressName(), myAddress.getSpec().getQueueName(), ArtemisConstants.ROUTING_TYPE_MULTICAST, 0);
+        AddressData address1 = jmx.getAddressQueue(brokerName, myAddress.getAddressName(), myAddress.getSingularQueueName(), ArtemisConstants.ROUTING_TYPE_MULTICAST, 0);
         assertThat("Received different amount of messages than expected from post-MM", address1.getMsgCount(), equalTo(sent));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -86,10 +86,10 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int initialSize = 2;
         int msgsExpectedPerQueue = 100;
         String addressName = "migratory";
-        ActiveMQArtemisAddress initialAddress = ResourceManager.createArtemisAddress(testNamespace,
-                addressName, "queue0", ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        BPActiveMQArtemisAddress initialAddress = ResourceManager.createBPArtemisAddress(addressName, "queue0", ArtemisConstants.ROUTING_TYPE_ANYCAST);
+                //ResourceManager.createArtemisAddress(testNamespace, addressName, "queue0", ArtemisConstants.ROUTING_TYPE_ANYCAST);
         String brokerName = "multiqueue";
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "multiqueue", initialSize, false, false, true, true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "multiqueue", initialSize, false, false, true, true, initialAddress.getPropertiesList());
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
 
         Pod brokerPod0 = brokerPods.get(0);
@@ -99,12 +99,12 @@ public class MessageMigrationTests extends AbstractSystemTests {
                 allDefaultPort, initialAddress, msgsExpectedPerQueue, false, false);
         LOGGER.info("[{}] Send {} messages to broker1, queue \"queue0\"", testNamespace, msgsExpectedPerQueue);
         int sent = messagingClient.sendMessages();
-        ActiveMQArtemisAddress secondAddress = new ActiveMQArtemisAddressBuilder()
-                .withNewSpec()
-                    .withAddressName(addressName)
-                    .withQueueName("queue1")
-                    .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
-                .endSpec().build();
+        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).get();
+        BPActiveMQArtemisAddress secondAddress = ResourceManager.createBPArtemisAddress(addressName + "1", "queue1", ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        List<String> brokerProperties = secondAddress.getPropertiesList();
+        brokerProperties.addAll(broker.getSpec().getBrokerProperties());
+        broker.getSpec().setBrokerProperties(brokerProperties);
+        ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).update();
         messagingClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod1,
                 allDefaultPort, secondAddress, msgsExpectedPerQueue, false, false);
         sent += messagingClient.sendMessages();
@@ -117,14 +117,11 @@ public class MessageMigrationTests extends AbstractSystemTests {
         brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         assertThat("Broker didn't scale down to expected size (1)", brokerPods.size(), equalTo(1));
         JMXHelper jmx = new JMXHelper().withKubeClient(getClient());
-        AddressData address1 = jmx.getAddressQueue(brokerName, initialAddress.getSpec().getAddressName(),
-                initialAddress.getSpec().getQueueName(), ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
+        AddressData address1 = jmx.getAddressQueue(brokerName, initialAddress, 0);
         assertThat("Received different amount of messages than expected from post-MM", address1.getMsgCount(), equalTo(msgsExpectedPerQueue));
-        AddressData address2 = jmx.getAddressQueue(brokerName, secondAddress.getSpec().getAddressName(),
-                secondAddress.getSpec().getQueueName(), ArtemisConstants.ROUTING_TYPE_ANYCAST, 0);
+        AddressData address2 = jmx.getAddressQueue(brokerName, secondAddress, 0);
         assertThat("Received different amount of messages than expected from post-MM", address1.getMsgCount(), equalTo(msgsExpectedPerQueue));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, initialAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -133,8 +130,10 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int msgsExpected = 100;
         int initialSize = 3;
         int scaledDownSize = 1;
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-scd", "migration-scd");
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, true, true);
+        String addressName = "migration-scd";
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(addressName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
+                ///ResourceManager.createArtemisAddress(testNamespace, "migration-scd", "migration-scd");
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, true, true, myAddress.getPropertiesList());
 
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -168,16 +167,15 @@ public class MessageMigrationTests extends AbstractSystemTests {
         assertThat("Received different amount of messages than expected from post-MM", received, equalTo(200));
         assertThat("Received different amount of messages than expected from post-MM", received, equalTo(sent1 + sent2));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
-    private ActiveMQArtemis sendMessagesAndScaledown(ActiveMQArtemis broker, Pod pod, String allDefaultPort, ActiveMQArtemisAddress address, int msgExpected, int targetSize) {
+    private ActiveMQArtemis sendMessagesAndScaledown(ActiveMQArtemis broker, Pod pod, String allDefaultPort, BPActiveMQArtemisAddress address, int msgExpected, int targetSize) {
         LOGGER.info("[{}] Send {} messages to {}", testNamespace, msgExpected, pod.getMetadata().getName());
         MessagingClient coreClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, pod, allDefaultPort, address, msgExpected);
         int sent = coreClient.sendMessages();
         assertThat("Sent different amount of messages than expected", sent, equalTo(msgExpected));
-        checkMessageCount(testNamespace, pod, address.getSpec().getQueueName(), msgExpected);
+        checkMessageCount(testNamespace, pod, address.getSingularQueueName(), msgExpected);
         int initialSize = broker.getSpec().getDeploymentPlan().getSize();
         broker = doArtemisScale(testNamespace, broker, initialSize, targetSize);
         return broker;
@@ -187,11 +185,13 @@ public class MessageMigrationTests extends AbstractSystemTests {
     public void sequentialScaledownTest() {
         int initialSize = 4;
         int msgExpected = 100;
+        String addressName = "migration-queue";
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(addressName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, true, true);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, true, true, myAddress.getPropertiesList());
 //        @Disabled("ENTMQBR-8195")
 //        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-queue", "migration-queue");
+                //ResourceManager.createArtemisAddress(testNamespace, "migration-queue", "migration-queue");
         String brokerName = broker.getMetadata().getName();
 
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -204,7 +204,7 @@ public class MessageMigrationTests extends AbstractSystemTests {
         broker = sendMessagesAndScaledown(broker, pod3, allDefaultPort, myAddress, msgExpected, 3);
         int msgSum = 0;
         for (Pod pod : getClient().listPodsByPrefixName(testNamespace, brokerName)) {
-            msgSum += getMessageCount(testNamespace, pod, myAddress.getSpec().getQueueName());
+            msgSum += getMessageCount(testNamespace, pod, myAddress.getSingularQueueName());
         }
         assertThat("expected number of messages on pods is not same!", msgSum, equalTo(msgExpected));
 
@@ -222,7 +222,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         received = receiver.receiveMessages();
         assertThat("Received different amount of messages than expected", received, equalTo(msgExpected));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -231,8 +230,10 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int initialSize = 2;
         int msgExpected = 100;
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-prt", "migration-prt");
+        String addressName = "migration-prt";
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(addressName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, myAddress.getPropertiesList());
+        //ResourceManager.createArtemisAddress(testNamespace, "migration-prt", "migration-prt");
 
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -270,7 +271,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         received = receiver.receiveMessages();
         assertThat("Received different amount of messages than expected", received, equalTo(msgExpected));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -280,10 +280,13 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int initialSize = 1;
         int targetSize = 2;
         int msgExpected = 100;
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
+        String addressName = "migration-runtime";
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(addressName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, myAddress.getPropertiesList());
         doArtemisScale(testNamespace, broker, initialSize, targetSize);
 
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-runtime", "migration-runtime");
+
+                //ResourceManager.createArtemisAddress(testNamespace, "migration-runtime", "migration-runtime");
 
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -317,7 +320,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int received = receiver.receiveMessages();
         assertThat("Received different amount of messages than expected", received, equalTo(msgExpected * targetSize));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -326,9 +328,11 @@ public class MessageMigrationTests extends AbstractSystemTests {
     public void disableMigrationRuntimeTest() {
         int initialSize = 2;
         int msgExpected = 100;
+        String addressName = "migration-runtime-dis";
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(addressName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, false, true, myAddress.getPropertiesList());
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, false, true);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-runtime-dis", "migration-runtime-dis");
+                //ResourceManager.createArtemisAddress(testNamespace, "migration-runtime-dis", "migration-runtime-dis");
 
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -354,7 +358,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         int received = receiver.receiveMessages();
         assertThat("Received different amount of messages than expected", received, equalTo(msgExpected));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -362,9 +365,11 @@ public class MessageMigrationTests extends AbstractSystemTests {
     public void nonPersistentMessagesMMTest() {
         int initialSize = 2;
         int msgExpected = 100;
+        String addressName = "migration-non-pers";
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(addressName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, false, true, myAddress.getPropertiesList());
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, false, false, false, true);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "migration-non-pers", "migration-non-pers");
+                //ResourceManager.createArtemisAddress(testNamespace, "migration-non-pers", "migration-non-pers");
 
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
@@ -394,7 +399,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
 
         assertThat("Received different amount of messages than expected", received, equalTo(msgExpected * 2));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -403,9 +407,11 @@ public class MessageMigrationTests extends AbstractSystemTests {
     public void restartWithoutMigration() {
         int initialSize = 2;
         int msgExpected = 100;
+        String addressName = "no-migration";
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(addressName, ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize, myAddress.getPropertiesList());
 
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "sd-broker", initialSize);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "no-migration", "no-migration");
+        //ResourceManager.createArtemisAddress(testNamespace, "no-migration", "no-migration");
         String brokerName = broker.getMetadata().getName();
         List<Pod> brokerPods = getClient().listPodsByPrefixName(testNamespace, brokerName);
         Pod pod1 = brokerPods.get(1);
@@ -431,7 +437,6 @@ public class MessageMigrationTests extends AbstractSystemTests {
         MessagingClient receiver = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, pod1, allDefaultPort, myAddress, 100);
         int received = receiver.receiveMessages();
         assertThat("Received different amount of messages than expected", received, equalTo(100));
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 }

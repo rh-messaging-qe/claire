@@ -6,6 +6,7 @@ package io.brokerqe.claire;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
+import io.amq.broker.v1beta1.ActiveMQArtemisSpec;
 import io.amq.broker.v1beta1.ActiveMQArtemisSpecBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.clients.BundledClientDeployment;
@@ -16,6 +17,7 @@ import io.brokerqe.claire.clients.bundled.ArtemisCommand;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestSeparator;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.claire.security.CertificateManager;
@@ -501,16 +503,28 @@ public abstract class AbstractSystemTests implements TestSeparator {
 
     }
 
+    @Deprecated
     public void testMessaging(String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages) {
         testMessaging(ClientType.BUNDLED_CORE, namespace, brokerPod, address, messages, null, null);
     }
 
+    public void testMessaging(String namespace, Pod brokerPod, BPActiveMQArtemisAddress address, int messages) {
+        testMessaging(ClientType.BUNDLED_CORE, namespace, brokerPod, address, messages, null, null);
+    }
+
+    @Deprecated
     public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages) {
         testMessaging(clientType, namespace, brokerPod, address, messages, null, null);
     }
-
+    public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, BPActiveMQArtemisAddress address, int messages) {
+        testMessaging(clientType, namespace, brokerPod, address, messages, null, null);
+    }
+    @Deprecated
     public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, ActiveMQArtemisAddress address, int messages, String username, String password) {
         testMessaging(clientType, namespace, brokerPod, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password);
+    }
+    public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, BPActiveMQArtemisAddress address, int messages, String username, String password) {
+        testMessaging(clientType, namespace, brokerPod, address.getAddressName(), address.getSingularQueueName(), messages, username, password);
     }
 
     public void testMessaging(ClientType clientType, String namespace, Pod brokerPod, String address, int messages, String username, String password) {
@@ -547,7 +561,15 @@ public abstract class AbstractSystemTests implements TestSeparator {
         }
     }
 
+    @Deprecated
     public void testTlsMessaging(String namespace, ActiveMQArtemisAddress address,
+                                 String externalBrokerUri, String saslMechanism, String secretName,
+                                 String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
+        testTlsMessaging(namespace, address, externalBrokerUri, saslMechanism, secretName,
+                null, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
+    }
+
+    public void testTlsMessaging(String namespace, BPActiveMQArtemisAddress address,
                                  String externalBrokerUri, String saslMechanism, String secretName,
                                  String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
         testTlsMessaging(namespace, address, externalBrokerUri, saslMechanism, secretName,
@@ -561,10 +583,18 @@ public abstract class AbstractSystemTests implements TestSeparator {
                 null, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
     }
 
+    @Deprecated
     public void testTlsMessaging(String namespace, ActiveMQArtemisAddress address,
                                  String externalBrokerUri, String saslMechanism, String secretName, Pod clientsPod,
                                  String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
         testTlsMessaging(namespace, address.getSpec().getAddressName(), address.getSpec().getQueueName(), externalBrokerUri, saslMechanism, secretName,
+                clientsPod, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
+    }
+
+    public void testTlsMessaging(String namespace, BPActiveMQArtemisAddress address,
+                                 String externalBrokerUri, String saslMechanism, String secretName, Pod clientsPod,
+                                 String clientKeyStore, String clientKeyStorePassword, String clientTrustStore, String clientTrustStorePassword) {
+        testTlsMessaging(namespace, address.getAddressName(), address.getSingularQueueName(), externalBrokerUri, saslMechanism, secretName,
                 clientsPod, clientKeyStore, clientKeyStorePassword, clientTrustStore, clientTrustStorePassword);
     }
 
@@ -632,5 +662,12 @@ public abstract class AbstractSystemTests implements TestSeparator {
         Map<Integer, String> browsedMessages = (Map<Integer, String>) browserClient.executeCommand(true);
         LOGGER.debug("[{}] Browsed {} messages from {} on {}", namespace, browsedMessages.get(-1), fqqn, brokerPod.getMetadata().getName());
         return browsedMessages;
+    }
+
+    public ActiveMQArtemis maybeAddSpec(ActiveMQArtemis artemis) {
+        if (artemis.getSpec() == null) {
+            artemis.setSpec(new ActiveMQArtemisSpec());
+        }
+        return artemis;
     }
 }

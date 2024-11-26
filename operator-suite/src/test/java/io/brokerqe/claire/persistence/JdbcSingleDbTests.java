@@ -5,7 +5,6 @@
 package io.brokerqe.claire.persistence;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
@@ -17,6 +16,7 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.db.Postgres;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.junit.DisabledTestArchitecture;
@@ -50,6 +50,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
     private String brokerName = "jdbc-brk";
     private Postgres postgres;
     private ActiveMQArtemis broker;
+    private BPActiveMQArtemisAddress myAddress;
     private static final String LOGGER_SECRET_NAME = "artemis-secret-logging-config";
     private static final String LOGGER_FILE = Constants.PROJECT_TEST_DIR + "/resources/logging/debug-log4j2.properties";
 
@@ -80,6 +81,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
 
     void deployBrokerWithDatabase(int brokerSize, boolean waitForDeployment) {
         getClient().createSecretEncodedData(testNamespace, LOGGER_SECRET_NAME, Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, TestUtils.getFileContentAsBase64(LOGGER_FILE)), true);
+        myAddress = ResourceManager.createBPArtemisAddress("testx", ArtemisConstants.ROUTING_TYPE_ANYCAST);
 
         String downloadDriverCommand = "mkdir -p /amq/init/config/extra-libs && wget -O /amq/init/config/extra-libs/postgresql.jar %s".formatted(Constants.POSTGRESQL_DRIVER_URL);
         StatefulSet jdbcPatchSs = new StatefulSetBuilder()
@@ -141,6 +143,7 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
                         )
                     .endPatch()
                 .endResourceTemplate()
+                .withBrokerProperties(myAddress.getPropertiesList())
             .endSpec().build();
 
         ResourceManager.createArtemis(testNamespace, broker, waitForDeployment, Constants.DURATION_3_MINUTES);
@@ -150,7 +153,6 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
     void testSingleBrokerMessaging() {
         brokerName = "jdbc-brk-single";
         deployBrokerWithDatabase(1, true);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "testx", "testx");
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         int msgsExpected = 10;
         LOGGER.info("[{}] Send & receive messages", brokerPod.getMetadata().getName());
@@ -160,17 +162,17 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
         String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
         MessagingClient messagingClientCore1 = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, allDefaultPort, myAddress, msgsExpected);
         int sent = messagingClientCore1.sendMessages();
-        checkMessageCount(testNamespace, brokerPod, myAddress.getSpec().getQueueName(), msgsExpected);
+        checkMessageCount(testNamespace, brokerPod, myAddress.getSingularQueueName(), msgsExpected);
 
         // pod reload - need new client
         brokerPod = getClient().reloadPodWithWait(testNamespace, brokerPod, brokerName);
-        checkMessageCount(testNamespace, brokerPod, myAddress.getSpec().getQueueName(), msgsExpected);
+        checkMessageCount(testNamespace, brokerPod, myAddress.getSingularQueueName(), msgsExpected);
 
         MessagingClient messagingClientCore = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, brokerPod, allDefaultPort, myAddress, msgsExpected);
         int recv = messagingClientCore.receiveMessages();
         assertThat("Send & received messages are not same!", sent, equalTo(recv));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
+        undeployBrokerWithDB();
     }
 
     @Test
@@ -221,6 +223,8 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
             Pod brokerPod1 = getClient().getPod(testNamespace, brokerName + "-ss-1");
             return getClient().getLogsFromPod(brokerPod1).contains(acquiredLockLog);
         });
+
+        undeployBrokerWithDB();
     }
 
 }

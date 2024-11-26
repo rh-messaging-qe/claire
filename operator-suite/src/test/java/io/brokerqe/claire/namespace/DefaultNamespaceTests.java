@@ -5,17 +5,17 @@
 package io.brokerqe.claire.namespace;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestValidSince;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import org.junit.jupiter.api.AfterAll;
@@ -57,6 +57,8 @@ public class DefaultNamespaceTests extends AbstractSystemTests {
     @TestValidSince(ArtemisVersion.VERSION_2_33)
     void testNonRootDeployment() {
         Acceptors amqpAcceptors = createAcceptor("amqp-owire-acceptor", "amqp,openwire", 5672);
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
+
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
                 .withName("my-artemis")
@@ -74,11 +76,11 @@ public class DefaultNamespaceTests extends AbstractSystemTests {
                     .endPodSecurityContext()
                 .endDeploymentPlan()
                 .withAcceptors(List.of(amqpAcceptors))
+                .withBrokerProperties(myAddress.getPropertiesList())
             .endSpec()
             .build();
 
         broker = ResourceManager.createArtemis(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         // sending & receiving messages
         String brokerName = broker.getMetadata().getName();
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
@@ -101,7 +103,6 @@ public class DefaultNamespaceTests extends AbstractSystemTests {
         assertThat(sent, equalTo(received));
         assertThat(messagingClientAmqp.compareMessages(), is(true));
 
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 

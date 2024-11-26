@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -176,7 +177,7 @@ public class MessagingTests extends AbstractSystemTests {
         Map<String, String> artemisCreateQueueOptions = new HashMap<>(Map.of(
                 "name", address,
                 "address", address,
-                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST.toLowerCase(Locale.ROOT), "",
                 "durable", "",
                 "auto-create-address", "",
                 "preserve-on-no-consumers", ""

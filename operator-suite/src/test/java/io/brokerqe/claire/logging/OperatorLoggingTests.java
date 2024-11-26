@@ -5,12 +5,13 @@
 package io.brokerqe.claire.logging;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -77,10 +78,11 @@ public class OperatorLoggingTests extends AbstractSystemTests {
 
     void testOperatorLogLevel(String logLevel) {
         operator.setOperatorLogLevel(logLevel.toLowerCase(Locale.ROOT));
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "artemis-log");
+        BPActiveMQArtemisAddress wrongAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
+
+        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "artemis-log", wrongAddress.getPropertiesList());
 
         LOGGER.info("[{}] Deploying wrongly defined ActiveMQArtemisAddress", testNamespace);
-        ActiveMQArtemisAddress wrongAddress = ResourceManager.createArtemisAddress(testNamespace, "lala", "lala", "wrongRoutingType");
         TestUtils.waitFor(ERROR + " message to show up in logs", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
             Pod pod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
             String log = getClient().getLogsFromPod(pod);
@@ -90,7 +92,6 @@ public class OperatorLoggingTests extends AbstractSystemTests {
         String operatorLog = getClient().getLogsFromPod(operatorPod);
         logContainsLevel(operatorLog, logLevel);
         ResourceManager.deleteArtemis(testNamespace, broker);
-        ResourceManager.deleteArtemisAddress(testNamespace, wrongAddress);
     }
 
     protected void logContainsLevel(String log, String level) {

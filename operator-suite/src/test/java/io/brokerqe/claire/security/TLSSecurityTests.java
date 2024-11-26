@@ -5,7 +5,6 @@
 package io.brokerqe.claire.security;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
@@ -13,10 +12,10 @@ import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.junit.TestValidUntil;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -261,7 +260,7 @@ public class TLSSecurityTests extends AbstractSystemTests {
         String owireAcceptorName = "my-owire";
 
         ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, "tls-broker");
-        ActiveMQArtemisAddress tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        BPActiveMQArtemisAddress tlsAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672, true, true, brokerSecretName, mutualAuthentication);
         Acceptors owireAcceptors;
 
@@ -318,7 +317,7 @@ public class TLSSecurityTests extends AbstractSystemTests {
                 owireAcceptors.setTrustSecret("amq-io");
             }
         }
-
+        maybeAddSpec(broker).getSpec().setBrokerProperties(tlsAddress.getPropertiesList());
         broker = addAcceptorsWaitForPodReload(testNamespace, List.of(amqpAcceptors, owireAcceptors), broker);
         String brokerName = broker.getMetadata().getName();
         List<String> brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
@@ -336,7 +335,6 @@ public class TLSSecurityTests extends AbstractSystemTests {
         }
 
         ResourceManager.deleteArtemis(testNamespace, broker);
-        ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress);
         getClient().deleteSecret(testNamespace, brokerSecretName);
         if (!singleSecret) {
             getClient().deleteSecret(testNamespace, bugBrokerSecretName);

@@ -14,7 +14,6 @@ import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.brokerqe.claire.junit.TestValidSince;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
@@ -51,7 +50,6 @@ public class KeycloakLdapTests extends LdapTests {
 
     @AfterAll
     void teardownClusterOperator() {
-        ResourceManager.deleteArtemisAddress(testNamespace, ldapAddress);
         ResourceManager.deleteArtemis(testNamespace, broker);
         getClient().deleteConfigMap(testNamespace, secretConfigName);
         keycloak.undeployOperator();
@@ -156,6 +154,8 @@ public class KeycloakLdapTests extends LdapTests {
         );
 
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672);
+        ldapAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
+
         broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
                 .withName(brokerName)
@@ -203,6 +203,7 @@ public class KeycloakLdapTests extends LdapTests {
                 .endConsole()
             .endSpec()
             .build();
+        broker.getSpec().getBrokerProperties().addAll(ldapAddress.getPropertiesList());
         Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
                 ResourceManager.generateDefaultBrokerDN(),
                 ResourceManager.generateDefaultClientDN(),
@@ -213,7 +214,6 @@ public class KeycloakLdapTests extends LdapTests {
         broker = ResourceManager.createArtemis(testNamespace, broker);
         keycloak.setupRedirectUris(keycloakRealm, "amq-console", broker);
 
-        ldapAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
         allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
     }

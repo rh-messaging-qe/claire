@@ -5,14 +5,15 @@
 package io.brokerqe.claire.configuration;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.db.Postgres;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.junit.DisabledTestArchitecture;
@@ -77,6 +78,7 @@ public class BrokerCustomLibraryTests extends AbstractSystemTests {
                 .endTemplate()
             .endSpec()
             .build();
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress("dbplugin", ArtemisConstants.ROUTING_TYPE_ANYCAST);
 
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
@@ -109,15 +111,14 @@ public class BrokerCustomLibraryTests extends AbstractSystemTests {
                         )
                     .endPatch()
                 .endResourceTemplate()
+                .withBrokerProperties(myAddress.getPropertiesList())
                 .endSpec().build();
         ResourceManager.createArtemis(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
 
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, "dbplugin", "dbplugin");
         Pod brokerPod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         testMessaging(testNamespace, brokerPod, myAddress, 10);
 
         ResourceManager.deleteArtemis(testNamespace, broker);
-        ResourceManager.deleteArtemisAddress(testNamespace, myAddress);
     }
 
 }

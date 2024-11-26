@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.TestUtils;
 import io.fabric8.openshift.api.model.Route;
 import org.json.JSONArray;
@@ -24,6 +25,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 
 public class JMXHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(JMXHelper.class);
@@ -96,12 +98,12 @@ public class JMXHelper {
     private int getMessageCount(String host, String address, String routingType, String queue) throws IOException {
         String jmxTemplate = JMX_CALL_BASE +
                 ",component=addresses" +
-                ",address=!\"%s\"" +
+                ",address=!\"%s!\"" +
                 ",subcomponent=queues" +
                 ",routing-type=!\"%s!\"" +
                 ",queue=!\"%s!\"" +
                 "/MessageCount";
-        String jmxPath = String.format(jmxTemplate, address, routingType, queue);
+        String jmxPath = String.format(jmxTemplate, address, routingType.toLowerCase(Locale.ROOT), queue);
         String content = performJmxCall(host, jmxPath);
         JSONObject json = new JSONObject(content);
         return json.getInt("value");
@@ -139,6 +141,10 @@ public class JMXHelper {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    public AddressData getAddressQueue(String deployName, BPActiveMQArtemisAddress address, int pod) {
+        return getAddressQueue(deployName, address.getAddressName(), address.getSingularQueueName(), address.getRoutingType().toLowerCase(Locale.ROOT), pod);
     }
     public AddressData getAddressQueue(String deployName, String addressName, String queueName, String routingType, int pod)  {
         try {

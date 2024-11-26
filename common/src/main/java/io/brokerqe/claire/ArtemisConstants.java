@@ -66,8 +66,6 @@ public interface ArtemisConstants {
     String LALA_PASS = "lala";
 
     // Address/Queue settings
-    String ROUTING_TYPE_ANYCAST = "anycast";
-    String ROUTING_TYPE_MULTICAST = "multicast";
     String ADDRESSSETTINGS_POLICY_DROP = "DROP";
     String ADDRESSSETTINGS_POLICY_FAIL = "FAIL";
     String ADDRESSSETTINGS_POLICY_PAGE = "PAGE";
@@ -76,9 +74,14 @@ public interface ArtemisConstants {
     String ADDRESSETTINGS_POLICY_NOTIFY = "NOTIFY";
     String ADDRESSSETTING_FORCE = "FORCE";
     String ADDRESSSETTING_OFF = "OFF";
-    String ADDRESSSETTINGS_ROUTING_ANYCAST = "ANYCAST";
-    String ADDRESSSETTINGS_ROUTING_MULTICAST = "MULTICAST";
+
+    // Please be aware that routing option needs to be lowercase instead in JMX calls.
+    String ROUTING_TYPE_ANYCAST = "ANYCAST";
+    String ROUTING_TYPE_MULTICAST = "MULTICAST";
     String ADDRESSSETING_UNIT_MPS = "MESSAGES_PER_SECOND";
+    String ADDRESS_EXAMPLE_NAME = "myAddress0";
+    String ADDRESS_QUEUE_EXAMPLE_NAME = "myQueue0";
+
 
     // Artemis test container
     String ARTEMIS_STRING = "artemis";

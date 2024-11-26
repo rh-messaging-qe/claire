@@ -36,6 +36,8 @@ import io.brokerqe.claire.db.Postgres;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helpers.DataStorer;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddressBuilder;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorFile;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorOlm;
@@ -237,14 +239,25 @@ public class ResourceManager {
     public static ActiveMQArtemis createArtemis(String namespace, String name) {
         return createArtemis(namespace, name, 1);
     }
+    public static ActiveMQArtemis createArtemis(String namespace, String name, List<String> brokerProperties) {
+        return createArtemis(namespace, name, 1, brokerProperties);
+    }
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size) {
         return createArtemis(namespace, name, size, false, false, false, false);
     }
+    public static ActiveMQArtemis createArtemis(String namespace, String name, int size, List<String> brokerProperties) {
+        return createArtemis(namespace, name, size, false, false, false, false, brokerProperties);
+    }
+
 
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor) {
         return createArtemis(namespace, name, size, upgradeEnabled, upgradeMinor, false, false);
     }
     public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor, boolean exposeConsole, boolean enableMigration) {
+        return createArtemis(namespace, name, size, upgradeEnabled, upgradeMinor, exposeConsole, enableMigration, null);
+    }
+
+    public static ActiveMQArtemis createArtemis(String namespace, String name, int size, boolean upgradeEnabled, boolean upgradeMinor, boolean exposeConsole, boolean enableMigration, List<String> brokerProperties) {
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
                 .withName(name)
@@ -263,10 +276,12 @@ public class ResourceManager {
                 .editOrNewConsole()
                     .withExpose(exposeConsole)
                 .endConsole()
+                .withBrokerProperties(brokerProperties)
             .endSpec()
             .build();
         return createArtemis(namespace, broker, true, calculateWaitTime(broker));
     }
+
 
     public static ActiveMQArtemis createArtemis(String namespace, Path filePath) {
         return createArtemis(namespace, filePath, true);
@@ -350,6 +365,25 @@ public class ResourceManager {
     public static ActiveMQArtemis removeFromBrokerProperties(ActiveMQArtemis broker, List<String> brokerProperties, boolean restartPods) {
         broker.getSpec().getBrokerProperties().removeAll(brokerProperties);
         return updateArtemis(broker, restartPods);
+    }
+
+    public static BPActiveMQArtemisAddress createBPArtemisAddress(String name, String queueName, String routingType) {
+        return new BPActiveMQArtemisAddressBuilder()
+                .withAddressName(name)
+                .withQueueName(queueName)
+                .withRoutingType(routingType)
+                .build();
+    }
+    // If addressName = queueName
+    public static BPActiveMQArtemisAddress createBPArtemisAddress(String addressName, String routingType) {
+        return createBPArtemisAddress(addressName, addressName, routingType);
+    }
+    public static BPActiveMQArtemisAddress createBPArtemisAddress(String routingType) {
+        if (routingType == ArtemisConstants.ROUTING_TYPE_MULTICAST) {
+            return createBPArtemisAddress(ArtemisConstants.ADDRESS_EXAMPLE_NAME, ArtemisConstants.ADDRESS_QUEUE_EXAMPLE_NAME, routingType);
+        } else {
+            return createBPArtemisAddress(ArtemisConstants.ADDRESS_EXAMPLE_NAME, ArtemisConstants.ADDRESS_EXAMPLE_NAME, routingType);
+        }
     }
 
     public static ActiveMQArtemisAddress createArtemisAddress(String namespace, Path filePath) {
@@ -774,24 +808,57 @@ public class ResourceManager {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, queue, messages, null, null);
     }
     // ExecutionPod and serviceUrl are on same pod/IP
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages) {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages);
     }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, BPActiveMQArtemisAddress address, int messages) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages);
+    }
+
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled) {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages, persistenceDisabled);
     }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, BPActiveMQArtemisAddress address, int messages, boolean persistenceDisabled) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages, persistenceDisabled);
+    }
+
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled, boolean multicast) {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages, persistenceDisabled, multicast);
     }
 
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, BPActiveMQArtemisAddress address, int messages, boolean persistenceDisabled, boolean multicast) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, messages, persistenceDisabled, multicast);
+    }
+
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address, messages, null, null);
     }
 
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, BPActiveMQArtemisAddress address, int messages) {
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address, messages, null, null);
+    }
+
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled, boolean multicast) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, null, null, persistenceDisabled, multicast);
     }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, BPActiveMQArtemisAddress address, int messages, boolean persistenceDisabled, boolean multicast) {
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address.getAddressName(), address.getSingularQueueName(), messages, null, null, persistenceDisabled, multicast);
+    }
+
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, boolean persistenceDisabled) {
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address, messages, null, null, persistenceDisabled);
+    }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, BPActiveMQArtemisAddress address, int messages, boolean persistenceDisabled) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address, messages, null, null, persistenceDisabled);
     }
 
@@ -803,15 +870,31 @@ public class ResourceManager {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address, queue, messages, username, password);
     }
 
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, ActiveMQArtemisAddress address, int messages, String username, String password) {
         return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password);
     }
 
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String port, BPActiveMQArtemisAddress address, int messages, String username, String password) {
+        return createMessagingClient(clientType, execPod, execPod.getStatus().getPodIP(), port, address.getAddressName(), address.getSingularQueueName(), messages, username, password);
+    }
+
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, String username, String password, boolean persistenceDisabled) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password, persistenceDisabled, false);
     }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, BPActiveMQArtemisAddress address, int messages, String username, String password, boolean persistenceDisabled) {
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address.getAddressName(), address.getSingularQueueName(), messages, username, password, persistenceDisabled, false);
+    }
+
+    @Deprecated
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, ActiveMQArtemisAddress address, int messages, String username, String password) {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, username, password);
+    }
+
+    public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, BPActiveMQArtemisAddress address, int messages, String username, String password) {
+        return createMessagingClient(clientType, execPod, serviceUrl, port, address.getAddressName(), address.getSingularQueueName(), messages, username, password);
     }
     public static MessagingClient createMessagingClient(ClientType clientType, Pod execPod, String serviceUrl, String port, String address, String queue, int messages, String username, String password, Boolean persistenceDisabled, Boolean multicast) {
         DeployableClient deployableClient;
@@ -885,10 +968,15 @@ public class ResourceManager {
         return createMessagingClient(clientType, execPod, serviceUrl, port, address, queue, messages, username, password, false, false);
     }
 
-
+    @Deprecated
     public static MessagingClient createMessagingClientTls(Pod execPod, String serviceUri, ActiveMQArtemisAddress address, int messages,
                                                            String saslMechanism, KeyStoreData keystoreData, KeyStoreData truststoreData, String secretName) {
         return createMessagingClientTls(execPod, serviceUri, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages, saslMechanism, keystoreData, truststoreData, secretName);
+    }
+
+    public static MessagingClient createMessagingClientTls(Pod execPod, String serviceUri, BPActiveMQArtemisAddress address, int messages,
+                                                           String saslMechanism, KeyStoreData keystoreData, KeyStoreData truststoreData, String secretName) {
+        return createMessagingClientTls(execPod, serviceUri, address.getAddressName(), address.getSingularQueueName(), messages, saslMechanism, keystoreData, truststoreData, secretName);
     }
 
 
@@ -899,9 +987,16 @@ public class ResourceManager {
                 "/etc/" + secretName + "/" + truststoreData.getIdentifier(), truststoreData.getPassword());
     }
 
+    @Deprecated
     public static MessagingClient createMessagingClientTls(Pod execPod, String serviceUri, ActiveMQArtemisAddress address, int messages,
                                                            String saslMechanism, String keystore, String keystorePassword, String trustStore, String trustStorePassword) {
         return createMessagingClientTls(execPod, serviceUri, address.getSpec().getAddressName(), address.getSpec().getQueueName(), messages,
+                saslMechanism, keystore, keystorePassword, trustStore, trustStorePassword);
+    }
+
+    public static MessagingClient createMessagingClientTls(Pod execPod, String serviceUri, BPActiveMQArtemisAddress address, int messages,
+                                                           String saslMechanism, String keystore, String keystorePassword, String trustStore, String trustStorePassword) {
+        return createMessagingClientTls(execPod, serviceUri, address.getAddressName(), address.getSingularQueueName(), messages,
                 saslMechanism, keystore, keystorePassword, trustStore, trustStorePassword);
     }
 

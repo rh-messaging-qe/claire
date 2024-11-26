@@ -5,7 +5,6 @@
 package io.brokerqe.claire.security;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
@@ -15,8 +14,8 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestValidSince;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
 import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.junit.DisabledTestArchitecture;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -45,7 +44,7 @@ public class LdapTests extends AbstractSystemTests {
     String brokerName = "artemis";
     String amqpAcceptorName = "my-amqp";
     ActiveMQArtemis broker;
-    ActiveMQArtemisAddress ldapAddress;
+    BPActiveMQArtemisAddress ldapAddress;
     Pod brokerPod;
     String allDefaultPort;
     final boolean jwtTokenSupported = false;
@@ -67,7 +66,6 @@ public class LdapTests extends AbstractSystemTests {
     @AfterAll
     void teardownClusterOperator() {
         ResourceManager.deleteArtemis(testNamespace, broker);
-        ResourceManager.deleteArtemisAddress(testNamespace, ldapAddress);
         openldap.undeployLdap();
         teardownDefaultClusterOperator(testNamespace);
     }
@@ -118,6 +116,7 @@ public class LdapTests extends AbstractSystemTests {
 
         // reference secret in the broker CR spec.extraMounts.secrets
         Acceptors amqpAcceptors = createAcceptor(amqpAcceptorName, "amqp", 5672);
+        ldapAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
         broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
                 .withName(brokerName)
@@ -141,8 +140,9 @@ public class LdapTests extends AbstractSystemTests {
                         ))
             .endSpec()
             .build();
+        broker.getSpec().getBrokerProperties().addAll(ldapAddress.getPropertiesList());
         broker = ResourceManager.createArtemis(testNamespace, broker);
-        ldapAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        //ldapAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
         allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
     }

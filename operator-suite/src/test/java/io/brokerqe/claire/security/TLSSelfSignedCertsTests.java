@@ -7,7 +7,6 @@ package io.brokerqe.claire.security;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -36,9 +35,10 @@ public class TLSSelfSignedCertsTests extends TLSAuthorizationTests {
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     void setupCertificates() {
-        tlsAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
-        tlsAddressName = tlsAddress.getSpec().getAddressName();
-        tlsAddressQueueName = tlsAddress.getSpec().getQueueName();
+        tlsAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
+        tlsAddressName = tlsAddress.getAddressName();
+        tlsAddressQueueName = tlsAddress.getSingularQueueName();
+        forbiddenAddress = ResourceManager.createBPArtemisAddress("forbidden-address", "forbidden-queue", ArtemisConstants.ROUTING_TYPE_ANYCAST);
 
         Instant now = Instant.now();
         // START OF CERTIFICATE MAGIC
@@ -76,6 +76,8 @@ public class TLSSelfSignedCertsTests extends TLSAuthorizationTests {
         // END OF FIRST PART OF CERTIFICATE MAGIC
 
         createArtemisDeployment();
+        maybeAddSpec(broker).getSpec().getBrokerProperties().addAll(tlsAddress.getPropertiesList());
+        broker.getSpec().getBrokerProperties().addAll(forbiddenAddress.getPropertiesList());
 
         // START OF SECOND PART OF CERTIFICATE MAGIC
         Map<String, KeyStoreData> keystores = CertificateManager.generateDefaultCertificateKeystores(
@@ -113,7 +115,6 @@ public class TLSSelfSignedCertsTests extends TLSAuthorizationTests {
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
         LOGGER.info("[{}] Broker {} is up and running with CertTextLoginModule", testNamespace, brokerName);
         clients = ResourceManager.deploySecuredClientsContainer(testNamespace, List.of(producerSecretName, consumerSecretName, browserSecretName, expiredBeforeSecretName, expiredAfterSecretName, expiredSecretName));
-        forbiddenAddress = ResourceManager.createArtemisAddress(testNamespace, "forbidden-address", "forbidden-queue", ArtemisConstants.ROUTING_TYPE_ANYCAST);
         brokerUris = getClient().getExternalAccessServiceUrlPrefixName(testNamespace, brokerName + "-" + amqpAcceptorName);
         clientsPod = getClient().getFirstPodByPrefixName(testNamespace, Constants.PREFIX_SYSTEMTESTS_CLIENTS);
     }

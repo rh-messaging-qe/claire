@@ -130,7 +130,7 @@ public class AddressSettingsTests extends AbstractSystemTests {
         setting.setDeadLetterAddress("deadlq");
         setting.setDeadLetterQueuePrefix("deadlq");
         setting.setDeadLetterQueueSuffix("deadlq");
-        setting.setDefaultAddressRoutingType(ArtemisConstants.ADDRESSSETTINGS_ROUTING_MULTICAST);
+        setting.setDefaultAddressRoutingType(ArtemisConstants.ROUTING_TYPE_MULTICAST);
         setting.setDefaultConsumersBeforeDispatch(100);
         setting.setDefaultConsumerWindowSize(100);
         setting.setDefaultGroupBuckets(100);
@@ -144,7 +144,7 @@ public class AddressSettingsTests extends AbstractSystemTests {
         setting.setDefaultMaxConsumers(100);
         setting.setDefaultNonDestructive(true);
         setting.setDefaultPurgeOnNoConsumers(true);
-        setting.setDefaultQueueRoutingType(ArtemisConstants.ADDRESSSETTINGS_ROUTING_MULTICAST);
+        setting.setDefaultQueueRoutingType(ArtemisConstants.ROUTING_TYPE_MULTICAST);
         setting.setDefaultRingSize(100);
         /*
         * This parameter is bugged starting 7.10.0

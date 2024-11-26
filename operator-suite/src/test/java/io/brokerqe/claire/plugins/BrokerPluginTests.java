@@ -5,12 +5,13 @@
 package io.brokerqe.claire.plugins;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -50,6 +51,7 @@ public class BrokerPluginTests extends AbstractSystemTests {
     @Test
     void testLoggingActiveMQServerPlugin() {
         String brokerName = "brokerplugin";
+        BPActiveMQArtemisAddress testAddress = ResourceManager.createBPArtemisAddress("orders", ArtemisConstants.ROUTING_TYPE_ANYCAST);
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
                     .withName(brokerName)
@@ -69,9 +71,9 @@ public class BrokerPluginTests extends AbstractSystemTests {
                         .withName("amqp-acceptor")
                     .endAcceptor()
                 .endSpec().build();
+        broker.getSpec().getBrokerProperties().addAll(testAddress.getPropertiesList());
         broker = ResourceManager.createArtemis(testNamespace, broker);
 
-        ActiveMQArtemisAddress testAddress = ResourceManager.createArtemisAddress(testNamespace, "orders", "orders");
         Pod brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
         LOGGER.info("[{}] Send & receive some messages", testNamespace);
         testMessaging(ClientType.BUNDLED_AMQP, testNamespace, brokerPod, testAddress, 2);

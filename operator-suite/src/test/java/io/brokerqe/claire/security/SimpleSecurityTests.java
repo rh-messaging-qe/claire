@@ -6,7 +6,6 @@ package io.brokerqe.claire.security;
 
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurityBuilder;
 import io.amq.broker.v1beta1.activemqartemissecurityspec.loginmodules.PropertiesLoginModulesBuilder;
@@ -18,7 +17,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
-import io.brokerqe.claire.operator.ArtemisFileProvider;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -144,7 +143,8 @@ public class SimpleSecurityTests extends AbstractSystemTests {
             "bob", "bobsecret",
             "secureUser1", "password123",
             "secureUser2", "Pass!$%/r/n//");
-        ActiveMQArtemisAddress myAddress = ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
+        BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
+                //ResourceManager.createArtemisAddress(testNamespace, ArtemisFileProvider.getAddressQueueExampleFile());
         String allDefaultPort = getServicePortNumber(testNamespace, getArtemisServiceHdls(testNamespace, broker), "all");
         int msgsExpected = 10;
 

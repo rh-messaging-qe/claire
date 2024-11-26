@@ -5,7 +5,6 @@
 package io.brokerqe.claire.security;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
-import io.amq.broker.v1beta1.ActiveMQArtemisAddress;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurityBuilder;
@@ -20,6 +19,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
+import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -62,10 +62,10 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
     ActiveMQArtemis broker;
     ActiveMQArtemisSecurity artemisSecurity;
     Acceptors amqpAcceptors;
-    ActiveMQArtemisAddress tlsAddress;
+    BPActiveMQArtemisAddress tlsAddress;
     String tlsAddressName;
     String tlsAddressQueueName;
-    ActiveMQArtemisAddress forbiddenAddress;
+    BPActiveMQArtemisAddress forbiddenAddress;
     List<String> brokerUris;
     Pod clientsPod;
     Deployment clients;
@@ -85,8 +85,6 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
     @AfterAll
     void teardownDeployment() {
         ResourceManager.undeployClientsContainer(testNamespace, clients);
-        ResourceManager.deleteArtemisAddress(testNamespace, tlsAddress);
-        ResourceManager.deleteArtemisAddress(testNamespace, forbiddenAddress);
         ResourceManager.deleteArtemisSecurity(testNamespace, artemisSecurity);
         ResourceManager.deleteArtemis(testNamespace, broker);
         getClient().deleteSecret(testNamespace, brokerSecretName);
@@ -205,7 +203,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
                 .editOrNewSpec()
                     .editOrNewSecuritySettings()
                         .addToBroker(new BrokerBuilder()
-                            .withMatch(tlsAddress.getSpec().getAddressName())
+                            .withMatch(tlsAddress.getAddressName())
                             .withPermissions(secPerms)
                             .build())
                     .endV1beta1SecuritySettings()
@@ -340,7 +338,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
 
     @AfterEach
     void cleanQueue() {
-        LOGGER.info("[{}] Cleaning queue {}", testNamespace, tlsAddress.getMetadata().getName());
+        LOGGER.info("[{}] Cleaning queue {}", testNamespace, tlsAddress.getAddressName());
         MessagingClient consumer = ResourceManager.createMessagingClientTls(clientsPod,
                 brokerUris.get(0), tlsAddressName, tlsAddressQueueName, msgsExpected, saslMechanism,
                 consumerKeystores.get(consumerCertData.getAlias() + ".ks"),
