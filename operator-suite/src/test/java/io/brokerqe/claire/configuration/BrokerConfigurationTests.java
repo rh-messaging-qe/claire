@@ -204,117 +204,24 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
-    void verifyResourceRequest() {
-        Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("400m");
-        IntOrString memValue = new IntOrString("512M");
-        requestedResources.put("cpu", cpuValue);
-        requestedResources.put("memory", memValue);
-        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
-            .editOrNewMetadata()
-                .withName(testBrokerName)
-                .withNamespace(testNamespace)
-            .endMetadata()
-            .editOrNewSpec()
-                .editOrNewDeploymentPlan()
-                    .withSize(1)
-                    .editOrNewResources()
-                        .withRequests(requestedResources)
-                    .endDeploymentplanResources()
-                .endDeploymentPlan()
-                .endSpec().build();
-        ResourceManager.createArtemis(testNamespace, broker, true);
-        Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
-        Map<String, Quantity> requests = brokerPod.getSpec().getContainers().get(0).getResources().getRequests();
-        verifyResourceRequestValues("request", requests, cpuValue, memValue);
-        ResourceManager.deleteArtemis(testNamespace, broker);
-    }
-
-    @Test
-    void verifyResourceLimits() {
-        getClient().printKubernetesNodesMetrics();
-        getClient().printKubernetesPodsMetrics(testNamespace);
-        Map<String, IntOrString> requestedResourceLimits = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("300m");
-        IntOrString memValue = new IntOrString("300Mi");
-        requestedResourceLimits.put("cpu", cpuValue);
-        requestedResourceLimits.put("memory", memValue);
-        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
-            .editOrNewMetadata()
-                .withName(testBrokerName)
-                .withNamespace(testNamespace)
-            .endMetadata()
-            .editOrNewSpec()
-                .editOrNewDeploymentPlan()
-                    .withSize(1)
-                    .editOrNewResources()
-                        .withLimits(requestedResourceLimits)
-                    .endDeploymentplanResources()
-                .endDeploymentPlan()
-                .endSpec().build();
-        ResourceManager.createArtemis(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
-        Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
-        Map<String, Quantity> limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
-        verifyResourceRequestValues("limit", limits, cpuValue, memValue);
-        ResourceManager.deleteArtemis(testNamespace, broker);
-    }
-
-
-    @Test
-    void verifyResourceUpdates() {
-        getClient().printKubernetesNodesMetrics();
-        Map<String, IntOrString> requestedResources = new HashMap<>();
-        IntOrString cpuValue = new IntOrString("300m");
-        IntOrString memValue = new IntOrString("350Mi");
-        requestedResources.put("cpu", cpuValue);
-        requestedResources.put("memory", memValue);
-        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
-            .editOrNewMetadata()
-                .withName(testBrokerName)
-                .withNamespace(testNamespace)
-            .endMetadata()
-            .editOrNewSpec()
-                .editOrNewDeploymentPlan()
-                    .withSize(1)
-                    .editOrNewResources()
-                        .withLimits(requestedResources)
-                        .withRequests(requestedResources)
-                    .endDeploymentplanResources()
-                .endDeploymentPlan()
-                .endSpec().build();
-        broker = ResourceManager.createArtemis(testNamespace, broker, true, Constants.DURATION_2_MINUTES);
-        Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
-        Map<String, Quantity> limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
-        Map<String, Quantity> requests = brokerPod.getSpec().getContainers().get(0).getResources().getRequests();
-        verifyResourceRequestValues("limit", limits, cpuValue, memValue);
-        verifyResourceRequestValues("request", requests, cpuValue, memValue);
-        getClient().printKubernetesPodsMetrics(testNamespace);
-
-        cpuValue = new IntOrString("400m");
-        memValue = new IntOrString("400Mi");
-        requestedResources.put("cpu", cpuValue);
-        requestedResources.put("memory", memValue);
-        broker.getSpec().getDeploymentPlan().getResources().setLimits(requestedResources);
-        broker.getSpec().getDeploymentPlan().getResources().setRequests(requestedResources);
-
-        broker = ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(broker).createOrReplace();
-        ResourceManager.waitForBrokerDeployment(testNamespace, broker, true, brokerPod);
-
-        brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
-        limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
-        requests = brokerPod.getSpec().getContainers().get(0).getResources().getRequests();
-        verifyResourceRequestValues("limit", limits, cpuValue, memValue);
-        verifyResourceRequestValues("request", requests, cpuValue, memValue);
-        ResourceManager.deleteArtemis(testNamespace, broker);
-    }
-
-    @Test
     void verifyDefaultResourceRequests() {
         getClient().printKubernetesNodesMetrics();
-        ActiveMQArtemis broker = ResourceManager.createArtemis(testNamespace, testBrokerName);
-        Pod brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
-        Map<String, Quantity> limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
-        Map<String, Quantity> requests = brokerPod.getSpec().getContainers().get(0).getResources().getRequests();
+        ActiveMQArtemis broker =  new ActiveMQArtemisBuilder()
+            .editOrNewMetadata()
+                .withName(testBrokerName)
+                .withNamespace(testNamespace)
+            .endMetadata()
+            .editOrNewSpec()
+                .editOrNewDeploymentPlan()
+                    .withSize(1)
+                .endDeploymentPlan()
+                .endSpec().build();
+        // Not waiting for brokers to be spawned: we only care about resources/limits in SS!
+        getKubernetesClient().resource(broker).inNamespace(testNamespace).create();
+        StatefulSet brokerSet = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
+
+        Map<String, Quantity> limits = brokerSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits();
+        Map<String, Quantity> requests = brokerSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests();
 
         assertThat(String.format("Resource limits were applied by default: %s", limits), limits, aMapWithSize(0));
         assertThat(String.format("Resource requests were applied by default: %s", requests), requests, aMapWithSize(0));
@@ -329,11 +236,11 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         resources.setLimits(requestedResources);
         resources.setRequests(requestedResources);
         broker.getSpec().getDeploymentPlan().setResources(resources);
-        ResourceManager.updateArtemis(broker, true);
+        getKubernetesClient().resource(broker).inNamespace(testNamespace).update();
 
-        brokerPod = getClient().getPod(testNamespace, testBrokerName + "-ss-0");
-        limits = brokerPod.getSpec().getContainers().get(0).getResources().getLimits();
-        requests = brokerPod.getSpec().getContainers().get(0).getResources().getRequests();
+        brokerSet = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
+        limits = brokerSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits();
+        requests = brokerSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests();
         verifyResourceRequestValues("limit", limits, cpuValue, memValue);
         verifyResourceRequestValues("request", requests, cpuValue, memValue);
         ResourceManager.deleteArtemis(testNamespace, broker);
