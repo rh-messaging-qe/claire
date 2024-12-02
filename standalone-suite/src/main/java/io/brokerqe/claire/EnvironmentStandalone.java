@@ -35,6 +35,7 @@ public class EnvironmentStandalone extends Environment {
     private final String tmpDirLocation;
     private final boolean logContainers;
     private final boolean collectTestData;
+    private final boolean playwrightDebug;
     private final String artemisContainerImage;
     private final String artemisContainerJavaHome;
     private final String nfsServerContainerImage;
@@ -69,6 +70,7 @@ public class EnvironmentStandalone extends Environment {
         logContainers = Boolean.parseBoolean(getConfigurationValue(Constants.EV_LOG_CONTAINERS, Constants.PROP_LOG_CONTAINERS,
                 String.valueOf(Constants.DEFAULT_LOG_CONTAINERS)));
         collectTestData = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_COLLECT_TEST_DATA, "true"));
+        playwrightDebug = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_PLAYWRIGHT_DEBUG, "false"));
         artemisContainerImage = getConfigurationValue(Constants.EV_ARTEMIS_CONTAINER_IMAGE,
                 Constants.PROP_ARTEMIS_CONTAINER_IMAGE, Constants.DEFAULT_ARTEMIS_CONTAINER_IMAGE);
 
@@ -325,6 +327,11 @@ public class EnvironmentStandalone extends Environment {
         // TODO
         throw new ClaireNotImplementedException("teardown is not implemented on standalone");
 //        return true;
+    }
+
+    @Override
+    public boolean isPlaywrightDebug() {
+        return playwrightDebug;
     }
 
     @Override

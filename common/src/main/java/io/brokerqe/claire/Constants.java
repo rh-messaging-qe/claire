@@ -28,6 +28,7 @@ public interface Constants {
 
     // Environment Variables
     String EV_KUBE_CONTEXT = "KUBE_CONTEXT";
+    String EV_KUBE_CREDENTIALS = "KUBE_CREDENTIALS";
     String EV_ARTEMIS_VERSION = "ARTEMIS_VERSION";
     String EV_ARTEMIS_TEST_VERSION = "ARTEMIS_TEST_VERSION";
     String EV_DISABLE_RANDOM_NAMESPACES = "DISABLE_RANDOM_NAMESPACES";
@@ -47,6 +48,7 @@ public interface Constants {
     String EV_DUMP_LOCATION = "DUMP_LOCATION";
     String EV_DUMP_FORMAT = "DUMP_FORMAT";
     String EV_TEARDOWN = "TEARDOWN_ENV";
+    String EV_PLAYWRIGHT_DEBUG = "PLAYWRIGHT_DEBUG";
     String EV_CLUSTER_OPERATOR_MANAGED = "CLUSTER_OPERATOR_MANAGED";
     String EV_COLLECT_TEST_DATA = "COLLECT_TEST_DATA";
     String EV_JDBC_DATA = "JDBC_DATA";
@@ -99,6 +101,9 @@ public interface Constants {
 
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
+    String PROJECT_DIR = PROJECT_USER_DIR + "/..";
+    String STANDALONE_MODULE = PROJECT_DIR + "/standalone-suite";
+    String OPERATOR_MODULE = PROJECT_DIR + "/operator-suite";
     String PROJECT_TEST_DIR = PROJECT_USER_DIR + "/src/test";
     String LOGS_DEFAULT_DIR = PROJECT_USER_DIR + "/test-logs";
     String TMP_DEFAULT_DIR = PROJECT_USER_DIR + "/test-tmp";

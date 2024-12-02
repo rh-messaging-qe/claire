@@ -32,6 +32,7 @@ public abstract class Environment {
     public abstract String getKeycloakVersion();
     public abstract boolean isCollectTestData();
     public abstract boolean isTeardownEnv();
+    public abstract boolean isPlaywrightDebug();
     public abstract int getCustomExtraDelay();
     public abstract void setupDatabase();
 

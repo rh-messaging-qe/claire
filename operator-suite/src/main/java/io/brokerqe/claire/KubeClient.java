@@ -163,7 +163,7 @@ public class KubeClient {
     public Namespace createNamespace(String namespaceName, boolean setNamespace) {
         LOGGER.info("Creating new namespace {}", namespaceName);
         Namespace ns = this.getKubernetesClient().resource(new NamespaceBuilder().withNewMetadata().withName(namespaceName).endMetadata().build()).createOrReplace();
-        TestUtils.waitFor("Creating namespace", Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> this.namespaceExists(namespaceName));
+        TestUtils.waitFor("Creating namespace " + namespaceName, Constants.DURATION_2_SECONDS, Constants.DURATION_3_MINUTES, () -> this.namespaceExists(namespaceName));
         if (setNamespace) {
             this.namespace = namespaceName;
         }
@@ -288,8 +288,15 @@ public class KubeClient {
     }
 
     public void restartPod(String namespace, Pod pod) {
+        restartPod(namespace, pod, null);
+    }
+
+    public void restartPod(String namespace, Pod pod, String podPrefixName) {
         getKubernetesClient().pods().inNamespace(namespace).resource(pod).delete();
-        waitForPodReload(namespace, pod, pod.getMetadata().getName(), Constants.DURATION_90_SECONDS);
+        if (podPrefixName == null) {
+            podPrefixName = pod.getMetadata().getName();
+        }
+        waitForPodReload(namespace, pod, podPrefixName, Constants.DURATION_90_SECONDS);
     }
 
     public Pod getFirstPodByPrefixName(String namespaceName, String podNamePrefix) {

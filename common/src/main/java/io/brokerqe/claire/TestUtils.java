@@ -87,6 +87,10 @@ public final class TestUtils {
         return  Paths.get(Constants.PROJECT_USER_DIR, projectRelativeFile).toAbsolutePath();
     }
 
+    public static Path getStandaloneArtemisDefaultDir() {
+        return Paths.get(Constants.STANDALONE_MODULE, ArtemisConstants.INSTALL_DIR, ArtemisConstants.BIN_DIR);
+    }
+
     // ========== Execute command Operations ==========
 
     public static String executeLocalCommand(String cmd) {
@@ -94,10 +98,14 @@ public final class TestUtils {
     }
 
     public static String executeLocalCommand(String... cmd) {
+        return executeLocalCommand(10, cmd);
+    }
+
+    public static String executeLocalCommand(long timeoutSecs, String... cmd) {
         LocalExecutor executor = new LocalExecutor();
         LOGGER.debug("[CMD][local] {}", String.join(" ", cmd));
         executor.executeCommand(cmd);
-        return executor.getCommandData(Duration.ofSeconds(10).toSeconds());
+        return executor.getCommandData(Duration.ofSeconds(timeoutSecs).toSeconds());
     }
 
     // ========== Junit Test Operations ==========

@@ -6,6 +6,7 @@ package io.brokerqe.claire;
 
 import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helpers.SerializationFormat;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorFile;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
@@ -33,6 +34,7 @@ public class EnvironmentOperator extends Environment {
     private final String artemisOperatorName;
     private final String artemisOperatorType;
     private List<String> kubeContexts;
+    private String kubeCredentials;
     private String artemisVersion;
     private final ArtemisVersion artemisTestVersion;
     private final String brokerImage;
@@ -49,6 +51,7 @@ public class EnvironmentOperator extends Environment {
     private Map<String, KubeClient> kubeClients;
     private final boolean collectTestData;
     private boolean teardownEnv = true;
+    private boolean playwrightDebug;
     private final int customExtraDelay;
     private final boolean serializationEnabled;
     private final String serializationDirectory;
@@ -59,6 +62,7 @@ public class EnvironmentOperator extends Environment {
         this.set(this);
         String initialTimestamp = TestUtils.generateTimestamp();
         initializeKubeContexts(System.getenv().getOrDefault(Constants.EV_KUBE_CONTEXT, null));
+        kubeCredentials = System.getenv().getOrDefault(Constants.EV_KUBE_CREDENTIALS, null);
         artemisVersion = System.getenv(Constants.EV_ARTEMIS_VERSION);
         testLogLevel = System.getenv(Constants.EV_TEST_LOG_LEVEL);
         logsDirLocation = System.getenv().getOrDefault(Constants.EV_LOGS_LOCATION, Constants.LOGS_DEFAULT_DIR) + Constants.FILE_SEPARATOR + initialTimestamp;
@@ -68,6 +72,7 @@ public class EnvironmentOperator extends Environment {
         serializationDirectory = System.getenv().getOrDefault(Constants.EV_DUMP_LOCATION, Constants.DUMP_DEFAULT_DIR) + Constants.FILE_SEPARATOR + initialTimestamp;
         serializationFormat = System.getenv().getOrDefault(Constants.EV_DUMP_FORMAT, Constants.DUMP_DEFAULT_TYPE);
         teardownEnv = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_TEARDOWN, "true"));
+        playwrightDebug = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_PLAYWRIGHT_DEBUG, "false"));
 
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
         customExtraDelay = Integer.parseInt(System.getenv().getOrDefault(Constants.EV_CUSTOM_EXTRA_DELAY, "0"));
@@ -115,6 +120,9 @@ public class EnvironmentOperator extends Environment {
         envVarsSB.append(Constants.EV_DUMP_ENABLED).append("=").append(serializationEnabled).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_TEARDOWN).append("=").append(teardownEnv).append(Constants.LINE_SEPARATOR);
 
+        if (kubeCredentials != null) {
+            envVarsSB.append(Constants.EV_KUBE_CREDENTIALS).append("=").append(kubeCredentials).append(Constants.LINE_SEPARATOR);
+        }
         if (testLogLevel != null) {
             envVarsSB.append(Constants.EV_TEST_LOG_LEVEL).append("=").append(testLogLevel).append(Constants.LINE_SEPARATOR);
         }
@@ -165,6 +173,9 @@ public class EnvironmentOperator extends Environment {
             envVarsSB.append(Constants.EV_DUMP_LOCATION).append("=").append(serializationDirectory).append(Constants.LINE_SEPARATOR);
             envVarsSB.append(Constants.EV_DUMP_FORMAT).append("=").append(serializationFormat).append(Constants.LINE_SEPARATOR);
         }
+        if (playwrightDebug) {
+            envVarsSB.append(Constants.EV_PLAYWRIGHT_DEBUG).append("=").append(playwrightDebug).append(Constants.LINE_SEPARATOR);
+        }
 
         LOGGER.info(envVarsSB.toString());
     }
@@ -187,6 +198,11 @@ public class EnvironmentOperator extends Environment {
     @Override
     public boolean isTeardownEnv() {
         return teardownEnv;
+    }
+
+    @Override
+    public boolean isPlaywrightDebug() {
+        return playwrightDebug;
     }
 
     @Override
@@ -306,6 +322,18 @@ public class EnvironmentOperator extends Environment {
         return projectManagedClusterOperator;
     }
 
+    public String[] getKubeCredentials() {
+        if (kubeCredentials != null) {
+            if (kubeCredentials.contains("/")) {
+                return kubeCredentials.split("/");
+            } else {
+                throw new ClaireRuntimeException("Provided " + Constants.EV_KUBE_CREDENTIALS +
+                        " credentials are in incorrect format! Missing '/' as username/password delimiter!");
+            }
+        } else {
+            throw new ClaireRuntimeException("Missing environment variable " + Constants.EV_KUBE_CREDENTIALS);
+        }
+    }
     public String getBrokerImage() {
         return brokerImage;
     }
