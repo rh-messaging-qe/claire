@@ -75,6 +75,7 @@ import static org.hamcrest.Matchers.is;
 public class KubeClient {
     private final KubernetesClient client;
     private final KubernetesPlatform platform;
+    private final KubernetesVersion kubernetesVersion;
     protected String namespace;
     private final String kubeContext;
 
@@ -118,8 +119,18 @@ public class KubeClient {
         }
         client = tmpClient;
         platform = tmpPlatform;
+        kubernetesVersion = getKubernetesVersion(client);
         this.namespace = namespace;
         LOGGER.info("[{}] Created KubernetesClient for {}: {}.{} - {}", namespace, platform, client.getKubernetesVersion().getMajor(), client.getKubernetesVersion().getMinor(), client.getMasterUrl());
+    }
+
+    public KubernetesVersion getKubernetesVersion() {
+        return kubernetesVersion;
+    }
+
+    private KubernetesVersion getKubernetesVersion(KubernetesClient client) {
+        int version = Integer.parseInt(client.getKubernetesVersion().getMajor() + client.getKubernetesVersion().getMinor());
+        return KubernetesVersion.getByOrdinal(version);
     }
 
     public KubernetesClient getKubernetesClient() {

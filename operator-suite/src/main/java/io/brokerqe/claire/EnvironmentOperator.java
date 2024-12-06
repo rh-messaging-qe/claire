@@ -57,6 +57,7 @@ public class EnvironmentOperator extends Environment {
     private final String serializationDirectory;
     private final String serializationFormat;
     private PackageManifest pm;
+    private KubernetesVersion kubernetesVersion;
 
     public EnvironmentOperator() {
         this.set(this);

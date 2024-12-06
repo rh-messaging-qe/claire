@@ -82,7 +82,7 @@ public class ACSelfProvisioningPlugin {
             applyPatch();
 
             // check logs, possibly restart pod if issue with cert
-            TestUtils.waitFor(String.format("[{%s}] GET method to show up in logs of activemq-artemis-self-provisioning-plugin", SPP_DEFAULT_NAMESPACE), Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
+            TestUtils.waitFor(String.format("[%s] GET method to show up in logs of activemq-artemis-self-provisioning-plugin", SPP_DEFAULT_NAMESPACE), Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
                 Pod pod = kubeClient.getFirstPodByPrefixName(SPP_DEFAULT_NAMESPACE, "activemq-artemis-self-provisioning-plugin");
                 String logs = kubeClient.getLogsFromPod(pod);
                 return logs.contains("GET /plugin-manifest.json");
