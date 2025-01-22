@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -103,7 +104,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST.toLowerCase(Locale.ROOT), "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""
@@ -132,7 +133,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST.toLowerCase(Locale.ROOT), "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""
@@ -161,7 +162,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST.toLowerCase(Locale.ROOT), "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""
@@ -189,7 +190,7 @@ public class ClientsMessagingTests extends AbstractSystemTests {
         Map<String, String> commandOptions = Map.of(
                 "name", address,
                 "address", address,
-                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST.toLowerCase(Locale.ROOT), "",
                 "no-durable", "",
                 "preserve-on-no-consumers", "",
                 "auto-create-address", ""

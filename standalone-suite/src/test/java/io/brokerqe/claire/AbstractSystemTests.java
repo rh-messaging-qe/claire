@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -225,7 +226,7 @@ public class AbstractSystemTests implements TestSeparator {
         Map<String, String> artemisCreateQueueOptions = new HashMap<>(Map.of(
                 "name", senderOptions.getDestinationQueue(),
                 "address", senderOptions.getDestinationAddress(),
-                ArtemisConstants.ROUTING_TYPE_ANYCAST, "",
+                ArtemisConstants.ROUTING_TYPE_ANYCAST.toLowerCase(Locale.ROOT), "",
                 "durable", "",
                 "auto-create-address", "",
                 "preserve-on-no-consumers", ""
