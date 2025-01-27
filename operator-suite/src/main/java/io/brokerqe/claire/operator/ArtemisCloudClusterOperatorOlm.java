@@ -31,10 +31,11 @@ import java.util.List;
 
 public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator {
     final static Logger LOGGER = LoggerFactory.getLogger(ArtemisCloudClusterOperatorOlm.class);
+    final static public String AMQ_OPERATOR_NAME = "amq-broker-rhel8";
     private String olmChannel;
     private String indexImageBundle;
     private String brokerCatalogSourceName = "broker-source-" + TestUtils.getRandomString(2);
-    private String subscriptionName = "amq-broker-rhel8-" + TestUtils.getRandomString(2);
+    private String subscriptionName = AMQ_OPERATOR_NAME + "-" + TestUtils.getRandomString(2);
     private String sourceNamespace;
     private List<HasMetadata> olmResources = new ArrayList<>();
 
@@ -66,14 +67,13 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         PackageChannel ltsChannel;
 
         PackageManifest amqBrokerPM = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub()
-                .packageManifests().inNamespace(sourceNamespace).withName("amq-broker-rhel8").get();
+                .packageManifests().inNamespace(sourceNamespace).withName(AMQ_OPERATOR_NAME).get();
         if (!amqBrokerPM.getStatus().getCatalogSource().equals(brokerCatalogSourceName)) {
             LOGGER.error("[{}] Found unexpected CatalogSource for `amq-broker-rhel8` {}!", deploymentNamespace, amqBrokerPM.getStatus().getCatalogSource());
             throw new ClaireRuntimeException("Discovered unexpected CatalogSource " + amqBrokerPM.getStatus().getCatalogSource() + "!");
         }
 
-        List<String> channels = amqBrokerPM.getStatus().getChannels().stream()
-                .map(PackageChannel::getName).toList();
+        List<String> channels = amqBrokerPM.getStatus().getChannels().stream().map(PackageChannel::getName).toList();
         List<String> orderedChannels = channels.stream().map(ModuleDescriptor.Version::parse).sorted().map(ModuleDescriptor.Version::toString).toList();
         List<String> reverseOrderedChannels = new ArrayList<>(orderedChannels);
         Collections.reverse(reverseOrderedChannels);

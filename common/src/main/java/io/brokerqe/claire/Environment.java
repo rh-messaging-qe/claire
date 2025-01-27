@@ -39,6 +39,7 @@ public abstract class Environment {
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     protected String databaseFile;
     protected String testUpgradePlan;
+    protected String testUpgradePackageManifest;
     private Database database;
     private static Environment environment;
     private Properties appProperties;
@@ -69,6 +70,14 @@ public abstract class Environment {
             return TestUtils.readFileContent(new File(testUpgradePlan));
         } else {
             throw new IllegalArgumentException(Constants.EV_UPGRADE_PLAN + " variable has not been set!");
+        }
+    }
+
+    public String getTestUpgradePackageManifestContent() {
+        if (testUpgradePackageManifest != null) {
+            return TestUtils.readFileContent(new File(testUpgradePackageManifest));
+        } else {
+            throw new IllegalArgumentException(Constants.EV_UPGRADE_PACKAGE_MANIFEST + " variable has not been set!");
         }
     }
 

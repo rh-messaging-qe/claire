@@ -578,7 +578,7 @@ public class KubeClient {
         return operatorGroup;
     }
 
-    public PackageManifest getPackageManifest(String packageName) {
+    public List<PackageManifest> getPackageManifests(String packageName) {
         String namespace;
         if (!isKubernetesPlatform()) {
             namespace = "openshift-marketplace";
@@ -588,11 +588,15 @@ public class KubeClient {
         try {
             LOGGER.info("Getting package manifest {} from namespace {}", packageName, namespace);
             return ((OpenShiftClient) client).operatorHub().packageManifests().inNamespace(namespace)
-                    .list().getItems().stream().filter(e -> e.getMetadata().getName().equals(packageName)).findFirst().orElseThrow();
+                    .list().getItems().stream().filter(e -> e.getMetadata().getName().equals(packageName)).toList();
         } catch (NoSuchElementException e) {
             LOGGER.error("Package manifest {} not found in namespace {}", packageName, namespace);
             throw e;
         }
+    }
+
+    public PackageManifest getPackageManifest(String packageName) {
+        return getPackageManifests(packageName).stream().findFirst().orElseThrow();
     }
 
     public String getPackageManifestDefaultChannel(PackageManifest pm) {
@@ -605,7 +609,7 @@ public class KubeClient {
         try {
             PackageChannel channel = pm.getStatus().getChannels().stream().filter(e -> e.getName().equals(channelName)).findFirst().orElseThrow();
             String version =  channel.getCurrentCSV();
-            LOGGER.info("Retrieved current  version {} from channel {} from package manifest {} ", version, channelName, pm.getMetadata().getName());
+            LOGGER.info("Retrieved current version {} from channel {} from package manifest {} ", version, channelName, pm.getMetadata().getName());
             return version;
         } catch (NoSuchElementException e) {
             LOGGER.error("No versions found in channel {}", channelName);
