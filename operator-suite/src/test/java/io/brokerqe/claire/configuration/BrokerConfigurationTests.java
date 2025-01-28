@@ -218,6 +218,11 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .endSpec().build();
         // Not waiting for brokers to be spawned: we only care about resources/limits in SS!
         getKubernetesClient().resource(broker).inNamespace(testNamespace).create();
+        // However, we need to wait for SS to spawn
+        TestUtils.waitFor("StatefulSet to appear", Constants.DURATION_5_SECONDS, Constants.DURATION_90_SECONDS, () -> {
+            StatefulSet brokerSet = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
+            return brokerSet != null;
+        });
         StatefulSet brokerSet = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
 
         Map<String, Quantity> limits = brokerSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits();
