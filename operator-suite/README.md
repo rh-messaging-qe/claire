@@ -34,33 +34,34 @@ If you would want to try your own OLM operator, you would need to specify only f
 
 ## List of available Environment Variables
 
-| Name                                                   | Description                                                         | Default                     | Possible values                                  |
-|--------------------------------------------------------|---------------------------------------------------------------------|-----------------------------|--------------------------------------------------|
-| ARTEMIS_VERSION                                        | ArtemisCloud Version to be used (Makefile)                          | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
-| ARTEMIS_TEST_VERSION                                   | ArtemisCloud Version to be used by tests                            | not set                     | \<major\>.\<minor\>                              |
-| OPERATOR_IMAGE                                         | ArtemisCloud Operator image url                                     | not set                     | \<image registry url\>                           |
-| BROKER_IMAGE                                           | Broker image url                                                    | not set                     | \<image registry url\>                           |
-| BROKER_INIT_IMAGE                                      | Broker init image url                                               | not set                     | \<image registry url\>                           |
-| BUNDLE_IMAGE                                           | Bundle image url                                                    | not set                     | \<image registry url\>                           |
-| OLM                                                    | Whether to install latest available Operator                        | false                       | `true`, `false`                                  |
-| OLM_LTS                                                | Whether to install lts or latest available operator (tied to `OLM`) | false                       | `true`, `false`                                  |
-| OLM_IIB                                                | OLM Index Image Bundle to use                                       | not set                     | \<iib image registry url\>                       |
-| OLM_CHANNEL                                            | OLM channel to use with Subscription                                | not set                     | \<channel\>                                      |
-| DISABLE_RANDOM_NAMESPACES                              | Whether to use random string suffices                               | not set (`false`)           | `true`, `false`                                  |
-| LOGS_LOCATION                                          | Location where to generate collected logs                           | `test-logs`                 | \<directory\>                                    |
-| TEST_LOG_LEVEL                                         | Set logging level of test suite                                     | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
-| CLUSTER_OPERATOR_MANAGED                               | Whether test suite manages CO or not (Makefile)                     | `true`                      | `false`                                          |
-| COLLECT_TEST_DATA                                      | Whether to gather test data on error or not                         | `true`                      | `true`, `false`                                  |
-| CUSTOM_EXTRA_DELAY                                     | Prolonged all internal waitFor calls (seconds)                      | `0`                         | \<number of seconds\>                            |
-| OPERATOR_INSTALL_ZIP                                   | Url to zip file with install/examples (Makefile)                    | 7.10.2 url                  | \<url\>                                          |
-| OPERATOR_VERSION_UPSTREAM                              | Version/branch of repository (Makefile)                             | main                        | \<branch\>                                       |
-| DUMP_ENABLED                                           | Enabled serialization of deployed resources                         | `false`                     | `true`, `false`                                  |
-| DUMP_FORMAT                                            | Format of serialized deployed resources                             | `yaml`                      | `yaml`, `json`                                   |
-| DUMP_LOCATION                                          | Location to dump serialized deployed resources                      | `serialization-dump`        | \<directory\>                                    |
-| KUBE_CONTEXT                                           | Provide comma separated context(s) for kubernetes client            | `default/null`              | null, \<contextA,contextB,contextC,...\>         |
-| TEARDOWN_ENV                                           | Teardown down deployment or leave it as is                          | `true`                      | `true`, `false`                                  |
-| PLAYWRIGHT_DEBUG                                       | Playwright will run in head mode (show browser) & record video      | `false`                     | `true`, `false`                                  |
-| KUBE_CREDENTIALS                                       | Kubernetes credentials provided in `user/password` format           | not set                     | `claire/c1airePassw0rd`                          |
+| Name                                                    | Description                                                         | Default                     | Possible values                                  |
+|---------------------------------------------------------|---------------------------------------------------------------------|-----------------------------|--------------------------------------------------|
+| ARTEMIS_VERSION                                         | ArtemisCloud Version to be used (Makefile)                          | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
+| ARTEMIS_TEST_VERSION                                    | ArtemisCloud Version to be used by tests                            | not set                     | \<major\>.\<minor\>                              |
+| OPERATOR_IMAGE                                          | ArtemisCloud Operator image url                                     | not set                     | \<image registry url\>                           |
+| BROKER_IMAGE                                            | Broker image url                                                    | not set                     | \<image registry url\>                           |
+| BROKER_INIT_IMAGE                                       | Broker init image url                                               | not set                     | \<image registry url\>                           |
+| BUNDLE_IMAGE                                            | Bundle image url                                                    | not set                     | \<image registry url\>                           |
+| OLM                                                     | Whether to install latest available Operator                        | false                       | `true`, `false`                                  |
+| OLM_LTS                                                 | Whether to install lts or latest available operator (tied to `OLM`) | false                       | `true`, `false`                                  |
+| OLM_IIB                                                 | OLM Index Image Bundle to use                                       | not set                     | \<iib image registry url\>                       |
+| OLM_CHANNEL                                             | OLM channel to use with Subscription                                | not set                     | \<channel\>                                      |
+| DISABLE_RANDOM_NAMESPACES                               | Whether to use random string suffices                               | not set (`false`)           | `true`, `false`                                  |
+| UPGRADE_PACKAGE_MANIFEST                                | Provide a list of supported AMQ Broker Operator versions            | not set                     | see below                                        |
+| LOGS_LOCATION                                           | Location where to generate collected logs                           | `test-logs`                 | \<directory\>                                    |
+| TEST_LOG_LEVEL                                          | Set logging level of test suite                                     | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+| CLUSTER_OPERATOR_MANAGED                                | Whether test suite manages CO or not (Makefile)                     | `true`                      | `false`                                          |
+| COLLECT_TEST_DATA                                       | Whether to gather test data on error or not                         | `true`                      | `true`, `false`                                  |
+| CUSTOM_EXTRA_DELAY                                      | Prolonged all internal waitFor calls (seconds)                      | `0`                         | \<number of seconds\>                            |
+| OPERATOR_INSTALL_ZIP                                    | Url to zip file with install/examples (Makefile)                    | 7.10.2 url                  | \<url\>                                          |
+| OPERATOR_VERSION_UPSTREAM                               | Version/branch of repository (Makefile)                             | main                        | \<branch\>                                       |
+| DUMP_ENABLED                                            | Enabled serialization of deployed resources                         | `false`                     | `true`, `false`                                  |
+| DUMP_FORMAT                                             | Format of serialized deployed resources                             | `yaml`                      | `yaml`, `json`                                   |
+| DUMP_LOCATION                                           | Location to dump serialized deployed resources                      | `serialization-dump`        | \<directory\>                                    |
+| KUBE_CONTEXT                                            | Provide comma separated context(s) for kubernetes client            | `default/null`              | null, \<contextA,contextB,contextC,...\>         |
+| TEARDOWN_ENV                                            | Teardown down deployment or leave it as is                          | `true`                      | `true`, `false`                                  |
+| PLAYWRIGHT_DEBUG                                        | Playwright will run in head mode (show browser) & record video      | `false`                     | `true`, `false`                                  |
+| KUBE_CREDENTIALS                                        | Kubernetes credentials provided in `user/password` format           | not set                     | `claire/c1airePassw0rd`                          |
 
 ## Setting log level
 Currently, there is supported `TEST_LOG_LEVEL` environment variable, which can set desired logging level of test suite.
@@ -69,6 +70,19 @@ By default, we use `INFO` level. Supported values are `TRACE`, `DEBUG`, `INFO`, 
 ## Disable generating random suffices for namespaces
 Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.
 Example `test-namespace-2a6c` will be always `test-namespace`.
+
+## Structure of UPGRADE_PACKAGE_MANIFEST file
+A list of expected AMQ Broker Operator versions, for example:
+```shell
+7.10.0.OPR.4.CR1
+7.10.1.OPR.2.CR1
+7.10.6.OPR.1.CR1
+7.10.7.OPR.1.CR2
+7.11.0.OPR.3.CR1
+7.11.1.OPR.2.CR1
+7.11.2.OPR.1.CR3
+7.11.3.OPR.1.CR1
+```
 
 ## Hints
 - keep code clean
