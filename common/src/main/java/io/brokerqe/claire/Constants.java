@@ -72,9 +72,7 @@ public interface Constants {
     String DEFAULT_KEYCLOAK_OPERATOR_NAME = "keycloak-operator";
     String DEFAULT_RHSSO_OPERATOR_NAME = "rhbk-operator";
     String DEFAULT_KEYCLOAK_VERSION = "24.0.2";
-    String DEFAULT_RHSSO_VERSION = "rhbk-operator.v24.0.6-opr.1";
     String DEFAULT_KEYCLOAK_CHANNEL = "fast";
-    String DEFAULT_RHSSO_CHANNEL = "stable-v24";
 
     // Networking
     String AMQP = "amqp";

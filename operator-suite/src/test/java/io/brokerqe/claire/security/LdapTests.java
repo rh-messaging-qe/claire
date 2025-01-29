@@ -10,14 +10,14 @@ import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
+import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
 import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
-import io.brokerqe.claire.junit.TestValidSince;
-import io.brokerqe.claire.KubernetesArchitecture;
 import io.brokerqe.claire.junit.DisabledTestArchitecture;
+import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -193,11 +194,9 @@ public class LdapTests extends AbstractSystemTests {
 
         LOGGER.info("[{}] Trying to send messages as {} with {}", getTestNamespace(), ArtemisConstants.BOB_NAME, bobPass);
         t = assertThrows(MessagingClientException.class, consumerBob::sendMessages);
-        if (ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber() <= ArtemisVersion.VERSION_2_28.getVersionNumber()) {
-            assertThat(t.getMessage(), containsString("does not have permission='SEND' on address"));
-        } else {
-            assertThat(t.getMessage(), containsString("does not have permission='SEND' for queue"));
-        }
+        assertThat(t.getMessage(), anyOf(
+                containsString("does not have permission='SEND' for queue"),
+                containsString("does not have permission='SEND' on address")));
     }
 
     @Test

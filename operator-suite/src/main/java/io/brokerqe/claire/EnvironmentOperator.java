@@ -370,7 +370,7 @@ public class EnvironmentOperator extends Environment {
             if (!getDefaultKubeClient().isKubernetesPlatform()) {
                 return getDefaultKubeClient().getPackageManifestVersion(pm, keycloakChannel);
             } else {
-                return Constants.DEFAULT_RHSSO_VERSION;
+                throw new ClaireRuntimeException("[RHSSO] Unable to find proper channel on non-OCP platform!");
             }
         }
     }
@@ -384,7 +384,7 @@ public class EnvironmentOperator extends Environment {
                 pm = getDefaultKubeClient().getPackageManifest(keycloakOperatorName);
                 return getDefaultKubeClient().getPackageManifestDefaultChannel(pm);
             } else {
-                return Constants.DEFAULT_RHSSO_CHANNEL;
+                throw new UnsupportedOperationException("[RHSSO] Unable to find any channel for RHSSO installation");
             }
         }
     }

@@ -71,6 +71,13 @@ public class Rhsso extends Keycloak {
         String rhbkOperatorName = testEnvironmentOperator.getKeycloakOperatorName();
         String keycloakChannel = testEnvironmentOperator.getKeycloakChannel();
         String keycloakVersion = testEnvironmentOperator.getKeycloakVersion();
+
+        LOGGER.warn("==== TEMPORARY WORKAROUND - latest (any) 26 seems to be broken ====");
+        keycloakChannel = "stable-v24";
+        keycloakVersion = "rhbk-operator.v24.0.10-opr.1";
+//        String keycloakChannel = "stable-v26";
+//        String keycloakVersion = "rhbk-operator.v26.0.9-opr.1";
+
         String subscriptionString = String.format(
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -87,6 +94,7 @@ public class Rhsso extends Keycloak {
               sourceNamespace: openshift-marketplace""", namespace, keycloakChannel, rhbkOperatorName, keycloakVersion);
 
         HasMetadata subscription = kubeClient.getKubernetesClient().resource(subscriptionString).inNamespace(namespace).createOrReplace();
+        LOGGER.debug("[RHSSO]\n{}", subscriptionString);
         keycloakResources.add(subscription);
         TestUtils.waitFor("rh-sso operator deployment to be ready", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
             Deployment operatorRhsso = kubeClient.getDeployment(namespace, rhbkOperatorName);
