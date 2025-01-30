@@ -8,6 +8,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.junit.DisableOnNoPackageManifestFile;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorOlm;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
@@ -27,6 +28,7 @@ import java.util.regex.Pattern;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@DisableOnNoPackageManifestFile
 @Tag(Constants.TAG_UPGRADE)
 public class OperatorOlmVersionTests extends AbstractSystemTests {
 
