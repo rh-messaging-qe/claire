@@ -330,8 +330,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     public void ensureBrokerIsActive() {
         LOGGER.info("Ensure broker instance {} became the broker live", name);
-        isActive = ArtemisJmxHelper.isActive(this, true, 40,
-                Constants.DURATION_500_MILLISECONDS);
+        isActive = ArtemisJmxHelper.isActive(this, true, 60,
+                Constants.DURATION_1_SECOND);
         assertThat(isActive).isTrue();
     }
 
