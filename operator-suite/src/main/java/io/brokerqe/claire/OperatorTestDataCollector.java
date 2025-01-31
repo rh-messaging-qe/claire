@@ -101,13 +101,18 @@ public class OperatorTestDataCollector extends TestDataCollector {
     }
 
     private void collectResourceStats(String namespace, String dirName) {
-        LOGGER.debug("[{}] Gathering node/pod resources into files.", namespace);
-        String topNode = TestUtils.executeLocalCommand("oc adm top node");
-        String namespacePod = TestUtils.executeLocalCommand("oc adm top pod -n " + namespace);
-        String nodeFileName = dirName + Constants.FILE_SEPARATOR + "stats_node.log";
-        String podFileName = dirName + Constants.FILE_SEPARATOR + "stats_pod.log";
-        TestUtils.createFile(nodeFileName, topNode);
-        TestUtils.createFile(podFileName, namespacePod);
+        try {
+            LOGGER.debug("[{}] Gathering node/pod resources into files.", namespace);
+            String topNode = TestUtils.executeLocalCommand("oc adm top node");
+            String namespacePod = TestUtils.executeLocalCommand("oc adm top pod -n " + namespace);
+            String nodeFileName = dirName + Constants.FILE_SEPARATOR + "stats_node.log";
+            String podFileName = dirName + Constants.FILE_SEPARATOR + "stats_pod.log";
+            TestUtils.createFile(nodeFileName, topNode);
+            TestUtils.createFile(podFileName, namespacePod);
+        } catch (Exception e) {
+            LOGGER.warn("[{}] Not gathering node/pod resources into files: oc command returned error", namespace);
+            e.printStackTrace();
+        }
     }
 
     private void collectBrokerPodFiles(List<Pod> pods, String archiveLocation) {
