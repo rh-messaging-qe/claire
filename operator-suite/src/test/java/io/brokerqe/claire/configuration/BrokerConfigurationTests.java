@@ -242,7 +242,12 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         resources.setRequests(requestedResources);
         broker.getSpec().getDeploymentPlan().setResources(resources);
         getKubernetesClient().resource(broker).inNamespace(testNamespace).update();
-
+        // Wait for it to populate!
+        TestUtils.waitFor("StatefulSet to populate with limits", Constants.DURATION_5_SECONDS, Constants.DURATION_90_SECONDS, () -> {
+            StatefulSet bs = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
+            Map<String, Quantity> bLimits = bs.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits();
+            return bLimits.get("cpu") != null; // need to wait for this fields to be updated.
+        });
         brokerSet = getClient().getStatefulSet(testNamespace, testBrokerName + "-ss");
         limits = brokerSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits();
         requests = brokerSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests();
