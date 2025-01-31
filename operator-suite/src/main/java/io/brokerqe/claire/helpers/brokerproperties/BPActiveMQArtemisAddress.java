@@ -6,6 +6,8 @@
 
 package io.brokerqe.claire.helpers.brokerproperties;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +75,29 @@ public class BPActiveMQArtemisAddress {
                 }
             }
         }
+        return result;
+    }
+
+    public JSONObject getPropertiesJson() {
+        JSONObject result = new JSONObject();
+        JSONObject addressConfigurations = new JSONObject();
+        JSONObject queueArray = new JSONObject();
+        for (String queueName: queueNames) {
+            JSONObject queue = new JSONObject();
+            queue.put("routingType", routingType);
+            if (queueAdditionalProperties.containsKey(queueName)) {
+                for (String property : queueAdditionalProperties.get(queueName)) {
+                    String propertyName = property.split("=")[0];
+                    String propertyValue = property.split("=")[1];
+                    queue.put(propertyName, propertyValue);
+                }
+            }
+            queueArray.put(queueName, queue);
+        }
+        JSONObject addressConfig = new JSONObject();
+        addressConfig.put("queueConfigs", queueArray);
+        addressConfigurations.put(addressName, addressConfig);
+        result.put("addressConfigurations", addressConfigurations);
         return result;
     }
 

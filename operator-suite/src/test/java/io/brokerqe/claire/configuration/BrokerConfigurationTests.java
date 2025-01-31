@@ -25,6 +25,7 @@ import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddressBuilder;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
+
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -33,10 +34,13 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.openshift.api.model.Route;
+import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
@@ -53,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ArrayList;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -65,6 +70,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -650,7 +656,210 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         assertNull(amqss, "Statefulset was unexpectedly created");
         return broker;
     }
+    private Secret getSecretForAddress(String secretName, String name, BPActiveMQArtemisAddress address) {
+        Secret secret = new Secret();
+        secret.setMetadata(new ObjectMeta());
+        secret.getMetadata().setName(secretName);
+        Map<String, String> jsonMap = new HashMap<>();
+        jsonMap.put(name, address.getPropertiesJson().toString());
+        secret.setStringData(jsonMap);
+        return secret;
+    }
 
+    private Secret getSecretForAddress(String name, BPActiveMQArtemisAddress address) {
+        return getSecretForAddress(String.format("%s-bp", getRandomName("secret", 4)), name, address);
+    }
+
+    private Secret getSecretForAddress(BPActiveMQArtemisAddress address) {
+        return getSecretForAddress(String.format("%s.json", getRandomName("address", 4)), address);
+    }
+
+    @Test
+    void mulltipleJsonPropertyTest() {
+        Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
+        amqpAcceptors.setBindToAllInterfaces(true);
+        String brokerName = "json-test";
+        String addressName = "jsonaddress";
+        String queueName = "jsonqueue";
+        BPActiveMQArtemisAddress address = new BPActiveMQArtemisAddressBuilder()
+                .withAddressName(addressName)
+                .withQueueName(queueName)
+                .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
+                .build();
+
+        BPActiveMQArtemisAddress secondAddress = new BPActiveMQArtemisAddressBuilder()
+                .withAddressName(addressName + "-second")
+                .withQueueName(queueName + "-second")
+                .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
+                .build();
+
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(brokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                        .withManagementRBACEnabled()
+                    .endDeploymentPlan()
+                .withAcceptors(amqpAcceptors)
+                .editOrNewConsole()
+                    .withExpose(true)
+                .endConsole()
+                .endSpec().build();
+
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress(address)).createOrReplace();
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress(secondAddress)).createOrReplace();
+
+        broker = ResourceManager.createArtemis(testNamespace, broker, true);
+
+        Pod brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
+        String log = getClient().getLogsFromPod(brokerPod);
+
+        assertThat(String.format("Address %s has been created", address.getAddressName()),
+                log, containsString(String.format("Deploying %s queue %s on address %s", 
+                        address.getRoutingType(), address.getQueueName(0), address.getAddressName())));
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+    @Test
+    void specificBrokerTest() {
+        Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
+        amqpAcceptors.setBindToAllInterfaces(true);
+        String brokerName = "json-test";
+        String addressName = "jsonaddress";
+        String queueName = "jsonqueue";
+        BPActiveMQArtemisAddress address = new BPActiveMQArtemisAddressBuilder()
+                .withAddressName(addressName)
+                .withQueueName(queueName)
+                .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
+                .build();
+
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(brokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(2)
+                        .withManagementRBACEnabled()
+                    .endDeploymentPlan()
+                .withAcceptors(amqpAcceptors)
+                .editOrNewConsole()
+                    .withExpose(true)
+                .endConsole()
+                .endSpec().build();
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress("broker-0-bp", "address.json", address)).createOrReplace();
+
+        broker = ResourceManager.createArtemis(testNamespace, broker, true);
+
+        Pod brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
+        String log = getClient().getLogsFromPod(brokerPod);
+
+        assertThat(String.format("Address %s has been created", address.getAddressName()),
+                log, containsString(String.format("Deploying %s queue %s on address %s", 
+                        address.getRoutingType(), address.getQueueName(0), address.getAddressName())));
+
+        Pod brokerPod1 = getClient().listPodsByPrefixName(testNamespace, brokerName).get(1);
+        String log1 = getClient().getLogsFromPod(brokerPod1);
+
+        assertThat(String.format("Address %s has been created", address.getAddressName()),
+                log1, not(containsString(String.format("Deploying %s queue %s on address %s",
+                        address.getRoutingType(), address.getQueueName(0), address.getAddressName()))));
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+    @Test
+    void jsonPropertyTest() {
+        Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
+        amqpAcceptors.setBindToAllInterfaces(true);
+        String brokerName = "json-test";
+        String addressName = "jsonaddress";
+        String queueName = "jsonqueue";
+        BPActiveMQArtemisAddress address = new BPActiveMQArtemisAddressBuilder()
+                .withAddressName(addressName)
+                .withQueueName(queueName)
+                .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
+                .build();
+
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(brokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                        .withManagementRBACEnabled()
+                    .endDeploymentPlan()
+                .withAcceptors(amqpAcceptors)
+                .editOrNewConsole()
+                    .withExpose(true)
+                .endConsole()
+                .endSpec().build();
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress(address)).createOrReplace();
+
+        broker = ResourceManager.createArtemis(testNamespace, broker, true);
+
+        Pod brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
+        String log = getClient().getLogsFromPod(brokerPod);
+
+        assertThat(String.format("Address %s has been created", address.getAddressName()),
+                log, containsString(String.format("Deploying %s queue %s on address %s", 
+                        address.getRoutingType(), address.getQueueName(0), address.getAddressName())));
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+
+
+    @Test
+    void largeJsonProperties() {
+        Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
+        amqpAcceptors.setBindToAllInterfaces(true);
+        String brokerName = "json-test";
+        String addressName = "jsonaddress";
+        String queueNamePrefix = "jsonqueue";
+        List<String> queues = new ArrayList<>();
+        // we want slightly less than 1MB of data, so 1MB divided by aprox. size of 1 queue,
+        // plus account for overhead from base64
+        long limit = FileUtils.ONE_MB / 41 / (3 * 5);
+        for (long i = 0; i < limit; i++) {
+            queues.add(String.format(queueNamePrefix + "-%d", i));
+        }
+
+        BPActiveMQArtemisAddress address = new BPActiveMQArtemisAddressBuilder()
+                .withAddressName(addressName)
+                .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
+                .withQueueNames(queues)
+                .build();
+
+        ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
+                .editOrNewMetadata()
+                    .withName(brokerName)
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                        .withManagementRBACEnabled()
+                    .endDeploymentPlan()
+                .withAcceptors(amqpAcceptors)
+                .editOrNewConsole()
+                    .withExpose(true)
+                .endConsole()
+                .withBrokerProperties(address.getPropertiesList())
+                .endSpec().build();
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress(address)).createOrReplace();
+        broker = ResourceManager.createArtemis(testNamespace, broker, true);
+        Pod brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
+        String log = getClient().getLogsFromPod(brokerPod);
+        for (long i = 0; i < limit; i++) {
+            assertThat(String.format("Address %s has been created", address.getAddressName()),
+                    log, containsString(String.format("Deploying %s queue %s on address %s",
+                            address.getRoutingType(), String.format(queueNamePrefix + "-%d", i), address.getAddressName())));        }
+        
+        ResourceManager.deleteArtemis(testNamespace, broker);
+    }
+    
     @Test
     void filterApplicationTest() {
         Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);

@@ -14,6 +14,7 @@ import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.TestUtils;
 import io.fabric8.openshift.api.model.Route;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +107,15 @@ public class JMXHelper {
         String jmxPath = String.format(jmxTemplate, address, routingType.toLowerCase(Locale.ROOT), queue);
         String content = performJmxCall(host, jmxPath);
         JSONObject json = new JSONObject(content);
-        return json.getInt("value");
+        int result;
+        try {
+            result = json.getInt("value");
+        } catch (JSONException e) {
+            LOGGER.info("no messages on the address");
+            result = 0;
+
+        }
+        return result;
     }
 
     private List<String> getQueueNames(String host, String address) throws IOException {
@@ -155,7 +164,7 @@ public class JMXHelper {
             ar.setQueueName(queueName);
             ar.setTotalMsgCount(getMessageCount(host, addressName, routingType, queueName));
             return ar;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;

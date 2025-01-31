@@ -58,7 +58,7 @@ public class BPActiveMQArtemisAddressBuilder {
         return this;
     }
 
-    public BPActiveMQArtemisAddressBuilder addQueueNames(List<String> queueNames) {
+    public BPActiveMQArtemisAddressBuilder withQueueNames(List<String> queueNames) {
         maybeInitQueueNames();
         this.queueNames.addAll(queueNames);
         return this;
