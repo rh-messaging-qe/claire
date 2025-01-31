@@ -161,7 +161,33 @@ public class AbstractSystemTests implements TestSeparator {
         }
     }
 
+    protected String getAmqpBrokerUri(ArtemisContainer artemis, DeployableClient deployableClient) {
+        String brokerUriName = Constants.AMQP_URL_PREFIX + artemis.getName() + ":" + DEFAULT_AMQP_PORT;
+        String brokerUriAddress = Constants.AMQP_URL_PREFIX + artemis.getContainerIpAddress() + ":" + DEFAULT_AMQP_PORT;
+        try {
+            LOGGER.info("Trying to use artemis container name in brokerURI.");
+            testSimpleSendReceive(deployableClient, brokerUriName, "testConnectionQueue", ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+            return brokerUriName;
+        } catch (Exception e) {
+            LOGGER.warn("Failed. Using IP address in brokerURI instead.");
+            return brokerUriAddress;
+        }
+    }
+
     // ==== Messaging methods
+    protected void testSimpleSendReceive(DeployableClient deployableClient, String brokerUri, String queue, String username, String password) {
+        Map<String, String> clientOptions = Map.of(
+                "conn-username", username,
+                "conn-password", password,
+                "address", "testMeAddress",
+                "count", "1"
+        );
+        MessagingClient messagingClient = new AmqpQpidClient(deployableClient, brokerUri, clientOptions, clientOptions);
+        messagingClient.sendMessages();
+        messagingClient.receiveMessages();
+        deleteQueue(deployableClient, queue);
+        deleteAddress(deployableClient, queue);
+    }
     protected void deleteAddress(DeployableClient artemisDeployableClient, String name) {
         BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.ADDRESS_DELETE, Map.of("name", name));
         artemisClient.executeCommand();
