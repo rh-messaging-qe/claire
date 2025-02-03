@@ -12,7 +12,9 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
+import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.Protocol;
+import io.brokerqe.claire.clients.container.AmqpQpidClient;
 import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helper.ArtemisJmxHelper;
@@ -65,6 +67,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     private boolean isBackup = false;
     private boolean isActive = false;
     private ArtemisConfigData artemisConfigData;
+    private boolean isContainerNameUsable = false;
+    private boolean containerNameConnectionTested = false;
 
     public ArtemisContainer(String name) {
         super(name, ENVIRONMENT_STANDALONE.getArtemisContainerImage());
@@ -105,11 +109,46 @@ public final class ArtemisContainer extends AbstractGenericContainer {
             default -> throw new IllegalArgumentException("Unknown port!");
         }
 
-        brokerUri = String.format(brokerUri, getName());
-        // TODO use port as well?
+        brokerUri = getBrokerHostUri(brokerUri);
+        // TODO use port as well? - currently no, as all client expect port as separate argument
 //        brokerUri = String.format(brokerUri, getInstanceNameAndPort(port));
         return brokerUri;
     }
+
+    private String getBrokerHostUri(String brokerUri) {
+        String brokerUriName = String.format(brokerUri, getName());
+        String brokerUriAddress = String.format(brokerUri, getContainerIpAddress());
+
+        if (containerNameConnectionTested) {
+            if (isContainerNameUsable) {
+                return brokerUriName;
+            } else {
+                return brokerUriAddress;
+            }
+        }
+
+        try {
+            LOGGER.info("Checking to use artemis container name in brokerURI.");
+            Map<String, String> clientOptions = Map.of(
+                    "conn-username", ArtemisConstants.ADMIN_NAME,
+                    "conn-password", ArtemisConstants.ADMIN_PASS,
+                    "address", "internaltestAddress",
+                    "count", "0"
+            );
+            MessagingClient messagingClient = new AmqpQpidClient(deployableClient, brokerUriName + ":" + ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT, clientOptions, clientOptions);
+            messagingClient.sendMessages();
+
+            containerNameConnectionTested = true;
+            isContainerNameUsable = true;
+            return brokerUriName;
+        } catch (Exception e) {
+            LOGGER.warn("Failed. Using IP address in brokerURI instead.");
+            isContainerNameUsable = false;
+            containerNameConnectionTested = true;
+            return brokerUriAddress;
+        }
+    }
+
 
     public ArtemisConfigData getArtemisData() {
         return artemisConfigData;
@@ -329,21 +368,22 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void ensureBrokerIsActive() {
+        ensureBrokerIsActive(60, Constants.DURATION_1_SECOND);
+    }
+
+    public void ensureBrokerIsActive(long retries, long pollTime) {
         LOGGER.info("Ensure broker instance {} became the broker live", name);
-        isActive = ArtemisJmxHelper.isActive(this, true, 60,
-                Constants.DURATION_1_SECOND);
+        isActive = ArtemisJmxHelper.isActive(this, true, retries, pollTime);
         assertThat(isActive).isTrue();
     }
 
     public void ensureBrokerIsBackup() {
-        boolean isBackup = ArtemisJmxHelper.isBackup(this, true,
-                40, Constants.DURATION_500_MILLISECONDS);
+        boolean isBackup = ArtemisJmxHelper.isBackup(this, true, 40, Constants.DURATION_500_MILLISECONDS);
         assertThat(isBackup).isTrue();
     }
 
     public void ensureBrokerReplicaIsInSync() {
-        boolean isReplicaInSync = ArtemisJmxHelper.isReplicaInSync(this, true,
-                10, Constants.DURATION_500_MILLISECONDS);
+        boolean isReplicaInSync = ArtemisJmxHelper.isReplicaInSync(this, true, 10, Constants.DURATION_500_MILLISECONDS);
         assertThat(isReplicaInSync).isTrue();
     }
 
@@ -398,6 +438,17 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     public DeployableClient getDeployableClient() {
         return deployableClient;
+    }
+
+    // Use this method from outside - means some other method tested network connection for us.
+    // That's why we set connectionTested as well
+    public void setContainerNameUsable(boolean containerNameUsable) {
+        isContainerNameUsable = containerNameUsable;
+        setContainerNameConnectionTested(true);
+    }
+
+    public void setContainerNameConnectionTested(boolean containerNameConnectionTested) {
+        this.containerNameConnectionTested = containerNameConnectionTested;
     }
 
 }

@@ -14,6 +14,7 @@ import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.client.deployment.StJavaClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.clients.Protocol;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
 import io.brokerqe.claire.clients.bundled.BundledAmqpMessagingClient;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
@@ -61,7 +62,7 @@ public class MessagingTests extends AbstractSystemTests {
         // BrokerService.getAmqpPort?
         stDeployableClient = new StJavaClientDeployment();
         artemisDeployableClient = new BundledClientDeployment();
-        brokerUri = getAmqpBrokerUri(artemis, artemisDeployableClient);
+        brokerUri = getValidBrokerUriConnection(artemis, stDeployableClient);
     }
 
 
@@ -71,7 +72,7 @@ public class MessagingTests extends AbstractSystemTests {
     public void testAmqpJmsMessaging() {
         LOGGER.info("Test SystemTests AMQP Messaging");
         int msgsExpected = 5;
-        MessagingClient messagingClient = new AmqpQpidClient(stDeployableClient, artemis.getName(), DEFAULT_ALL_PORT, address, queue, msgsExpected, username, password);
+        MessagingClient messagingClient = new AmqpQpidClient(stDeployableClient, artemis.getBrokerUri(Protocol.AMQP), DEFAULT_ALL_PORT, address, queue, msgsExpected, username, password);
         int sent = messagingClient.sendMessages();
         int received = messagingClient.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
@@ -86,7 +87,7 @@ public class MessagingTests extends AbstractSystemTests {
         LOGGER.info("Test SystemTests Core Messaging");
         int msgsExpected = 5;
         DeployableClient deployableClient = new StJavaClientDeployment();
-        MessagingClient messagingClient = new CoreArtemisClient(deployableClient, artemis.getName(), DEFAULT_ALL_PORT, address, queue, msgsExpected, username, password);
+        MessagingClient messagingClient = new CoreArtemisClient(deployableClient, artemis.getBrokerUri(Protocol.CORE), DEFAULT_ALL_PORT, address, queue, msgsExpected, username, password);
         int sent = messagingClient.sendMessages();
         int received = messagingClient.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
@@ -101,7 +102,7 @@ public class MessagingTests extends AbstractSystemTests {
         LOGGER.info("Test SystemTests Openwire Messaging");
         int msgsExpected = 5;
         DeployableClient deployableClient = new StJavaClientDeployment();
-        MessagingClient messagingClient = new OpenWireActiveMQClient(deployableClient, artemis.getName(), DEFAULT_ALL_PORT, address, queue, msgsExpected, username, password);
+        MessagingClient messagingClient = new OpenWireActiveMQClient(deployableClient, artemis.getBrokerUri(Protocol.CORE), DEFAULT_ALL_PORT, address, queue, msgsExpected, username, password);
         int sent = messagingClient.sendMessages();
         int received = messagingClient.receiveMessages();
         assertThat(sent, equalTo(msgsExpected));
@@ -123,7 +124,7 @@ public class MessagingTests extends AbstractSystemTests {
                 .withPassword(password)
                 .withUsername(username)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemis.getName());
+                .withDestinationUrl(artemis.getDefaultBrokerUri());
         MessagingClient bundledClient = new BundledCoreMessagingClient(options);
         int sent = bundledClient.sendMessages();
         int received = bundledClient.receiveMessages();
@@ -146,7 +147,7 @@ public class MessagingTests extends AbstractSystemTests {
                 .withPassword(password)
                 .withUsername(username)
                 .withDestinationQueue(queue)
-                .withDestinationUrl(artemis.getName());
+                .withDestinationUrl(artemis.getDefaultBrokerUri());
         MessagingClient bundledClient = new BundledAmqpMessagingClient(options);
         int sent = bundledClient.sendMessages();
         int received = bundledClient.receiveMessages();
@@ -231,7 +232,9 @@ public class MessagingTests extends AbstractSystemTests {
         artemisClient.executeCommand();
 
         artemis.restartWithStop(timeout);
-        artemis.ensureBrokerIsActive();
+        // DB2 is super-slow, add more time for startup
+        long retries = timeout.toSeconds() / 10 < 10 ? 10 : timeout.toSeconds() / 10;
+        artemis.ensureBrokerIsActive(retries, Constants.DURATION_10_SECONDS);
 
         artemisClient.executeCommand();
 

@@ -161,15 +161,17 @@ public class AbstractSystemTests implements TestSeparator {
         }
     }
 
-    protected String getAmqpBrokerUri(ArtemisContainer artemis, DeployableClient deployableClient) {
+    protected String getValidBrokerUriConnection(ArtemisContainer artemis, DeployableClient deployableClient) {
         String brokerUriName = Constants.AMQP_URL_PREFIX + artemis.getName() + ":" + DEFAULT_AMQP_PORT;
         String brokerUriAddress = Constants.AMQP_URL_PREFIX + artemis.getContainerIpAddress() + ":" + DEFAULT_AMQP_PORT;
         try {
             LOGGER.info("Trying to use artemis container name in brokerURI.");
             testSimpleSendReceive(deployableClient, brokerUriName, "testConnectionQueue", ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+            artemis.setContainerNameUsable(true);
             return brokerUriName;
         } catch (Exception e) {
             LOGGER.warn("Failed. Using IP address in brokerURI instead.");
+            artemis.setContainerNameUsable(false);
             return brokerUriAddress;
         }
     }
@@ -179,7 +181,7 @@ public class AbstractSystemTests implements TestSeparator {
         Map<String, String> clientOptions = Map.of(
                 "conn-username", username,
                 "conn-password", password,
-                "address", "testMeAddress",
+                "address", queue,
                 "count", "1"
         );
         MessagingClient messagingClient = new AmqpQpidClient(deployableClient, brokerUri, clientOptions, clientOptions);
@@ -341,7 +343,7 @@ public class AbstractSystemTests implements TestSeparator {
                 case "GiB" -> seconds *= 100;
             }
         }
-        return Duration.ofSeconds(seconds);
+        return Duration.ofSeconds(seconds + messageCount);
     }
 
     // common assertion methods

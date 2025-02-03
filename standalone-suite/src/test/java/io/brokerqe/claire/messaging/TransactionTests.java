@@ -11,6 +11,7 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.clients.Protocol;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
 import io.brokerqe.claire.clients.container.AmqpQpidClient;
@@ -51,7 +52,7 @@ public class TransactionTests extends AbstractSystemTests {
         LOGGER.info("Creating artemis instance: " + artemisName);
         artemis = ArtemisDeployment.createArtemis(artemisName);
         deployableClient = new StJavaClientDeployment();
-        brokerUri = getAmqpBrokerUri(artemis, deployableClient);
+        brokerUri = getValidBrokerUriConnection(artemis, deployableClient);
     }
 
     private void doTestTransactions(String address, Map<String, String> senderOptions, Map<String, String> receiverOptions, int receiverExpMsgCount, int leftoverMessages) {
@@ -98,7 +99,7 @@ public class TransactionTests extends AbstractSystemTests {
 
     private void doCleanQueue(String address) {
         LOGGER.info("[{}] Cleaning queue {}", artemis.getName(), address);
-        MessagingClient consumer = new AmqpQpidClient(deployableClient, artemis.getName(), DEFAULT_ALL_PORT, address, address, 0, username, password);
+        MessagingClient consumer = new AmqpQpidClient(deployableClient, artemis.getBrokerUri(Protocol.CORE), DEFAULT_ALL_PORT, address, address, 0, username, password);
         try {
             consumer.receiveMessages();
         } catch (Exception exception) {
