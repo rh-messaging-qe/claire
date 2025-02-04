@@ -48,9 +48,13 @@ public class OperatorOlmVersionTests extends AbstractSystemTests {
             LOGGER.info("===== Checking out PackageManifest={} {} =====", pm.getMetadata().getName(), pm.getMetadata().getLabels().get("catalog"));
 
             for (PackageChannel channel : pm.getStatus().getChannels()) {
-                List<String> oprVersionsExpected = oprVersions.get(channel.getName());
                 ArrayList<Map<String, String>> entries = (ArrayList) channel.getAdditionalProperties().get("entries");
+                List<String> oprVersionsExpected = oprVersions.get(channel.getName());
 
+                if (oprVersionsExpected == null) {
+                    LOGGER.info("[Skipping channel {}]", channel.getName());
+                    continue;
+                }
                 // Get versions from channel
                 List<String> channelVersions = new ArrayList<>();
                 entries.stream().flatMap(map -> map.entrySet().stream()).forEach(entry -> {
