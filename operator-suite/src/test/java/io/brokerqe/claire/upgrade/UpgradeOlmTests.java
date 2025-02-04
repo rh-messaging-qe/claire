@@ -138,7 +138,7 @@ public class UpgradeOlmTests extends AbstractSystemTests {
         String brokerVersionLogs = getClient().getLogsFromPod(brokerVersionPod);
         assertThat(brokerVersionLogs, anyOf(containsString(brokerVersionOldString), containsString(brokerVersionNewString)));
 
-        LOGGER.info("[{}] Test messaging on this new broker {}", testNamespace, brokerVersionPod);
+        LOGGER.info("[{}] Test messaging on this new broker {}", testNamespace, brokerVersionPod.getMetadata().getName());
         BPActiveMQArtemisAddress myAddress = ResourceManager.createBPArtemisAddress(ArtemisConstants.ROUTING_TYPE_ANYCAST);
         brokerUpgrade.getSpec().setBrokerProperties(myAddress.getPropertiesList());
         ResourceManager.getArtemisClient().inNamespace(testNamespace).resource(brokerUpgrade).createOrReplace();
