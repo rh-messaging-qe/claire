@@ -379,7 +379,7 @@ public class ResourceManager {
         return createBPArtemisAddress(addressName, addressName, routingType);
     }
     public static BPActiveMQArtemisAddress createBPArtemisAddress(String routingType) {
-        if (routingType == ArtemisConstants.ROUTING_TYPE_MULTICAST) {
+        if (routingType.equals(ArtemisConstants.ROUTING_TYPE_MULTICAST)) {
             return createBPArtemisAddress(ArtemisConstants.ADDRESS_EXAMPLE_NAME, ArtemisConstants.ADDRESS_QUEUE_EXAMPLE_NAME, routingType);
         } else {
             return createBPArtemisAddress(ArtemisConstants.ADDRESS_EXAMPLE_NAME, ArtemisConstants.ADDRESS_EXAMPLE_NAME, routingType);
