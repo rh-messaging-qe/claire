@@ -6,9 +6,11 @@ package io.brokerqe.claire.upgrade;
 
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesVersion;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.DisableOnNoPackageManifestFile;
+import io.brokerqe.claire.junit.TestMinimumKubernetesVersion;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorOlm;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
 import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
@@ -30,6 +32,7 @@ import static org.hamcrest.Matchers.is;
 
 @DisableOnNoPackageManifestFile
 @Tag(Constants.TAG_UPGRADE)
+@TestMinimumKubernetesVersion(KubernetesVersion.VERSION_1_26)
 public class OperatorOlmVersionTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorOlmVersionTests.class);
