@@ -60,7 +60,6 @@ If you would want to try your own OLM operator, you would need to specify only f
 | DUMP_LOCATION                                           | Location to dump serialized deployed resources                      | `serialization-dump`        | \<directory\>                                    |
 | KUBE_CONTEXT                                            | Provide comma separated context(s) for kubernetes client            | `default/null`              | null, \<contextA,contextB,contextC,...\>         |
 | TEARDOWN_ENV                                            | Teardown down deployment or leave it as is                          | `true`                      | `true`, `false`                                  |
-| PLAYWRIGHT_DEBUG                                        | Playwright will run in head mode (show browser) & record video      | `false`                     | `true`, `false`                                  |
 | KUBE_CREDENTIALS                                        | Kubernetes credentials provided in `user/password` format           | not set                     | `claire/c1airePassw0rd`                          |
 
 ## Setting log level

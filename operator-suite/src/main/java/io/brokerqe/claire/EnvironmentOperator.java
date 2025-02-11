@@ -59,7 +59,7 @@ public class EnvironmentOperator extends Environment {
     private PackageManifest pm;
     private KubernetesVersion kubernetesVersion;
 
-    public EnvironmentOperator() {
+    protected EnvironmentOperator() {
         this.set(this);
         String initialTimestamp = TestUtils.generateTimestamp();
         initializeKubeContexts(System.getenv().getOrDefault(Constants.EV_KUBE_CONTEXT, null));

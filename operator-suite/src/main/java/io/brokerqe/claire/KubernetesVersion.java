@@ -21,7 +21,8 @@ public enum KubernetesVersion {
     VERSION_1_32(132), // 4.19
     VERSION_1_33(133), // 4.20
     VERSION_1_34(134), // 4.21
-    VERSION_1_35(135); // 4.22
+    VERSION_1_35(135), // 4.22
+    VERSION_1_36(136); // 4.23
 
     private final int versionNumber;
 

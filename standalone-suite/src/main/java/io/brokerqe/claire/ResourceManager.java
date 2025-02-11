@@ -50,13 +50,21 @@ public final class ResourceManager {
             Constants.DURATION_10_SECONDS, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
     private static final Map<String, JmsClient> CLIENTS = new LinkedHashMap<>();
     private static Network defaultNetwork;
+    private static EnvironmentStandalone environmentStandalone;
 
-    private ResourceManager() {
-        super();
+    private ResourceManager(EnvironmentStandalone environment) {
+        environmentStandalone = environment;
     }
 
     public static Map<String, AbstractGenericContainer> getContainers() {
         return CONTAINERS;
+    }
+
+    public static EnvironmentStandalone getEnvironment() {
+        if (environmentStandalone == null) {
+            environmentStandalone = new EnvironmentStandalone();
+        }
+        return environmentStandalone;
     }
 
     public static void stopAllContainers() {

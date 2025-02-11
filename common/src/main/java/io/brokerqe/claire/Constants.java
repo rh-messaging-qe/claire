@@ -21,6 +21,7 @@ public interface Constants {
     String TAG_JDBC = "jdbc";
     String TAG_OPERATOR = "operator";
     String TAG_SMOKE = "smoke";
+    String TAG_WEBCONSOLE = "webconsole";
     String TAG_SMOKE_CLIENTS = "smoke-clients";
     String TAG_TLS = "tls";
     String TAG_RAPIDAST = "rapidast";

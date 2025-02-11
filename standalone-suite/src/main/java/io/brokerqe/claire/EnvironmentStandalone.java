@@ -53,7 +53,7 @@ public class EnvironmentStandalone extends Environment {
     private String testTempDir;
     private String testConfigDir;
 
-    private EnvironmentStandalone() {
+    protected EnvironmentStandalone() {
         String initialTimestamp = TestUtils.generateTimestamp();
         loadProjectProperties(Constants.STANDALONE_MODULE_PROPERTIES_FILE);
         this.set(this);

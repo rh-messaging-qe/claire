@@ -298,6 +298,7 @@ public abstract class AbstractGenericContainer {
     }
 
     public Object executeCommand(String... command) {
+        // you might need to use "sh", "-c", <your-cmd>
         return getExecutor().executeCommand(command);
     }
 

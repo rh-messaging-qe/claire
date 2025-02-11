@@ -166,7 +166,7 @@ public class AbstractSystemTests implements TestSeparator {
         String brokerUriAddress = Constants.AMQP_URL_PREFIX + artemis.getContainerIpAddress() + ":" + DEFAULT_AMQP_PORT;
         try {
             LOGGER.info("Trying to use artemis container name in brokerURI.");
-            testSimpleSendReceive(deployableClient, brokerUriName, "testConnectionQueue", ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+            testSimpleSendReceive(artemis, deployableClient, brokerUriName, "testConnectionQueue", ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, true);
             artemis.setContainerNameUsable(true);
             return brokerUriName;
         } catch (Exception e) {
@@ -177,19 +177,27 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     // ==== Messaging methods
-    protected void testSimpleSendReceive(DeployableClient deployableClient, String brokerUri, String queue, String username, String password) {
+    protected void testSimpleSendReceive(ArtemisContainer artemis, DeployableClient stDeployableClient, String brokerUri, String queue, String username, String password, boolean deleteDestination) {
         Map<String, String> clientOptions = Map.of(
                 "conn-username", username,
                 "conn-password", password,
                 "address", queue,
                 "count", "1"
         );
-        MessagingClient messagingClient = new AmqpQpidClient(deployableClient, brokerUri, clientOptions, clientOptions);
+
+        if (stDeployableClient == null) {
+            stDeployableClient = new StJavaClientDeployment();
+        }
+        MessagingClient messagingClient = new AmqpQpidClient(stDeployableClient, brokerUri, clientOptions, clientOptions);
         messagingClient.sendMessages();
         messagingClient.receiveMessages();
-        deleteQueue(deployableClient, queue);
-        deleteAddress(deployableClient, queue);
+
+        if (deleteDestination) {
+            deleteQueue(artemis.getDeployableClient(), queue);
+            deleteAddress(artemis.getDeployableClient(), queue);
+        }
     }
+
     protected void deleteAddress(DeployableClient artemisDeployableClient, String name) {
         BundledArtemisClient artemisClient = new BundledArtemisClient(artemisDeployableClient, ArtemisCommand.ADDRESS_DELETE, Map.of("name", name));
         artemisClient.executeCommand();
@@ -251,6 +259,10 @@ public class AbstractSystemTests implements TestSeparator {
     }
 
     public void sendReceiveDurableMsgQueue(ArtemisContainer artemis, BundledClientOptions senderOptions, BundledClientOptions receiverOptions) {
+        sendReceiveDurableMsgQueue(artemis, senderOptions, receiverOptions, true, true);
+    }
+
+    public void sendReceiveDurableMsgQueue(ArtemisContainer artemis, BundledClientOptions senderOptions, BundledClientOptions receiverOptions, boolean deleteDestination, boolean compareMessages) {
         Map<String, String> artemisCreateQueueOptions = new HashMap<>(Map.of(
                 "name", senderOptions.getDestinationQueue(),
                 "address", senderOptions.getDestinationAddress(),
@@ -271,10 +283,40 @@ public class AbstractSystemTests implements TestSeparator {
 
         MessagingClient receiver = createMessagingClient(receiverOptions);
         int received = receiveMessages(receiver, senderOptions);
-        MatcherAssert.assertThat(received, equalTo(sent));
+        if (compareMessages) {
+            MatcherAssert.assertThat(received, equalTo(sent));
+        }
 
-        artemisClient = new BundledArtemisClient(artemis.getDeployableClient(), ArtemisCommand.QUEUE_DELETE, artemisDeleteQueueOptions);
-        artemisClient.executeCommand();
+        if (deleteDestination) {
+            artemisClient = new BundledArtemisClient(artemis.getDeployableClient(), ArtemisCommand.QUEUE_DELETE, artemisDeleteQueueOptions);
+            artemisClient.executeCommand();
+        }
+    }
+
+    protected void sendReceiveMessagesNoCheck(ArtemisContainer artemisContainer, String addressName, int send, int receive) {
+        LOGGER.info("Send-receive some messages to/from broker {}", artemisContainer.getName());
+        BundledClientOptions senderOptions = new BundledClientOptions()
+                .withDeployableClient(artemisContainer.getDeployableClient())
+                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withDestinationAddress(addressName)
+                .withDestinationQueue(addressName)
+                .withMessageCount(send)
+                .withUsername(ArtemisConstants.ADMIN_NAME)
+                .withPassword(ArtemisConstants.ADMIN_PASS)
+                .withDestinationUrl(artemisContainer.getName())
+                .withProtocol(Protocol.CORE);
+        BundledClientOptions receiverOptions = new BundledClientOptions()
+                .withDeployableClient(artemisContainer.getDeployableClient())
+                .withDestinationPort(DEFAULT_ALL_PORT)
+                .withDestinationAddress(addressName)
+                .withDestinationQueue(addressName)
+                .withMessageCount(receive)
+                .withUsername(ArtemisConstants.ADMIN_NAME)
+                .withPassword(ArtemisConstants.ADMIN_PASS)
+                .withDestinationUrl(artemisContainer.getName())
+                .withProtocol(Protocol.CORE);
+        receiverOptions.withMessageCount(50);
+        sendReceiveDurableMsgQueue(artemisContainer, senderOptions, receiverOptions, false, false);
     }
 
     public void produceAndConsumeOnPrimaryAndOnBackupTest(ArtemisContainer.ArtemisProcessControllerAction stopAction,

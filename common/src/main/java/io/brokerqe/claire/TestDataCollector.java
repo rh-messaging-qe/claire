@@ -85,7 +85,7 @@ public abstract class TestDataCollector implements TestWatcher, TestExecutionExc
         TestUtils.createDirectory(archiveDir);
         String certificatesArchiveDirectory = archiveDir + Constants.FILE_SEPARATOR + "certificates";
         String certificatesArchiveDirectoryClass = archiveDir + Constants.FILE_SEPARATOR + "class_certificates";
-        if (!TestUtils.isEmptyDirectory(certificatesDirClass) || !TestUtils.isEmptyDirectory(certificatesDir)) {
+        if (TestUtils.directoryExists(certificatesDirClass) && (!TestUtils.isEmptyDirectory(certificatesDirClass) || !TestUtils.isEmptyDirectory(certificatesDir))) {
             if (TestUtils.directoryExists(certificatesArchiveDirectory)) {
                 LOGGER.warn("[TDC] Skipping duplicated copying of certificates into {}", certificatesArchiveDirectory);
             } else {

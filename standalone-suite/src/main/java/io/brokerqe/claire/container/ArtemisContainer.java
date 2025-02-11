@@ -84,19 +84,19 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public String getBrokerUri(Protocol protocol) {
         switch (protocol) {
             case AMQP -> {
-                return getBrokerUri(Protocol.AMQP, 5672);
+                return getBrokerUri(Protocol.AMQP, ArtemisConstants.DEFAULT_AMQP_PORT);
             }
             case AMQPS -> {
                 return getBrokerUri(Protocol.AMQP, 5673);
             }
             case CORE -> {
-                return getBrokerUri(Protocol.CORE, 61616);
+                return getBrokerUri(Protocol.CORE, ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
             }
             case CORES -> {
                 return getBrokerUri(Protocol.CORE, 61617);
             }
             default -> {
-                return getBrokerUri(Protocol.CORE, 61616);
+                return getBrokerUri(Protocol.CORE, ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT);
             }
         }
     }
@@ -111,7 +111,9 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
         brokerUri = getBrokerHostUri(brokerUri);
         // TODO use port as well? - currently no, as all client expect port as separate argument
-//        brokerUri = String.format(brokerUri, getInstanceNameAndPort(port));
+//        if (port != null) {
+//            brokerUri = String.format(brokerUri, getInstanceNameAndPort(port));
+//        }
         return brokerUri;
     }
 
@@ -142,7 +144,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
             isContainerNameUsable = true;
             return brokerUriName;
         } catch (Exception e) {
-            LOGGER.warn("Failed. Using IP address in brokerURI instead.");
+            LOGGER.warn("Name resolution failed. Using container IP address in brokerURI instead of name.");
             isContainerNameUsable = false;
             containerNameConnectionTested = true;
             return brokerUriAddress;
@@ -449,6 +451,10 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     public void setContainerNameConnectionTested(boolean containerNameConnectionTested) {
         this.containerNameConnectionTested = containerNameConnectionTested;
+    }
+
+    public int getMappedPort(int port) {
+        return container.getMappedPort(port);
     }
 
 }

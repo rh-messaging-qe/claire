@@ -65,14 +65,15 @@ operator-suite/container/scripts/run-test.sh --help
 
 ## List of shared Environment Variables
 
-| Name                      | Description                                      | Default                     | Possible values                                  |
-|---------------------------|--------------------------------------------------|-----------------------------|--------------------------------------------------|
-| ARTEMIS_VERSION           | ArtemisCloud Version to be used (Makefile)       | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
-| ARTEMIS_TEST_VERSION      | ArtemisCloud Version to be used by tests         | not set                     | \<major\>.\<minor\>                              |
-| LOGS_LOCATION             | Location where to generate collected logs        | `test-logs`                 | \<directory\>                                    |
-| TEST_LOG_LEVEL            | Set logging level of test suite                  | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
-| COLLECT_TEST_DATA         | Whether to gather test data on error or not      | `true`                      | `true`, `false`                                  |
-| TESTS | Which tests to execute (maven syntax) | not set | <mvn-regexp> |
+| Name                 | Description                                                    | Default                     | Possible values                                  |
+|----------------------|----------------------------------------------------------------|-----------------------------|--------------------------------------------------|
+| ARTEMIS_VERSION      | ArtemisCloud Version to be used (Makefile)                     | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
+| ARTEMIS_TEST_VERSION | ArtemisCloud Version to be used by tests                       | not set                     | \<major\>.\<minor\>                              |
+| LOGS_LOCATION        | Location where to generate collected logs                      | `test-logs`                 | \<directory\>                                    |
+| TEST_LOG_LEVEL       | Set logging level of test suite                                | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+| COLLECT_TEST_DATA    | Whether to gather test data on error or not                    | `true`                      | `true`, `false`                                  |
+| TESTS                | Which tests to execute (maven syntax)                          | not set                     | <mvn-regexp>                                     |
+| PLAYWRIGHT_DEBUG     | Playwright will run in head mode (show browser) & record video | `false`                     | `true`, `false`                                  |
 
 ## More information
 For more information about subprojects - refer to README.md files in `operator-suite` or `standalone-suite` folders, which contain more details about usage, more environment variables, etc.
