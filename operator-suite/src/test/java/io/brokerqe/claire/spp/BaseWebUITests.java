@@ -8,6 +8,7 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Download;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.junit.UsePlaywright;
@@ -32,6 +33,8 @@ public class BaseWebUITests extends AbstractSystemTests {
     static Browser browser;
     static BrowserContext context;
     static Page page;
+    static Locator.ClickOptions clicker;
+    static Locator.FillOptions filler;
 
     @BeforeAll
     static void launchBrowser() {
@@ -43,6 +46,8 @@ public class BaseWebUITests extends AbstractSystemTests {
                     .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
         }
         browser = playwright.chromium().launch(options);
+        clicker = new Locator.ClickOptions().setTimeout(5000);
+        filler = new Locator.FillOptions().setTimeout(5000);
     }
 
     @AfterAll

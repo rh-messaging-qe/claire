@@ -9,6 +9,7 @@ import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.helpers.DataStorer;
+import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -82,13 +83,19 @@ public class ACSelfProvisioningPlugin {
             applyPatch();
 
             // check logs, possibly restart pod if issue with cert
-            TestUtils.waitFor(String.format("[%s] GET method to show up in logs of activemq-artemis-self-provisioning-plugin", SPP_DEFAULT_NAMESPACE), Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES, () -> {
-                Pod pod = kubeClient.getFirstPodByPrefixName(SPP_DEFAULT_NAMESPACE, "activemq-artemis-self-provisioning-plugin");
-                String logs = kubeClient.getLogsFromPod(pod);
-                return logs.contains("GET /plugin-manifest.json");
-            });
+            TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
+            List<Event> events = kubeClient.getKubernetesClient().v1().events().inNamespace(SPP_DEFAULT_NAMESPACE).list().getItems();
+            Pod sppPod;
+            for (Event event : events) {
+                if (event.getReason().equals("FailedMount")) {
+                    LOGGER.warn("[{}] Detected FailedMount, restarting spp-pod", SPP_DEFAULT_NAMESPACE);
+                    sppPod = kubeClient.getFirstPodByPrefixName(SPP_DEFAULT_NAMESPACE, "activemq-artemis-self-provisioning-plugin");
+                    kubeClient.restartPod(SPP_DEFAULT_NAMESPACE, sppPod, SPP_DEFAULT_NAMESPACE);
+                    break;
+                }
+            }
 
-            Pod sppPod = kubeClient.getFirstPodByPrefixName(SPP_DEFAULT_NAMESPACE, "activemq-artemis-self-provisioning-plugin");
+            sppPod = kubeClient.getFirstPodByPrefixName(SPP_DEFAULT_NAMESPACE, "activemq-artemis-self-provisioning-plugin");
             String podLogs = kubeClient.getLogsFromPod(sppPod);
             if (podLogs.contains("SSL routines:ssl3_read_bytes:sslv3 alert bad certificate:SSL alert number ")) {
                 LOGGER.info("[{}] Problem with deployed SPP pod - cert-mount-issues. Restarting pod.", SPP_DEFAULT_NAMESPACE);
@@ -128,7 +135,6 @@ public class ACSelfProvisioningPlugin {
         LOGGER.info("[PATCH] Removing 'activemq-artemis-self-provisioning-plugin' from consoles.operator.openshift.io cluster");
 //        plugins=$(oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins | map(select(. != "activemq-artemis-self-provisioning-plugin"))')
 //        oc patch consoles.operator.openshift.io cluster --type=merge --patch '{ "spec": { "plugins": $plugins } }'
-
         String[] getPluginsCmd = {"/bin/bash", "-c",
                                   "oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins | map(select(. != \"activemq-artemis-self-provisioning-plugin\"))'"};
         JSONArray jsonPlugins = new JSONArray(TestUtils.executeLocalCommand(getPluginsCmd).replaceAll("\"", "'"));

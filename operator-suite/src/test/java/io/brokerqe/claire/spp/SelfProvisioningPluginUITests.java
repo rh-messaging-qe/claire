@@ -14,6 +14,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubernetesVersion;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestMinimumKubernetesVersion;
 import io.brokerqe.claire.junit.TestOLMSupported;
 import io.brokerqe.claire.plugins.ACSelfProvisioningPlugin;
@@ -72,14 +73,19 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
 
     void navigateWorkloadBrokers(Page page, String brokerName) {
         LOGGER.info("[{}] Navigate to Workloads/Brokers screen", testNamespace);
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Workloads")).click();
-        try {
-            page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Brokers")).click(new Locator.ClickOptions().setTimeout(5000));
-        } catch (TimeoutError e) {
-            // probably workloads have been clicked twice (thus closed; so click again)
-            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Workloads")).click();
-            page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Brokers")).click(new Locator.ClickOptions().setTimeout(5000));
+        Locator workloadsMenuButton = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Workloads"));
+        List<String> menuContent = workloadsMenuButton.locator("..").getByRole(AriaRole.LIST).allInnerTexts();
+        if (menuContent.isEmpty()) {
+            workloadsMenuButton.click();
+            TestUtils.threadSleep(Constants.DURATION_1_SECOND);
+            menuContent = workloadsMenuButton.locator("..").getByRole(AriaRole.LIST).allInnerTexts();
         }
+
+        if (!menuContent.get(0).contains("Brokers")) {
+            LOGGER.error("Workloads menu does not contain 'Brokers'! {}", menuContent);
+            throw new ClaireRuntimeException("Workloads menu does not contain Brokers! Deployment problem?");
+        }
+        page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Brokers")).click(new Locator.ClickOptions().setTimeout(5000));
 
         if (brokerName != null) {
             page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(brokerName)).click();
