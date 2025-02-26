@@ -130,7 +130,7 @@ public interface Constants {
     String DEFAULT_ARTEMIS_CONTAINER_IMAGE = "quay.io/rhmessagingqe/claire-standalone-artemis:fedora";
     String EV_ARTEMIS_CONTAINER_IMAGE = "ARTEMIS_CONTAINER_IMAGE";
     String PROP_ARTEMIS_CONTAINER_IMAGE = "artemis.container.image";
-    String DEFAULT_ARTEMIS_CONTAINER_INSTANCE_JAVA_HOME = "/opt/openjdk-java-11";
+    String DEFAULT_ARTEMIS_CONTAINER_INSTANCE_JAVA_HOME = "/opt/openjdk-java-17";
     String EV_ARTEMIS_CONTAINER_JAVA_HOME = "ARTEMIS_CONTAINER_JAVA_HOME";
     String PROP_ARTEMIS_CONTAINER_JAVA_HOME = "artemis.container.java.home";
 
