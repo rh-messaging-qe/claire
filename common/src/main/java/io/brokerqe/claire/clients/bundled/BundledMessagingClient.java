@@ -8,6 +8,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.MessagingClientException;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.executor.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,9 +146,13 @@ public abstract class BundledMessagingClient implements MessagingClient {
     public int sendMessages() {
         String cmdOutput;
         String[] command = constructClientCommand(PRODUCER);
-        cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
-        LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
-        return parseMessageCount(cmdOutput, PRODUCER);
+        try {
+            cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+            LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
+            return parseMessageCount(cmdOutput, PRODUCER);
+        } catch (ClaireRuntimeException e) {
+            throw new MessagingClientException(e.getMessage(), e);
+        }
     }
 
     @Override

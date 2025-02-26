@@ -188,8 +188,11 @@ public interface ArtemisConstants {
     String USING_CUSTOM_LOG_MSG = "There is a custom logger configuration defined in JAVA_ARGS_APPEND: -Dlog4j2.configurationFile=";
     String USING_DEFAULT_LOG_MSG = "Using default logging configuration(console only)";
     String LOG_PATTERN_FAILED_AUTH_304 = "AMQ601716: User .* failed authentication, reason: 304";
+    String LOG_PATTERN_FAILED_VALID_USER = "AMQ229031: Unable to validate user from .*. Username: %s";
     String LOG_EXCEPTION = "java.lang.Exception";
     String LOG_EXCEPTION_CAUSE = "Caused by: ";
+    String LOG_ERROR = "ERROR";
+
 
     // Audit Log patterns
     String LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN = ".* AMQ601715: User %s\\(%s\\)@.* successfully authenticated";
