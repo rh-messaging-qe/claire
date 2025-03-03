@@ -6,9 +6,11 @@ package io.brokerqe.claire.logging.general;
 
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
+import io.brokerqe.claire.junit.TestValidSince;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -59,8 +61,9 @@ public class LogAccessTests extends AbstractSystemTests {
         }
     }
 
-    @Test
     // ENTMQBR-8907
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_37)
     void nonOwnerArtemisCommandTest() {
         LOGGER.info(String.format("Test artemis commands with owner user: %s", oldContainerUsername));
         doTestArtemisCommands(oldContainerUsername);

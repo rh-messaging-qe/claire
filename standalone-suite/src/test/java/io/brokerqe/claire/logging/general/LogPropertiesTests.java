@@ -6,6 +6,7 @@ package io.brokerqe.claire.logging.general;
 
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.ArtemisConfigData;
@@ -17,6 +18,7 @@ import io.brokerqe.claire.clients.bundled.BundledClientOptions;
 import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.junit.TestValidSince;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -68,8 +70,9 @@ public class LogPropertiesTests extends AbstractSystemTests {
         }
     }
 
-    @Test
     // ENTMQBR-9064
+    @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_37)
     void logFileRotationTest() {
 
         TestUtils.waitFor("for log file to rotate", Constants.DURATION_10_SECONDS, Constants.DURATION_2_MINUTES, () -> {
