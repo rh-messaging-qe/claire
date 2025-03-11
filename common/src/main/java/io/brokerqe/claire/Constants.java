@@ -184,7 +184,8 @@ public interface Constants {
     // https://hub.docker.com/_/microsoft-mssql-server
     String IMAGE_MSSQL = "mcr.microsoft.com/mssql/server:2022-latest";
     String IMAGE_ORACLE = "container-registry.oracle.com/database/free:latest";
-    String IMAGE_RAPIDAST = "quay.io/redhatproductsecurity/rapidast:latest";
+    // TODO: fix the spiderAjax to use latest, or development tag of image
+    String IMAGE_RAPIDAST = "quay.io/redhatproductsecurity/rapidast:2.9.0";
 
     // Openshift related
     String MONITORING_NAMESPACE = "openshift-monitoring";
