@@ -675,6 +675,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_40)
     void mulltipleJsonPropertyTest() {
         Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
         amqpAcceptors.setBindToAllInterfaces(true);
@@ -723,6 +724,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_40)
     void specificBrokerTest() {
         Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
         amqpAcceptors.setBindToAllInterfaces(true);
@@ -770,6 +772,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
     @Test
+    @TestValidSince(ArtemisVersion.VERSION_2_40)
     void jsonPropertyTest() {
         Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
         amqpAcceptors.setBindToAllInterfaces(true);
