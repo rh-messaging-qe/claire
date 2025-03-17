@@ -22,6 +22,7 @@ public class LogAccessTests extends AbstractSystemTests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(io.brokerqe.claire.logging.general.LogAccessTests.class);
     private ArtemisContainer artemis;
+    private final String artemisBinDir = ArtemisConstants.INSTANCE_BIN_DIR;
     private final String username = ArtemisConstants.ADMIN_NAME;
     private final String password = ArtemisConstants.ADMIN_PASS;
     private final String oldContainerUsername = ArtemisConstants.ARTEMIS_STRING;
@@ -35,8 +36,8 @@ public class LogAccessTests extends AbstractSystemTests {
     }
 
     private String[] constructArtemisCommand(String artemisCommand, String withContainerUser) {
-        String cmd = String.format("./bin/artemis %s --user %s --password %s", artemisCommand, username, password);
-        return new String[]{"sudo", "-H", "-u", withContainerUser, "/bin/bash", "-c", cmd};
+        String cmd = String.format("%s/artemis %s --user %s --password %s", artemisBinDir, artemisCommand, username, password);
+        return new String[]{"sudo", "-E", "-H", "-u", withContainerUser, "/bin/bash", "-c", cmd};
     }
 
     private void doTestArtemisCommands(String withContainerUser) {
