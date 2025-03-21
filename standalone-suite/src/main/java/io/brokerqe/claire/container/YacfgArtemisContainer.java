@@ -5,6 +5,7 @@
 package io.brokerqe.claire.container;
 
 import com.sun.security.auth.module.UnixSystem;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
 import org.slf4j.Logger;
@@ -93,6 +94,7 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
         addCustomBuildParams();
 
         yacfgCmdArgs.addAll(params);
+        LOGGER.debug("[YACFG] Starting container with params: {}", params);
 
         container.withCreateContainerCmdModifier(cmd -> cmd.withCmd(yacfgCmdArgs.toArray(new String[0])));
         withUserId(String.valueOf(new UnixSystem().getUid()));
@@ -106,10 +108,16 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
     private void addCustomBuildParams() {
         if (!ENVIRONMENT_STANDALONE.isUpstreamArtemis()) {
             String bootstrapOpts = "bootstrap_apps=[";
-            bootstrapOpts += "{url: redhat-branding, war: redhat-branding.war},";
-            bootstrapOpts += "{url: artemis-plugin, war: artemis-plugin.war},";
-            bootstrapOpts += "{url: console, war: hawtio.war},";
-            bootstrapOpts += "{url: metrics, war: metrics.war}";
+
+            if (ENVIRONMENT_STANDALONE.getArtemisTestVersion().getVersionNumber() > ArtemisVersion.VERSION_2_39.getVersionNumber()) {
+                bootstrapOpts += "{url: console, war: console.war},";
+                bootstrapOpts += "{url: metrics, war: metrics.war}";
+            } else {
+                bootstrapOpts += "{url: redhat-branding, war: redhat-branding.war},";
+                bootstrapOpts += "{url: artemis-plugin, war: artemis-plugin.war},";
+                bootstrapOpts += "{url: console, war: hawtio.war},";
+                bootstrapOpts += "{url: metrics, war: metrics.war}";
+            }
             bootstrapOpts += "]";
             params.addAll(List.of(OPT_PARAM_KEY, bootstrapOpts));
         }

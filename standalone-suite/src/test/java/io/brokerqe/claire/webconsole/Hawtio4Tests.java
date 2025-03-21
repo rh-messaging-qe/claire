@@ -38,7 +38,6 @@ public class Hawtio4Tests extends BaseWebUITests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Hawtio4Tests.class);
     protected ArtemisContainer artemisInstance;
-    protected Page artemisPage;
 
     @BeforeAll
     void setupEnv() {
@@ -46,10 +45,10 @@ public class Hawtio4Tests extends BaseWebUITests {
         LOGGER.info("Creating artemis instance: " + artemisName);
         artemisInstance = ArtemisDeployment.createArtemis(artemisName, new ArtemisConfigData().withTuneFile("tune.yaml.jinja2"));
         launchBrowser();
-        int webPort = artemisInstance.getMappedPort(ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT);
-//        loginToArtemis(artemisInstance, "localhost:" + webPort, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+        setArtemisContainer(artemisInstance);
+        loginToArtemis(artemisInstance.getHttpConsoleUrl(true, false), ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
         // TMP MODE: make sure connector is started
-        artemisPage = loginToArtemisConnector(artemisInstance, "http://localhost:8080/console/connect/remote", webPort, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
+//        artemisPage = loginToArtemisConnector(artemisInstance, "http://localhost:8080/console/connect/remote", webPort, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
     }
 
     @BeforeEach
@@ -99,17 +98,16 @@ public class Hawtio4Tests extends BaseWebUITests {
         context.grantPermissions(Arrays.asList("clipboard-read", "clipboard-write"));
         String addressName = "jolokia-address";
         String queueName = "jolokia-queue";
-        setTab(artemisPage, ArtemisTabs.Status);
         clickBrokerOperations(artemisPage);
 
         LOGGER.info("Create Address using Jolokia URL");
-        String jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "operation createAddress(java.lang.String,java.lang.String)");
-        executeJolokiaCommand(artemisInstance, jolokiaUrlCommand, addressName + "/ANYCAST");
+        String jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "createAddress(String,");
+        executeJolokiaCommandLocally(artemisInstance, jolokiaUrlCommand, addressName + "/ANYCAST");
 
         LOGGER.info("Create Queue using Jolokia URL");
-        jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "operation createQueue(java.lang.String,java.lang.String,boolean)");
-        executeJolokiaCommand(artemisInstance, jolokiaUrlCommand, String.format("%s/%s/true", addressName, queueName));
-        artemisPage.getByText("Close", new Page.GetByTextOptions().setExact(true)).click(clicker);
+        jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "createQueue(String, String, boolean)");
+        executeJolokiaCommandLocally(artemisInstance, jolokiaUrlCommand, String.format("%s/%s/true", addressName, queueName));
+        navigateHome(artemisPage);
 
         LOGGER.info("Send messages using Jolokia URL");
         int msgCount = 20;
@@ -124,9 +122,8 @@ public class Hawtio4Tests extends BaseWebUITests {
 
         clickBrokerOperations(artemisPage);
         LOGGER.info("Delete forcefully address using Jolokia URL");
-        jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "operation deleteAddress(java.lang.String,boolean)");
-        executeJolokiaCommand(artemisInstance, jolokiaUrlCommand, String.format("%s/true", addressName));
-        artemisPage.getByText("Close", new Page.GetByTextOptions().setExact(true)).click(clicker);
+        jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "deleteAddress(String, boolean)");
+        executeJolokiaCommandLocally(artemisInstance, jolokiaUrlCommand, String.format("%s/true", addressName));
         checkAddressesPresence(artemisPage, 0, addressName);
     }
 

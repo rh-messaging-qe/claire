@@ -37,7 +37,7 @@ _defaults:
 render:
   generator_notice: true
   licenses: true
-  template: artemis/
+  template: artemis
 
 broker_xml:
   name: '{{ broker_name }}'
@@ -46,7 +46,7 @@ broker_xml:
 
   disk_scan_period: 5000
   max_disk_usage: 90
-  page_sync_timeout: 0
+  page_sync_timeout: 732000
   global_max_message: -1
 
 {% include 'artemis/_modules/broker_xml/store/user_jdbc_store.yaml.jinja2' %}
@@ -95,7 +95,7 @@ broker_xml:
 {% endif %}
 
 # bootstrap.xml
-{% include 'artemis/_modules/bootstrap_xml/allow.yaml.jinja2' %}
+{% include 'artemis/_modules/bootstrap_xml/default_240.yaml.jinja2' %}
 
 # jolokia-access.xml
 {% include 'artemis/_modules/jolokia_access/allow.yaml.jinja2' %}

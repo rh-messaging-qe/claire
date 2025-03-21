@@ -269,19 +269,19 @@ public final class ArtemisContainer extends AbstractGenericContainer {
 
     public String getConsoleUrl() {
         if (secured) {
-            return getHttpsConsoleUrl();
+            return getHttpConsoleUrl(false, true);
         } else {
-            return getHttpConsoleUrl();
+            return getHttpConsoleUrl(false, false);
         }
     }
-    public String getHttpConsoleUrl() {
-        return Constants.HTTP + "://" + this.getName()
-                + ":" + ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT + "/" + ArtemisConstants.CONSOLE_STRING;
-    }
 
-    public String getHttpsConsoleUrl() {
-        return Constants.HTTPS + "://" + this.getName()
-                + ":" + ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT + "/" + ArtemisConstants.CONSOLE_STRING;
+    public String getHttpConsoleUrl(boolean useLocalhost, boolean useHttps) {
+        String url = (useHttps ? Constants.HTTPS : Constants.HTTP) + "://";
+        if (useLocalhost) {
+            return url + "localhost:" + getGenericContainer().getMappedPort(ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT) + "/" + ArtemisConstants.CONSOLE_STRING;
+        } else {
+            return url + this.getContainerIpAddress() + ":" + ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT + "/" + ArtemisConstants.CONSOLE_STRING;
+        }
     }
 
     public String getLoginUrl() {

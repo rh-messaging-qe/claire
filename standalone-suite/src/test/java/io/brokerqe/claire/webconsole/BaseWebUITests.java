@@ -11,6 +11,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.TimeoutError;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
@@ -41,6 +42,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
+enum ArtemisMenu {
+    Artemis,
+    ArtemisJMX,
+    JMX,
+    Runtime
+}
+
 enum ArtemisTabs {
     Status,
     Connections,
@@ -68,15 +76,24 @@ public class BaseWebUITests extends AbstractSystemTests {
     static Playwright playwright;
     static Browser browser;
     static BrowserContext context;
-    static Page initialPage;
+    static Page artemisPage;
     static Locator.ClickOptions clicker;
     static Locator.FillOptions filler;
+    protected ArtemisContainer artemisContainer;
 
     @AfterAll
     static void closeBrowser() {
         context.close();
         browser.close();
         playwright.close();
+    }
+
+    public ArtemisContainer getArtemisContainer() {
+        return artemisContainer;
+    }
+
+    public void setArtemisContainer(ArtemisContainer artemis) {
+        artemisContainer = artemis;
     }
 
     static void launchBrowser() {
@@ -104,19 +121,26 @@ public class BaseWebUITests extends AbstractSystemTests {
         }
         context = browser.newContext(contextOptions);
         context.grantPermissions(Arrays.asList("clipboard-read", "clipboard-write"));
-        initialPage = context.newPage();
+        artemisPage = context.newPage();
     }
 
-    void loginToArtemis(ArtemisContainer artemisContainer, String loginUrl, String username, String password) {
+    void loginToArtemis(String loginUrl, String username, String password) {
         LOGGER.info("Logging into {}", loginUrl);
-        initialPage.navigate(loginUrl);
-        initialPage.getByText("Username").fill(username);
-        initialPage.getByText("Password").fill(password);
-        initialPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
+        artemisPage.navigate(loginUrl);
+        artemisPage.getByText("Username", new Page.GetByTextOptions().setExact(true)).fill(username);
+        artemisPage.getByText("Password").fill(password);
+        artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
+        LOGGER.info("Logging into artemis broker");
+        artemisPage.waitForLoadState();
+        TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
     }
 
+    /**
+     * This method is used only when using jolokia connector. By default we don't want to use it.
+     */
     Page loginToArtemisConnector(ArtemisContainer artemisContainer, String loginUrl, int webPort, String username, String password) {
         LOGGER.info("Logging into {}", loginUrl);
+        Page initialPage = context.newPage();
         initialPage.navigate(loginUrl);
 
         LOGGER.info("Create new remote connection");
@@ -130,7 +154,7 @@ public class BaseWebUITests extends AbstractSystemTests {
         initialPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Add").setExact(true)).click();
 
         // Get page after a specific action (e.g. clicking a link)
-        Page artemisPage = context.waitForPage(() -> {
+        artemisPage = context.waitForPage(() -> {
             initialPage.locator("[rowId='connection " + artemisContainer.getName() + "']").getByText("Connect").click();
         });
         artemisPage.getByText("Username").fill(username);
@@ -144,7 +168,13 @@ public class BaseWebUITests extends AbstractSystemTests {
 
     void navigateHome(Page page) {
         page.keyboard().press("Escape");
-        page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions().setName("Artemis Console")).click(clicker);
+        String homeButton;
+        if (getEnvironment().isUpstreamArtemis()) {
+            homeButton = "Artemis Console";
+        } else {
+            homeButton = "AMQ Broker Console";
+        }
+        page.getByRole(AriaRole.IMG, new Page.GetByRoleOptions().setName(homeButton)).click(clicker);
     }
 
     Page setTab(Page artemisPage, ArtemisTabs tabName) {
@@ -160,6 +190,17 @@ public class BaseWebUITests extends AbstractSystemTests {
             case BrokerDiagram -> artemisPage.getByText("Broker Diagram").click(clicker);
         }
         TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
+        return artemisPage;
+    }
+
+    Page setMenu(Page artemisPage, ArtemisMenu artemisMenu) {
+        switch (artemisMenu) {
+            case Artemis -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Artemis").setExact(true)).click(clicker);
+            case ArtemisJMX -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Artemis JMX")).click(clicker);
+            case JMX -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("JMX").setExact(true)).click(clicker);
+            case Runtime -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Runtime")).click(clicker);
+        }
+        TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
         return artemisPage;
     }
 
@@ -209,6 +250,7 @@ public class BaseWebUITests extends AbstractSystemTests {
 
     protected void checkAddressesPresence(Page artemisPage, int expectedAddressCount, String addressPrefix) {
         LOGGER.info("Checking addresses");
+        setMenu(artemisPage, ArtemisMenu.Artemis);
         setTab(artemisPage, ArtemisTabs.Addresses);
         filterBy(artemisPage, "Name", OperationFilter.Contains, addressPrefix, null);
 
@@ -279,11 +321,20 @@ public class BaseWebUITests extends AbstractSystemTests {
     }
 
     protected void clickBrokerOperations(Page artemisPage) {
-        setTab(artemisPage, ArtemisTabs.Status);
-        artemisPage.locator("div.pf-m-2-col path").click();
-        artemisPage.getByText("Operations").click();
-        playwright.selectors().setTestIdAttribute("aria-labelledby");
+        setMenu(artemisPage, ArtemisMenu.ArtemisJMX);
+        Locator dropdownExpandButton = artemisPage.locator("[id=\"org\\.apache\\.activemq\\.artemis-folder-" + getArtemisContainer().getName() + "\"]")
+                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(getArtemisContainer().getName()));
+        // broker operations
+        try {
+            dropdownExpandButton.click(clicker);
+        } catch (TimeoutError e) {
+            artemisPage.getByLabel("org.apache.activemq.artemis").click(clicker);
+            TestUtils.threadSleep(Constants.DURATION_1_SECOND);
+            dropdownExpandButton.click(clicker);
+        }
+        artemisPage.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName("Operations")).click(clicker);
         TestUtils.threadSleep(Constants.DURATION_1_SECOND);
+        playwright.selectors().setTestIdAttribute("aria-labelledby");
     }
 
     protected void createOperationMany(Page page, String addressPrefix, String queuePrefix, int count) {
@@ -298,8 +349,8 @@ public class BaseWebUITests extends AbstractSystemTests {
         clickBrokerOperations(artemisPage);
 
         Locator loc = artemisPage.locator("[id='operation-execute-createQueue(java.lang.String,java.lang.String,boolean,java.lang.String)']");
-        artemisPage.getByTestId("operation createQueue(java.lang.String,java.lang.String,boolean,java.lang.String) ex-toggle1").click();
-        TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
+        artemisPage.getByTestId("operation createQueue(java.lang.String,java.lang.String,boolean,java.lang.String) ex-toggle1").click(clicker);
+        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
 
         try {
             // address
@@ -307,7 +358,7 @@ public class BaseWebUITests extends AbstractSystemTests {
         } catch (Exception e) {
             // try it again
             LOGGER.warn("Trying to click again to fill address");
-            artemisPage.getByTestId("operation createQueue(java.lang.String,java.lang.String,boolean,java.lang.String) ex-toggle1").click();
+            artemisPage.getByTestId("operation createQueue(java.lang.String,java.lang.String,boolean,java.lang.String) ex-toggle1").click(clicker);
             TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
             artemisPage.locator("[id='operation-createQueue(java.lang.String,java.lang.String,boolean,java.lang.String)-arg-form-input-address-0']").fill(address);
         }
@@ -317,9 +368,8 @@ public class BaseWebUITests extends AbstractSystemTests {
         artemisPage.locator("[id='operation-createQueue(java.lang.String,java.lang.String,boolean,java.lang.String)-arg-form-input-durable-2']").setChecked(true);
         // routingType
         artemisPage.locator("[id='operation-createQueue(java.lang.String,java.lang.String,boolean,java.lang.String)-arg-form-input-routingType-3']").fill("ANYCAST");
-        loc.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Execute")).click();
+        loc.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Execute")).click(clicker);
         TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
-        artemisPage.locator("footer").getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Close")).click();
     }
 
     protected void deleteAddressOperationMany(Page page, String addressPrefix, int count) {
@@ -349,8 +399,6 @@ public class BaseWebUITests extends AbstractSystemTests {
         // force
         artemisPage.locator("[id='operation-deleteAddress(java.lang.String,boolean)-arg-form-input-force-1']").setChecked(true);
         loc.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Execute")).click();
-
-        artemisPage.locator("footer").getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Close")).click();
     }
 
     protected void filterBy(Page artemisPage, String predicateFilterName, OperationFilter operation, String objectName, String sortBy) {
@@ -458,21 +506,31 @@ public class BaseWebUITests extends AbstractSystemTests {
         return browsedMessages;
     }
 
-    protected void executeJolokiaCommand(ArtemisContainer artemis, String jolokiaUrlCommand, String parameters) {
-        String command = String.format("curl -H \"Origin:http://%s:%d\" -u %s:%s '%s/%s'", artemis.getName(), ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT,
+    protected void executeJolokiaCommandLocally(ArtemisContainer artemis, String jolokiaUrlCommand, String parameters) {
+        jolokiaUrlCommand = jolokiaUrlCommand.replace(
+                String.valueOf(artemis.getGenericContainer().getMappedPort(ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT)),
+                String.valueOf(ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT));
+        String command = String.format("curl -H \"Origin:http://localhost:%d\" -u %s:%s '%s/%s'", ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT,
                 ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, jolokiaUrlCommand, parameters);
         artemis.executeCommand("sh", "-c", command);
     }
 
-    protected String getJolokiaUrlCommand(Page artemisPage, String getTestIdLocator) {
-        Locator li = artemisPage.getByRole(AriaRole.LIST).getByTestId(getTestIdLocator);
-        li.getByRole(AriaRole.BUTTON).nth(1).click(clicker);
-        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
-        li.getByText("Copy Jolokia URL").click(clicker);
-
-        String jolokiaUrlCommand = (String) artemisPage.evaluate("() => navigator.clipboard.readText()");
+    protected String getJolokiaUrlCommand(Page artemisPage, String operationText) {
+        artemisPage.getByRole(AriaRole.LISTITEM).filter(new Locator.FilterOptions().setHasText(operationText)).getByLabel("", new Locator.GetByLabelOptions().setExact(true)).click(clicker);
+        Locator listItem = artemisPage.locator("li:has-text('" + operationText + "')");
+        listItem.locator("button.pf-v5-c-menu-toggle.pf-m-plain").click(clicker);
+        listItem.getByText("Copy Jolokia URL").click(clicker);
+        String jolokiaUrlCommand;
+        try {
+            jolokiaUrlCommand = (String) artemisPage.evaluate("() => navigator.clipboard.readText()");
+        } catch (TimeoutError te) {
+//        You can copy the URL manually: http://172.19.0.2:8161/console/jolokia/exec/org.apache.activemq.artemis:broker=!"artemis-mauricio!"/clearAuthorizationCache()
+            String insecureCopy = "You can copy the URL manually: ";
+            jolokiaUrlCommand = artemisPage.getByText(insecureCopy).allTextContents().get(0).substring(insecureCopy.length());
+        }
         LOGGER.debug("Got Jolokia URL:\n{}", jolokiaUrlCommand);
         artemisPage.keyboard().press("Escape");
+        // used only with connector
         jolokiaUrlCommand = workaroundJolokiaCmd(jolokiaUrlCommand);
         return jolokiaUrlCommand;
     }

@@ -61,7 +61,7 @@ public abstract class AbstractGenericContainer {
         logConsumer = new Slf4jLogConsumer(LOGGER);
         if (dockerImage != null) {
             container = new GenericContainer<>(DockerImageName.parse(dockerImage));
-            LOGGER.debug("[{}] With default network: {}", name, ResourceManager.getDefaultNetwork());
+            LOGGER.debug("[{}] With default network: {}", name, ResourceManager.getDefaultNetwork().getId());
             container.withNetwork(ResourceManager.getDefaultNetwork());
         }
     }

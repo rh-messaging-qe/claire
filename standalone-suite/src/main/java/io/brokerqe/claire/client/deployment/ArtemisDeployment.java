@@ -236,8 +236,6 @@ public class ArtemisDeployment {
             });
             yacfgParams.removeIf(tunePredicate);
             yacfg.withParams(yacfgParams);
-
-            LOGGER.debug("[YACFG] Starting container with params: {}", yacfgParams);
             yacfg.start();
             TimeHelper.waitFor(e -> yacfg.getStatus().equalsIgnoreCase("exited"), Constants.DURATION_500_MILLISECONDS,
                     Constants.DURATION_5_SECONDS);
