@@ -91,5 +91,12 @@ public class FailoverReplicationTests extends AbstractSystemTests {
 
         LOGGER.info("Ensuring produced and consumed messages are the same");
         ensureSameMessages(numOfMessages, producedMsgs, consumedMsgs);
+
+        LOGGER.info("[PRIMARY] Start back primary");
+        artemisPrimary.start();
+        artemisPrimary.ensureBrokerIsActive();
+        LOGGER.info("[PRIMARY] Ensure queue is empty");
+        artemisPrimary.ensureQueueCount(addressName, queueName, RoutingType.ANYCAST, 0);
+        artemisBackup.ensureBrokerIsBackup();
     }
 }
