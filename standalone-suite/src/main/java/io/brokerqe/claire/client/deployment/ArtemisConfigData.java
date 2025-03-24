@@ -10,6 +10,7 @@ import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.EnvironmentStandalone;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.YacfgArtemisContainer;
 import io.brokerqe.claire.database.Database;
 
@@ -114,6 +115,15 @@ public class ArtemisConfigData {
 
     public ArtemisConfigData withArtemisVersion(ArtemisVersion artemisVersion) {
         this.artemisVersion = artemisVersion;
+        return this;
+    }
+
+    public ArtemisConfigData withDebugLogs(boolean auditOff) {
+        if (auditOff) {
+            withCustomTuneFile(ArtemisContainer.ARTEMIS_TUNE_LOGS_DEBUG_FILE);
+        } else {
+            withCustomTuneFile(ArtemisContainer.ARTEMIS_TUNE_LOGS_DEBUG_ALL_FILE);
+        }
         return this;
     }
 

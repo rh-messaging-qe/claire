@@ -54,6 +54,8 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public static final String ARTEMIS_INSTANCE_DIR = ArtemisConstants.VAR_DIR + ArtemisConstants.LIB_DIR + Constants.FILE_SEPARATOR + ArtemisConstants.INSTANCE_STRING;
     public static final String ARTEMIS_INSTANCE_ETC_DIR = ARTEMIS_INSTANCE_DIR + ArtemisConstants.ETC_DIR;
     public static final String ARTEMIS_INSTANCE_DATA_DIR = ARTEMIS_INSTANCE_DIR + ArtemisConstants.DATA_DIR;
+    public static final String ARTEMIS_TUNE_LOGS_DEBUG_FILE = YacfgArtemisContainer.CLAIRE_STANDALONE_YACFG_PROFILES + Constants.FILE_SEPARATOR + "logs" + Constants.FILE_SEPARATOR + "tune-debug-logs.yaml";
+    public static final String ARTEMIS_TUNE_LOGS_DEBUG_ALL_FILE = YacfgArtemisContainer.CLAIRE_STANDALONE_YACFG_PROFILES + Constants.FILE_SEPARATOR + "logs" + Constants.FILE_SEPARATOR + "tune-debug-all.yaml";
     private static final String ARTEMIS_INSTANCE_CONTROLLER_CMD = "/usr/local/bin/artemis-controller.sh";
 
     private boolean secured = false;

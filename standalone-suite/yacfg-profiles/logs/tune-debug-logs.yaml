@@ -1,0 +1,5 @@
+log_level_all: "DEBUG"
+
+log_level_audit_base: 'INFO, audit_log_file'
+log_level_audit_message: 'INFO, audit_log_file'
+log_level_audit_resource: 'INFO, audit_log_file'

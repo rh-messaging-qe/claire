@@ -43,7 +43,9 @@ public class Hawtio4Tests extends BaseWebUITests {
     void setupEnv() {
         String artemisName = "artemis";
         LOGGER.info("Creating artemis instance: " + artemisName);
-        artemisInstance = ArtemisDeployment.createArtemis(artemisName, new ArtemisConfigData().withTuneFile("tune.yaml.jinja2"));
+        ArtemisConfigData artemisConfigData = new ArtemisConfigData().withTuneFile("tune.yaml.jinja2");
+        artemisConfigData.withDebugLogs(true);
+        artemisInstance = ArtemisDeployment.createArtemis(artemisName, artemisConfigData);
         launchBrowser();
         setArtemisContainer(artemisInstance);
         loginToArtemis(artemisInstance.getHttpConsoleUrl(true, false), ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
