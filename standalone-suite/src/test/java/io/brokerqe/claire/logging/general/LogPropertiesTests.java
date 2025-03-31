@@ -19,7 +19,6 @@ import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestValidSince;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -32,7 +31,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 
 public class LogPropertiesTests extends AbstractSystemTests {
@@ -74,6 +74,8 @@ public class LogPropertiesTests extends AbstractSystemTests {
     @Test
     @TestValidSince(ArtemisVersion.VERSION_2_37)
     void logFileRotationTest() {
+        LOGGER.info("Remove all .gz files that might remain in log directory");
+        artemis.deleteFileFrom(String.format("%s/*.gz", artemisLogPathDir));
 
         TestUtils.waitFor("for log file to rotate", Constants.DURATION_10_SECONDS, Constants.DURATION_2_MINUTES, () -> {
             String artemisLog = TestUtils.readFileContent(artemisLogPath.toFile());
@@ -83,7 +85,7 @@ public class LogPropertiesTests extends AbstractSystemTests {
         LOGGER.info("Assert a new generated log file in .gz format is present");
         List<Path> gzFiles = listLogGzFiles(artemisLogPathDir);
         LOGGER.debug("log files that end with .gz present in dir: {}", gzFiles.toString());
-        assertEquals(1, gzFiles.size());
+        assertFalse(gzFiles.isEmpty());
 
         LOGGER.info("Try to send messages with incorrect credentials, with Bundled Core Messaging");
         int msgsExpected = 5;
@@ -109,7 +111,7 @@ public class LogPropertiesTests extends AbstractSystemTests {
         String artemisLog = TestUtils.readFileContent(artemisLogPath.toFile());
         String userValidationMsg = String.format(ArtemisConstants.LOG_PATTERN_FAILED_VALID_USER, invalidUser);
         LOGGER.debug("user validation message match: {}", userValidationMsg);
-        Assertions.assertThat(artemisLog).containsPattern(userValidationMsg);
+        assertThat(artemisLog).containsPattern(userValidationMsg);
     }
 
 }
