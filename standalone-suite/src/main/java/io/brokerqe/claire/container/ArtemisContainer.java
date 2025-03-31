@@ -7,6 +7,7 @@ package io.brokerqe.claire.container;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.sun.security.auth.module.UnixSystem;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.ArtemisConfigData;
@@ -154,7 +155,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
 
-    public ArtemisConfigData getArtemisData() {
+    public ArtemisConfigData getArtemisConfigData() {
         return artemisConfigData;
     }
 
@@ -287,12 +288,20 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public String getLoginUrl() {
-        return getConsoleUrl() + "/" + ArtemisConstants.AUTH_STRING + "/" + ArtemisConstants.LOGIN_STRING;
+        if (getArtemisConfigData().getArtemisTestVersion().getVersionNumber() > ArtemisVersion.VERSION_2_38.getVersionNumber()) {
+            return getConsoleUrl() + "/" + ArtemisConstants.LOGIN_STRING;
+        } else {
+            return getConsoleUrl() + "/" + ArtemisConstants.AUTH_STRING + "/" + ArtemisConstants.LOGIN_STRING;
+        }
     }
 
     public String getLoggedInUrl() {
-        return getConsoleUrl() + "/" + ArtemisConstants.ARTEMIS_STRING
-                + "/artemisStatus?nid=root-org.apache.activemq.artemis-" + this.getName();
+        if (getArtemisConfigData().getArtemisTestVersion().getVersionNumber() > ArtemisVersion.VERSION_2_38.getVersionNumber()) {
+            return getConsoleUrl() + "/" + ArtemisConstants.ARTEMIS_STRING;
+        } else {
+            return getConsoleUrl() + "/" + ArtemisConstants.ARTEMIS_STRING
+                    + "/artemisStatus?nid=root-org.apache.activemq.artemis-" + this.getName();
+        }
     }
 
     @Override

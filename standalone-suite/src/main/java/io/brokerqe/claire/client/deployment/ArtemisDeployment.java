@@ -130,6 +130,7 @@ public class ArtemisDeployment {
         LOGGER.info("[CREATE] Creating artemis instance: {} with profile {}", instanceName, yacfgArtemisProfile);
         ArtemisContainer artemis = ResourceManager.getArtemisContainerInstance(instanceName);
         artemis.withEnvVar(artemisConfigData.getEnvVars());
+        artemis.setArtemisData(artemisConfigData);
 
         // === Configuration of artemis container yacfg ===
         String tuneFile = artemisConfigData.getTuneFile();

@@ -21,9 +21,7 @@ import io.brokerqe.claire.clients.bundled.BundledClientOptions;
 import io.brokerqe.claire.clients.container.AmqpCliOptionsBuilder;
 import io.brokerqe.claire.clients.container.AmqpQpidClient;
 import io.brokerqe.claire.container.ArtemisContainer;
-import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
-import io.brokerqe.claire.helper.webconsole.MainPageHelper;
-import io.brokerqe.claire.helper.webconsole.WebConsoleHelper;
+import io.brokerqe.claire.webconsole.WebConsoleSeleniumHelper;
 import io.brokerqe.claire.junit.TestDisabledOn;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
@@ -111,17 +109,16 @@ public class AuditLogTests extends AbstractSystemTests {
     @Test
     void webConsoleLoginLogoutTest() {
         // TODO: add parameters to test different browsers
-        // create a selenium remote web driver instance
         RemoteWebDriver driver = ResourceManager.getChromeRemoteDriver("chrome-browser");
 
         // load the console url (assertion is inside the method to be reused)
-        WebConsoleHelper.load(driver, artemis);
+        WebConsoleSeleniumHelper.load(driver, artemis);
 
         // try to log in (assertion is inside the method to be reused)
-        LoginPageHelper.login(driver, artemis);
+        WebConsoleSeleniumHelper.login(driver, artemis);
 
         // try to log out (assertion is inside the method to be reused)
-        MainPageHelper.logout(driver, artemis);
+        WebConsoleSeleniumHelper.logout(driver, artemis);
 
         // assert the log does not contain the pattern
         String logs = artemis.getLogs();

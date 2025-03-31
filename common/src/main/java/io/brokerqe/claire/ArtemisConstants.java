@@ -195,13 +195,13 @@ public interface ArtemisConstants {
 
 
     // Audit Log patterns
-    String LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN = ".* AMQ601715: User %s\\(%s\\)@.* successfully authenticated";
+    String LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN = ".* AMQ601715: User %s\\(.*%s.*\\)@.* successfully authenticated";
     String LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN = ".* AMQ601264: User %s\\(%s\\).* gets security check failure.*(AMQ229213|AMQ229032): User: %s does not have permission='SEND' (for queue %s )?on address %s.*";
     String LOG_AUDIT_AUTHENTICATION_FAIL_CONSUME_PATTERN = ".* AMQ601264: User %s\\(%s\\).* gets security check failure.*AMQ229213: User: %s does not have permission='CONSUME' for queue %s on address %s.*";
     String LOG_AUDIT_CREATE_ADDRESS_PATTERN_CORE = ".* AMQ601262: User %s\\(%s\\).* is creating address on target resource:.*with parameters:.*%s::%s.*";
     String LOG_AUDIT_CREATE_ADDRESS_PATTERN_AMQP = ".* AMQ601262: User %s\\(%s\\)@.* is creating address on target resource:.* with parameters:.*name=%s.*";
-    String LOG_AUDIT_CREATE_QUEUE_PATTERN = ".* AMQ601065: User %s\\(%s\\).*is creating a queue on target resource:.*with parameters.* name=myQueue.*address=myAddress.*";
-    String LOG_AUDIT_SENT_MESSAGE_PATTERN = ".* AMQ601500: User %s\\(%s\\)@.* sent a message .* address=%s::%s.*";
-    String LOG_AUDIT_RECEIVED_MESSAGE_PATTERN = ".* AMQ601501: User %s\\(%s\\)@.* is consuming a message from %s.*";
+    String LOG_AUDIT_CREATE_QUEUE_PATTERN = ".* AMQ601065: User %s\\(.*%s.*\\).*is creating a queue on target resource:.*with parameters.* name=myQueue.*address=myAddress.*";
+    String LOG_AUDIT_SENT_MESSAGE_PATTERN = ".* AMQ601500: User %s\\(.*%s.*\\)@.* sent a message .* address=%s::%s.*";
+    String LOG_AUDIT_RECEIVED_MESSAGE_PATTERN = ".* AMQ601501: User %s\\(.*%s.*\\)@.* is consuming a message from %s.*";
     String AUTO_RELOAD_PROPERTY = "acceptorConfigurations.%s.params.sslAutoReload=true";
 }

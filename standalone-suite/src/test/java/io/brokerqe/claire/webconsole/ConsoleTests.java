@@ -8,9 +8,6 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
-import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
-import io.brokerqe.claire.helper.webconsole.MainPageHelper;
-import io.brokerqe.claire.helper.webconsole.WebConsoleHelper;
 import io.brokerqe.claire.container.ArtemisContainer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -40,13 +37,13 @@ public class ConsoleTests extends AbstractSystemTests {
         RemoteWebDriver driver = ResourceManager.getChromeRemoteDriver("chrome-browser");
 
         // load the console url (assertion is inside the method to be reused)
-        WebConsoleHelper.load(driver, artemisInstance);
+        WebConsoleSeleniumHelper.load(driver, artemisInstance);
 
         // try to log in (assertion is inside the method to be reused)
-        LoginPageHelper.login(driver, artemisInstance);
+        WebConsoleSeleniumHelper.login(driver, artemisInstance);
 
         // try to log out (assertion is inside the method to be reused)
-        MainPageHelper.logout(driver, artemisInstance);
+        WebConsoleSeleniumHelper.logout(driver, artemisInstance);
     }
 
 }

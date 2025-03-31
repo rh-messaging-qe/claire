@@ -12,9 +12,6 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.container.ArtemisContainer;
-import io.brokerqe.claire.helper.webconsole.LoginPageHelper;
-import io.brokerqe.claire.helper.webconsole.MainPageHelper;
-import io.brokerqe.claire.helper.webconsole.WebConsoleHelper;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.security.CertificateData;
 import io.brokerqe.claire.security.CertificateManager;
@@ -82,13 +79,13 @@ public class SecuredConsoleTests extends AbstractSystemTests {
         RemoteWebDriver driver = ResourceManager.getChromeRemoteDriver("chrome-browser", true);
 
         // load the console url (assertion is inside the method to be reused)
-        WebConsoleHelper.load(driver, artemis);
+        WebConsoleSeleniumHelper.load(driver, artemis);
 
         // try to log in (assertion is inside the method to be reused)
-        LoginPageHelper.login(driver, artemis);
+        WebConsoleSeleniumHelper.login(driver, artemis);
 
         // try to log out (assertion is inside the method to be reused)
-        MainPageHelper.logout(driver, artemis);
+        WebConsoleSeleniumHelper.logout(driver, artemis);
     }
 
 }
