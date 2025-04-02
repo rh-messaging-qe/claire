@@ -727,7 +727,6 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
-    @Disabled("ENTMQBR-9694")
     @TestValidSince(ArtemisVersion.VERSION_2_40)
     void specificBrokerTest() {
         Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
@@ -758,15 +757,15 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                     .withExpose(true)
                 .endConsole()
                 .endSpec().build();
-        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress("broker-0-bp", "address.json", address)).createOrReplace();
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress("broker-0-bp", "broker-0.address.json", address)).createOrReplace();
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
 
         Pod brokerPod = getClient().listPodsByPrefixName(testNamespace, brokerName).get(0);
         String log = getClient().getLogsFromPod(brokerPod);
 
         assertThat(String.format("Address %s has been created", address.getAddressName()),
-                log, containsString(String.format("Deploying %s queue %s on address", //Deploying ANYCAST queue jsonqueue on address jsonqueue
-                        address.getRoutingType(), address.getQueueName(0)))); //, address.getAddressName()))); -- bug!
+                log, containsString(String.format("Deploying %s queue %s on address %s",
+                        address.getRoutingType(), address.getQueueName(0), address.getAddressName())));
 
         Pod brokerPod1 = getClient().listPodsByPrefixName(testNamespace, brokerName).get(1);
         String log1 = getClient().getLogsFromPod(brokerPod1);
@@ -817,8 +816,8 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         String log = getClient().getLogsFromPod(brokerPod);
 
         assertThat(String.format("Address %s has been created", address.getAddressName()),
-                log, containsString(String.format("Deploying %s queue %s on address",
-                        address.getRoutingType(), address.getQueueName(0)))); //, address.getAddressName()))); --bug!
+                log, containsString(String.format("Deploying %s queue %s on address %s",
+                        address.getRoutingType(), address.getQueueName(0), address.getAddressName())));
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
 
@@ -868,8 +867,8 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
         String log = getClient().getLogsFromPod(brokerPod);
         for (long i = 0; i < limit; i++) {
             assertThat(String.format("Address %s has been created", address.getAddressName()),
-                    log, containsString(String.format("Deploying %s queue %s on address",
-                            address.getRoutingType(), String.format(queueNamePrefix + "-%d", i)))); //, address.getAddressName())));
+                    log, containsString(String.format("Deploying %s queue %s on address %s",
+                            address.getRoutingType(), String.format(queueNamePrefix + "-%d", i), address.getAddressName())));
         }
         
         ResourceManager.deleteArtemis(testNamespace, broker);

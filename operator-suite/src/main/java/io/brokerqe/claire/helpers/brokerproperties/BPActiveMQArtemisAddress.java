@@ -92,10 +92,12 @@ public class BPActiveMQArtemisAddress {
                     queue.put(propertyName, propertyValue);
                 }
             }
+            queue.put("address", addressName);
             queueArray.put(queueName, queue);
         }
         JSONObject addressConfig = new JSONObject();
         addressConfig.put("queueConfigs", queueArray);
+        addressConfig.put("routingTypes", routingType);
         addressConfigurations.put(addressName, addressConfig);
         result.put("addressConfigurations", addressConfigurations);
         return result;
