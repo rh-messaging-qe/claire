@@ -8,6 +8,7 @@ import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helpers.DataStorer;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -248,11 +249,17 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         }
 
         if (imageType.equals(ArtemisConstants.BROKER_IMAGE_OPERATOR_PREFIX) || imageType.equals(ArtemisConstants.BROKER_INIT_IMAGE_OPERATOR_PREFIX)) {
-            envVars = operator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
             String finalImageTypeVersion = imageTypeVersion;
-            EnvVar brokerImageEV = envVars.stream().filter(envVar -> envVar.getName().equals(finalImageTypeVersion)).findFirst().get();
-            brokerImageEV.setValue(imageUrl);
-            LOGGER.info("[Operator] Updating {} -> {}", finalImageTypeVersion, imageUrl);
+            envVars = operator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+            try {
+                EnvVar brokerImageEV = envVars.stream().filter(envVar -> envVar.getName().equals(finalImageTypeVersion)).findFirst().get();
+                brokerImageEV.setValue(imageUrl);
+                LOGGER.info("[Operator] Updating {} -> {}", finalImageTypeVersion, imageUrl);
+            } catch (java.util.NoSuchElementException e) {
+                LOGGER.error("[Operator] Failed to find {} in {}", finalImageTypeVersion, envVars);
+                LOGGER.error("[Operator] updateImagesInOperatorFile({}, {}, {}, {})", operatorFile, imageType, imageUrl, version);
+                throw new ClaireRuntimeException(e.getMessage());
+            }
         }
 
         TestUtils.configToYaml(operatorFile.toFile(), operator);
