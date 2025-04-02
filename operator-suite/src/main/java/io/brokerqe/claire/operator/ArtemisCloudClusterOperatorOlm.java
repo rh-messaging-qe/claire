@@ -4,7 +4,9 @@
  */
 package io.brokerqe.claire.operator;
 
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.exception.WaitException;
@@ -118,6 +120,13 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         if (olmChannel == null) {
             olmChannel = this.olmChannel;
         }
+        String rhelVersion;
+        if (ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber() >= ArtemisVersion.VERSION_2_40.getVersionNumber()) {
+            rhelVersion = "9";
+        } else {
+            rhelVersion = "8";
+        }
+
         String subscriptionString = String.format("""
             apiVersion: operators.coreos.com/v1alpha1
             kind: Subscription
@@ -127,10 +136,10 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
             spec:
               channel: %s
               installPlanApproval: Automatic
-              name: amq-broker-rhel8
+              name: amq-broker-rhel%s
               source: %s
               sourceNamespace: openshift-marketplace
-            """, subscriptionName, deploymentNamespace, olmChannel, brokerCatalogSourceName);
+            """, subscriptionName, deploymentNamespace, olmChannel, rhelVersion, brokerCatalogSourceName);
 
         LOGGER.info("[OLM] Creating Subscription");
         deployOlmResource(subscriptionString);
