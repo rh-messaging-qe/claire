@@ -87,6 +87,7 @@ public abstract class Environment {
 
     public ArtemisVersion convertArtemisVersion(String version) {
         ArtemisVersion versionRet;
+        String versionUpstream;
         if (isUpstreamArtemis()) {
             return ArtemisVersion.values()[ArtemisVersion.values().length - 1];
         } else {
@@ -94,7 +95,12 @@ public abstract class Environment {
                 File versionsFile = new File(Constants.VERSION_MAPPER_PATH);
                 HashMap<String, HashMap<String, String>> versions = new Yaml().load(FileUtils.readFileToString(versionsFile, Charset.defaultCharset()));
                 LOGGER.info("[ENV] Found mapping of provided {} into {}", versions.get(version), version);
-                version = versions.get(version).get("upstream");
+                versionUpstream = versions.get(version).get("upstream");
+                if (versionUpstream == null) {
+                    LOGGER.error("[ENV] null versionUpstream from {}", versions);
+                    LOGGER.error("[ENV] convertArtemisVersion({})", version);
+                    throw new ClaireRuntimeException("null versionUpstream");
+                }
             } catch (IOException e) {
                 String errMsg = String.format("[ENV] Expecting to find version file %s", Constants.VERSION_MAPPER_PATH);
                 LOGGER.error(errMsg);
@@ -102,18 +108,18 @@ public abstract class Environment {
             }
         }
 
-        String versionSplit = version.replace(".", "");
-        int dotsCount = version.length() - versionSplit.length();
+        String versionSplit = versionUpstream.replace(".", "");
+        int dotsCount = versionUpstream.length() - versionSplit.length();
         if (dotsCount <= 2) {
             try {
                 versionRet = ArtemisVersion.getByOrdinal(Integer.parseInt(versionSplit));
             } catch (RuntimeException e) {
-                LOGGER.error("[ENV] Provided unknown {} value {}!", Constants.EV_ARTEMIS_TEST_VERSION, version);
-                throw new IllegalArgumentException("Unknown " + Constants.EV_ARTEMIS_TEST_VERSION + " version: " + version);
+                LOGGER.error("[ENV] Provided unknown {} value {}!", Constants.EV_ARTEMIS_TEST_VERSION, versionUpstream);
+                throw new IllegalArgumentException("Unknown " + Constants.EV_ARTEMIS_TEST_VERSION + " version: " + versionUpstream);
             }
         } else {
-            LOGGER.error("[ENV] Provided incorrect {} value {}! Exiting.", Constants.EV_ARTEMIS_TEST_VERSION, version);
-            throw new IllegalArgumentException("Unknown " + Constants.EV_ARTEMIS_TEST_VERSION + " version: " + version);
+            LOGGER.error("[ENV] Provided incorrect {} value {}! Exiting.", Constants.EV_ARTEMIS_TEST_VERSION, versionUpstream);
+            throw new IllegalArgumentException("Unknown " + Constants.EV_ARTEMIS_TEST_VERSION + " version: " + versionUpstream);
         }
         return versionRet;
     }
