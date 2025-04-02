@@ -53,4 +53,4 @@ validate:jdk17:
   <<: *validate
 #  image: registry.access.redhat.com/ubi8/openjdk-17
   image: registry.access.redhat.com/ubi9/ubi-minimal
-  tags: ["docker"]
+  tags: ["shared-podman"]
