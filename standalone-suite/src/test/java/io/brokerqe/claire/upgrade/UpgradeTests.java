@@ -64,6 +64,10 @@ public abstract class UpgradeTests extends AbstractSystemTests {
     }
 
     ArtemisContainer performUpgradeProcedure(ArtemisContainer artemisUpgraded, String upgradeInstallDir) {
+        return performUpgradeProcedure(artemisUpgraded, upgradeInstallDir, false);
+    }
+
+    ArtemisContainer performUpgradeProcedure(ArtemisContainer artemisUpgraded, String upgradeInstallDir, boolean checkHaStatus) {
         LOGGER.info("[UPGRADE] upgrading {} from {}", artemisUpgraded.getName(), upgradeInstallDir);
         // apache-artemis-2.33.0.redhat-00013/bin/artemis upgrade /tmp/upgrade-lala/
         String createCmd = upgradeInstallDir + "/bin/artemis upgrade " + artemisUpgraded.getInstanceDir();
@@ -72,7 +76,7 @@ public abstract class UpgradeTests extends AbstractSystemTests {
         artemisUpgraded.setInstallDir(upgradeInstallDir);
         artemisUpgraded.restartWithStop(Duration.ofSeconds(45));
         // TODO implement waitFor() some message in artemis
-        artemisUpgraded.ensureBrokerStarted(false);
+        artemisUpgraded.ensureBrokerStarted(checkHaStatus);
         return artemisUpgraded;
     }
 

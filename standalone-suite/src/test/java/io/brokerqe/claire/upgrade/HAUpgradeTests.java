@@ -54,10 +54,10 @@ public abstract class HAUpgradeTests extends UpgradeTests {
                 ArtemisContainer upgradeBackup = artemises.get(BACKUP).get(i);
                 ArtemisContainer upgradePrimary = artemises.get(PRIMARY).get(i);
                 getLogger().info("[UPGRADE] Going to upgrade pair #{}", i + 1);
-                upgradeBackup = performUpgradeProcedure(upgradeBackup, installDir);
+                upgradeBackup = performUpgradeProcedure(upgradeBackup, installDir, true);
                 assertVersionLogs(upgradeBackup, version, artemisVersion);
 
-                upgradePrimary = performUpgradeProcedure(upgradePrimary, installDir);
+                upgradePrimary = performUpgradeProcedure(upgradePrimary, installDir, true);
                 assertVersionLogs(upgradePrimary, version, artemisVersion);
             }
             int haCounter = argumentsAccessor.getInvocationIndex() % haPairs;
