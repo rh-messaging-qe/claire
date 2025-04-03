@@ -351,7 +351,7 @@ public class AbstractSystemTests implements TestSeparator {
         int received = primaryMessagingClient.receiveMessages();
 
         artemisPrimary.artemisProcessController(stopAction);
-        artemisBackup.ensureBrokerIsActive();
+        artemisBackup.ensureBrokerIsActive(30, Constants.DURATION_10_SECONDS);
 
         LOGGER.info("Sending {} messages to broker backup {}", sendMessages, artemisBackup.getName());
         sent += backupMessagingClient.sendMessages();
