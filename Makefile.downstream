@@ -40,7 +40,7 @@ clean: clean_maven standalone_clean operator_clean
 	- rm -f ${ROOT_DIR}/{settings.xml,version_map.yaml,common.yaml}
 
 clean_maven:
-	${MVN_DEFAULT_CMD}  --no-transfer-progress versions:revert clean
+	mvn --no-transfer-progress versions:revert clean
 
 build: standalone_prepare operator_prepare build_maven
 
