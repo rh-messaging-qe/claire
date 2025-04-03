@@ -99,7 +99,7 @@ public class TransactionTests extends AbstractSystemTests {
 
     private void doCleanQueue(String address) {
         LOGGER.info("[{}] Cleaning queue {}", artemis.getName(), address);
-        MessagingClient consumer = new AmqpQpidClient(deployableClient, artemis.getBrokerUri(Protocol.CORE), DEFAULT_ALL_PORT, address, address, 0, username, password);
+        MessagingClient consumer = new AmqpQpidClient(deployableClient, artemis.getBrokerUri(Protocol.AMQP), DEFAULT_ALL_PORT, address, address, 0, username, password);
         try {
             consumer.receiveMessages();
         } catch (Exception exception) {
