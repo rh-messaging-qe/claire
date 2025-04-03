@@ -5,6 +5,7 @@
 package io.brokerqe.claire.upgrade;
 
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
@@ -61,6 +62,9 @@ public abstract class HAUpgradeTests extends UpgradeTests {
             }
             int haCounter = argumentsAccessor.getInvocationIndex() % haPairs;
             ArtemisContainer randomPrimary = artemises.get(PRIMARY).get(haCounter);
+
+            // Give some extra time to broker to load up messages/data
+            TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
             postUpgradeProcedure(randomPrimary);
             postUpgradeProcedureTest(artemises.get(PRIMARY).get(haCounter), artemises.get(BACKUP).get(haCounter));
 

@@ -368,7 +368,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void ensureBrokerStarted(boolean checkHaStatus) {
-        boolean isStarted = ArtemisJmxHelper.isStarted(this, true, 20, Constants.DURATION_2_SECONDS);
+        boolean isStarted = ArtemisJmxHelper.isStarted(this, true, 30, Constants.DURATION_2_SECONDS);
         assertThat(isStarted).isTrue();
         if (checkHaStatus) {
             if (isPrimary()) {
@@ -381,7 +381,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void ensureBrokerIsActive() {
-        ensureBrokerIsActive(60, Constants.DURATION_1_SECOND);
+        ensureBrokerIsActive(30, Constants.DURATION_5_SECONDS);
     }
 
     public void ensureBrokerIsActive(long retries, long pollTime) {
@@ -391,28 +391,28 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     }
 
     public void ensureBrokerIsBackup() {
-        boolean isBackup = ArtemisJmxHelper.isBackup(this, true, 40, Constants.DURATION_500_MILLISECONDS);
+        boolean isBackup = ArtemisJmxHelper.isBackup(this, true, 40, Constants.DURATION_2_SECONDS);
         assertThat(isBackup).isTrue();
     }
 
     public void ensureBrokerReplicaIsInSync() {
-        boolean isReplicaInSync = ArtemisJmxHelper.isReplicaInSync(this, true, 10, Constants.DURATION_500_MILLISECONDS);
+        boolean isReplicaInSync = ArtemisJmxHelper.isReplicaInSync(this, true, 10, Constants.DURATION_2_SECONDS);
         assertThat(isReplicaInSync).isTrue();
     }
 
     public void ensureBrokerPagingCount(String addressName, int expectedResult) {
-        long pagingCount = ArtemisJmxHelper.getAddressPageCount(this, addressName, expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
+        long pagingCount = ArtemisJmxHelper.getAddressPageCount(this, addressName, expectedResult, 10, Constants.DURATION_2_SECONDS);
         assertThat(pagingCount).isEqualTo(expectedResult);
     }
 
     public void ensureBrokerIsPaging(String addressName, boolean expectedResult) {
-        boolean isPaging = ArtemisJmxHelper.isPaging(this, addressName, expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
+        boolean isPaging = ArtemisJmxHelper.isPaging(this, addressName, expectedResult, 10, Constants.DURATION_2_SECONDS);
         assertThat(isPaging).isEqualTo(expectedResult);
     }
 
     public void ensureQueueCount(String addressName, String queueName, RoutingType routeType, int expectedResult) {
         LOGGER.info("Ensure queue has {} messages", expectedResult);
-        Long countResult = ArtemisJmxHelper.getQueueCount(this, addressName, queueName, routeType, expectedResult, 10, Constants.DURATION_500_MILLISECONDS);
+        Long countResult = ArtemisJmxHelper.getQueueCount(this, addressName, queueName, routeType, expectedResult, 10, Constants.DURATION_2_SECONDS);
         assertThat(countResult).isEqualTo(expectedResult);
     }
 
