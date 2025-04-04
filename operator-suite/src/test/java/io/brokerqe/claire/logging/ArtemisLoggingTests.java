@@ -6,7 +6,6 @@ package io.brokerqe.claire.logging;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
-import io.amq.broker.v1beta1.activemqartemisspec.EnvBuilder;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
@@ -15,12 +14,9 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.WaitException;
 import io.brokerqe.claire.junit.TestValidSince;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -255,33 +251,12 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
     }
 
     @Test
-    void providerLoggingUsingExternalLibraryTest() {
+    @TestValidSince(ArtemisVersion.VERSION_2_40)
+    void providerLoggingUsingJsonLibraryTest() {
+        Assumptions.assumeThat(testEnvironmentOperator.isUpstreamArtemis()).isFalse();
+
         getClient().createConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME,
                 Map.of(ArtemisConstants.LOGGING_PROPERTIES_CONFIG_KEY, TestUtils.readFileContent(Paths.get(JSON_TEMPLATE_LOGGER_FILE).toFile())));
-
-        String downloadDriverCommand = "mkdir -p /amq/init/config/extra-libs && wget -O /amq/init/config/extra-libs/log4j-layout-template-json-2.19.0.jar %s".formatted(LOG4J_LAYOUT_TEMPLATE_JAR_URL);
-        StatefulSet log4jlibPatchSs = new StatefulSetBuilder()
-                .editOrNewSpec()
-                    .editOrNewTemplate()
-                        .editOrNewSpec()
-                            .withInitContainers(
-                                new ContainerBuilder()
-                                    .withName("log4j-json-template-init")
-                                    .withImage("quay.io/rhmessagingqe/alpine-curl:latest")
-                                    .withVolumeMounts(
-                                        new VolumeMountBuilder()
-                                            .withName("amq-cfg-dir")
-                                            .withMountPath("/amq/init/config")
-                                            .build()
-                                    )
-                                    .withCommand(List.of("sh", "-c"))
-                                    .withArgs(downloadDriverCommand)
-                                .build()
-                            )
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
 
         String artemisName = "artemis-json-log";
         ActiveMQArtemis artemis = new ActiveMQArtemisBuilder()
@@ -297,22 +272,6 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
                             .withConfigMaps(LOGGER_CONFIG_MAP_NAME)
                         .endExtraMounts()
                     .endDeploymentPlan()
-                    .addToEnv(new EnvBuilder()
-                        .withName("ARTEMIS_EXTRA_LIBS")
-                        .withValue("/amq/init/config/extra-libs")
-                        .build()
-                    )
-                    .addNewResourceTemplate()
-                        .withNewResourcetemplatesSelector()
-                            .withKind("StatefulSet")
-                        .endResourcetemplatesSelector()
-                        .editOrNewPatch()
-                            .withAdditionalProperties(Map.of(
-                                "kind", "StatefulSet",
-                                "spec", log4jlibPatchSs.getSpec())
-                            )
-                        .endPatch()
-                    .endResourceTemplate()
                 .endSpec()
                 .build();
         artemis = ResourceManager.createArtemis(testNamespace, artemis);
@@ -321,7 +280,7 @@ public class ArtemisLoggingTests extends AbstractSystemTests {
         String artemisLogs = getClient().getLogsFromPod(artemisPod);
         Assertions.assertThat(artemisLogs).doesNotContain("ERROR StatusConsoleListener Unable to invoke factory method in class org.apache.logging.log4j.layout.template.json.JsonTemplateLayout");
         Assertions.assertThat(artemisLogs).doesNotContain("java.lang.IllegalStateException: No factory method found for class org.apache.logging.log4j.layout.template.json.JsonTemplateLayout");
-
+        Assertions.assertThat(artemisLogs).containsPattern("\\{\"@timestamp\":.*\"log.level\":\"INFO\",\"message\":\"AMQ221007: Server is now active\",\"process.thread.name\":\"main\",\"log.logger\":\"org.apache.activemq.artemis.core.server\"}");
         ResourceManager.deleteArtemis(testNamespace, artemis);
         getClient().deleteConfigMap(testNamespace, LOGGER_CONFIG_MAP_NAME);
     }
