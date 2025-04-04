@@ -6,7 +6,6 @@ package io.brokerqe.claire.logging;
 
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
-import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
@@ -78,31 +77,30 @@ public class OperatorLoggingTests extends AbstractSystemTests {
 
     void testOperatorLogLevel(String logLevel) {
         operator.setOperatorLogLevel(logLevel.toLowerCase(Locale.ROOT));
+        Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
 
-        Acceptors acceptors = createAcceptor("acpt0", "all", 61616, false, true,
-                "invalidSecretName", false);
+        LOGGER.info("[{}] [TEST] Set non-existing version of broker to deployment to trigger ERROR", testNamespace);
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
                     .withName("artemis-log")
                     .withNamespace(testNamespace)
                 .endMetadata()
                 .editOrNewSpec()
-                    .withAcceptors(acceptors)
+                    .withVersion("7.25.Lala")
                     .editOrNewDeploymentPlan()
                         .withSize(1)
                     .endDeploymentPlan()
                 .endSpec()
                 .build();
-
         broker = ResourceManager.createArtemis(testNamespace, broker, false);
 
-        LOGGER.info("[{}] Deploying wrongly defined acceptor secret to generate error on operator log", testNamespace);
-        TestUtils.waitFor(ERROR + " message to show up in logs", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
-            Pod pod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
-            String log = getClient().getLogsFromPod(pod);
+        Pod finalOperatorPod = operatorPod;
+        TestUtils.waitFor(ERROR + " message to show up in logs", Constants.DURATION_10_SECONDS, Constants.DURATION_2_MINUTES, () -> {
+            String log = getClient().getLogsFromPod(finalOperatorPod);
             return log.contains(ERROR);
         });
-        Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
+
+        operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         String operatorLog = getClient().getLogsFromPod(operatorPod);
         logContainsLevel(operatorLog, logLevel);
         ResourceManager.deleteArtemis(testNamespace, broker);
@@ -125,9 +123,11 @@ public class OperatorLoggingTests extends AbstractSystemTests {
         }
 
         for (String expectedLevel : expectedLevels) {
+            LOGGER.info("Log contains expected level {}?", expectedLevel);
             assertThat(log, containsString(expectedLevel));
         }
         for (String unexpectedLevel : unexpectedLevels) {
+            LOGGER.info("Log does not contain expected level {}?", unexpectedLevel);
             assertThat(log, not(containsString(unexpectedLevel)));
         }
     }
