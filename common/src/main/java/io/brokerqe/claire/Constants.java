@@ -98,6 +98,7 @@ public interface Constants {
     long DURATION_2_MINUTES = Duration.ofMinutes(2).toMillis();
     long DURATION_3_MINUTES = Duration.ofMinutes(3).toMillis();
     long DURATION_5_MINUTES = Duration.ofMinutes(5).toMillis();
+    long DURATION_10_MINUTES = Duration.ofMinutes(10).toMillis();
 
     // Files
     String PROJECT_USER_DIR = System.getProperty("user.dir");
