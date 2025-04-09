@@ -328,8 +328,12 @@ public class KubeClient {
     }
 
     public void waitUntilPodIsReady(String namespaceName, Pod pod) {
+        waitUntilPodIsReady(namespaceName, pod, 3);
+    }
+
+    public void waitUntilPodIsReady(String namespaceName, Pod pod, long maxTimeoutMinutes) {
         LOGGER.debug("[{}] Waiting for readiness of pod {}", namespaceName, pod.getMetadata().getName());
-        client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(3, TimeUnit.MINUTES);
+        client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(maxTimeoutMinutes, TimeUnit.MINUTES);
     }
 
     public void waitUntilPodCondition(String namespaceName, Pod pod, Predicate<Pod> condition) {
@@ -346,11 +350,11 @@ public class KubeClient {
         return waitForPodReload(namespace, pod, podName, Constants.DURATION_1_MINUTE);
     }
 
-    public Pod waitForPodReload(String namespace, Pod pod, String podName, long maxTimeout) {
+    public Pod waitForPodReload(String namespace, Pod pod, String podName, long maxTimeoutMs) {
         String originalUid = pod.getMetadata().getUid();
 
-        LOGGER.info("[{}] Waiting {}s for pod {} reload", namespace, Duration.ofMillis(maxTimeout).toSeconds(), podName);
-        TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeout, () -> {
+        LOGGER.info("[{}] Waiting {}s for pod {} reload", namespace, Duration.ofMillis(maxTimeoutMs).toSeconds(), podName);
+        TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeoutMs, () -> {
             Pod newPod = getFirstPodByPrefixName(namespace, podName);
             String newPodUid = newPod == null ? "unknown" : newPod.getMetadata().getUid();
             LOGGER.debug("[{}] OriginalPodUid {} vs currentPodUid {}", namespace, originalUid, newPodUid);
@@ -363,7 +367,7 @@ public class KubeClient {
                 waitUntilPodIsDeleted(namespace, podTmp);
             }
             if (!podTmp.getMetadata().getUid().equals(originalUid)) {
-                waitUntilPodIsReady(namespace, podTmp);
+                waitUntilPodIsReady(namespace, podTmp, Duration.ofSeconds(maxTimeoutMs).toMinutes());
             }
         }
         LOGGER.debug("[{}] Returning reloaded pod {}", namespace, podName);
