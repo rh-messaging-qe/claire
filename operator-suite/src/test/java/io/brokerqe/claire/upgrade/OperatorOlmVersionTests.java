@@ -42,10 +42,10 @@ public class OperatorOlmVersionTests extends AbstractSystemTests {
         /*
           oc get catalogsource cs-iib-893878 -n openshift-marketplace
           oc get packagemanifest -l catalog=cs-iib-893878 -n openshift-marketplace
-          oc get packagemanifest amq-broker-rhel8 -n openshift-marketplace
+          oc get packagemanifest amq-broker-rhel8|9 -n openshift-marketplace
          */
         Map<String, List<String>> oprVersions = getOrderedProvidedVersions();
-        List<PackageManifest> pms = getClient().getPackageManifests(ArtemisCloudClusterOperatorOlm.AMQ_OPERATOR_NAME);
+        List<PackageManifest> pms = getClient().getPackageManifests(ArtemisCloudClusterOperatorOlm.getAmqOperatorName());
 
         for (PackageManifest pm : pms) {
             LOGGER.info("===== Checking out PackageManifest={} {} =====", pm.getMetadata().getName(), pm.getMetadata().getLabels().get("catalog"));

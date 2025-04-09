@@ -33,11 +33,10 @@ import java.util.List;
 
 public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator {
     final static Logger LOGGER = LoggerFactory.getLogger(ArtemisCloudClusterOperatorOlm.class);
-    final static public String AMQ_OPERATOR_NAME = "amq-broker-rhel8";
     private String olmChannel;
     private String indexImageBundle;
     private String brokerCatalogSourceName = "broker-source-" + TestUtils.getRandomString(2);
-    private String subscriptionName = AMQ_OPERATOR_NAME + "-" + TestUtils.getRandomString(2);
+    private String subscriptionName = getAmqOperatorName() + "-" + TestUtils.getRandomString(2);
     private String sourceNamespace;
     private List<HasMetadata> olmResources = new ArrayList<>();
 
@@ -55,6 +54,16 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         this.olmChannel = olmChannel;
     }
 
+    public static String getAmqOperatorName() {
+        String rhelVersion;
+        if (ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber() >= ArtemisVersion.VERSION_2_40.getVersionNumber()) {
+            rhelVersion = "9";
+        } else {
+            rhelVersion = "8";
+        }
+        return "amq-broker-rhel" + rhelVersion;
+    }
+
     public String getOlmChannel() {
         return olmChannel;
     }
@@ -69,9 +78,9 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         PackageChannel ltsChannel;
 
         PackageManifest amqBrokerPM = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub()
-                .packageManifests().inNamespace(sourceNamespace).withName(AMQ_OPERATOR_NAME).get();
+                .packageManifests().inNamespace(sourceNamespace).withName(getAmqOperatorName()).get();
         if (!amqBrokerPM.getStatus().getCatalogSource().equals(brokerCatalogSourceName)) {
-            LOGGER.error("[{}] Found unexpected CatalogSource for `amq-broker-rhel8` {}!", deploymentNamespace, amqBrokerPM.getStatus().getCatalogSource());
+            LOGGER.error("[{}] Found unexpected CatalogSource for `amq-broker-rhel{8|9}` {}!", deploymentNamespace, amqBrokerPM.getStatus().getCatalogSource());
             throw new ClaireRuntimeException("Discovered unexpected CatalogSource " + amqBrokerPM.getStatus().getCatalogSource() + "!");
         }
 
@@ -109,7 +118,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
               namespace: openshift-marketplace
             spec:
               sourceType: grpc
-              image: %s           
+              image: %s
             """, brokerCatalogSourceName, indexImageBundle);
 
         LOGGER.info("[OLM] Creating CatalogSource");
@@ -119,12 +128,6 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     public void deploySubscription(String olmChannel) {
         if (olmChannel == null) {
             olmChannel = this.olmChannel;
-        }
-        String rhelVersion;
-        if (ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber() >= ArtemisVersion.VERSION_2_40.getVersionNumber()) {
-            rhelVersion = "9";
-        } else {
-            rhelVersion = "8";
         }
 
         String subscriptionString = String.format("""
@@ -136,10 +139,10 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
             spec:
               channel: %s
               installPlanApproval: Automatic
-              name: amq-broker-rhel%s
+              name: %s
               source: %s
               sourceNamespace: openshift-marketplace
-            """, subscriptionName, deploymentNamespace, olmChannel, rhelVersion, brokerCatalogSourceName);
+            """, subscriptionName, deploymentNamespace, olmChannel, getAmqOperatorName(), brokerCatalogSourceName);
 
         LOGGER.info("[OLM] Creating Subscription");
         deployOlmResource(subscriptionString);
