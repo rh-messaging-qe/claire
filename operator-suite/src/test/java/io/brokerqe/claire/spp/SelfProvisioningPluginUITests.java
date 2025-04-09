@@ -10,6 +10,7 @@ import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.junit.UsePlaywright;
 import com.microsoft.playwright.options.AriaRole;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubernetesVersion;
 import io.brokerqe.claire.ResourceManager;
@@ -17,6 +18,7 @@ import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.junit.TestMinimumKubernetesVersion;
 import io.brokerqe.claire.junit.TestOLMSupported;
+import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.plugins.ACSelfProvisioningPlugin;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
@@ -34,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @UsePlaywright
 @TestOLMSupported
+@TestValidSince(ArtemisVersion.VERSION_2_40)
 @TestMinimumKubernetesVersion(KubernetesVersion.VERSION_1_29)
 public class SelfProvisioningPluginUITests extends BaseWebUITests {
 
