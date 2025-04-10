@@ -41,8 +41,8 @@ import io.fabric8.openshift.api.model.RouteBuilder;
 import io.fabric8.openshift.api.model.RoutePortBuilder;
 import io.fabric8.openshift.api.model.RouteTargetReferenceBuilder;
 import io.fabric8.openshift.api.model.TLSConfigBuilder;
-import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageChannel;
-import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
+import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageChannel;
+import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifest;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -332,6 +332,7 @@ public class KubeClient {
     }
 
     public void waitUntilPodIsReady(String namespaceName, Pod pod, long maxTimeoutMinutes) {
+        // this method seems to be bugged in 6.8.1 java kubernetes fabric8
         LOGGER.debug("[{}] Waiting for readiness of pod {}", namespaceName, pod.getMetadata().getName());
         client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(maxTimeoutMinutes, TimeUnit.MINUTES);
     }
@@ -355,7 +356,14 @@ public class KubeClient {
 
         LOGGER.info("[{}] Waiting {}s for pod {} reload", namespace, Duration.ofMillis(maxTimeoutMs).toSeconds(), podName);
         TestUtils.waitFor("Pod to be reloaded and ready", Constants.DURATION_5_SECONDS, maxTimeoutMs, () -> {
-            Pod newPod = getFirstPodByPrefixName(namespace, podName);
+            Pod newPod;
+            List<Pod> newPods = listPodsByPrefixName(namespace, podName);
+            if (newPods.size() != 1) {
+                LOGGER.warn("[{}], We are expecting only 1 pod to be spawned. Got 0 or {}, so try again", namespace, newPods.size());
+                newPod = null;
+            } else {
+                newPod = newPods.get(0);
+            }
             String newPodUid = newPod == null ? "unknown" : newPod.getMetadata().getUid();
             LOGGER.debug("[{}] OriginalPodUid {} vs currentPodUid {}", namespace, originalUid, newPodUid);
             return newPod != null && !newPodUid.equals(originalUid);

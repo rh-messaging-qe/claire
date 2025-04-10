@@ -106,7 +106,7 @@ public class UpgradeOlmTests extends AbstractSystemTests {
             operatorPod = getClient().getFirstPodByPrefixName(testNamespace, upgradeOlmOperator.getOperatorName());
         } else {
             LOGGER.info("[{}] Reloading ClusterOperator and Broker {} ", testNamespace, brokerUpgradableName);
-            operatorPod = getClient().waitForPodReload(testNamespace, operatorPod, upgradeOlmOperator.getOperatorName(), Constants.DURATION_10_MINUTES);
+            operatorPod = getClient().waitForPodReload(testNamespace, operatorPod, upgradeOlmOperator.getOperatorName(), Constants.DURATION_5_MINUTES);
             ResourceManager.waitForBrokerDeployment(testNamespace, brokerUpgrade, true, null, brokerReloadDuration, brokerUpgradeStatefulSet);
             brokerUpgradeStatefulSet = getClient().getStatefulSet(testNamespace, brokerUpgradableName);
 

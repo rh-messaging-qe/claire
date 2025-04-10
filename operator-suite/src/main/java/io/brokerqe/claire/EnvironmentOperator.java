@@ -10,7 +10,7 @@ import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helpers.SerializationFormat;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperatorFile;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
-import io.fabric8.openshift.api.model.operatorhub.lifecyclemanager.v1.PackageManifest;
+import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

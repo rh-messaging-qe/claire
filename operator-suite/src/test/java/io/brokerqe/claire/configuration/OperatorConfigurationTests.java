@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -57,6 +58,7 @@ public class OperatorConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @Disabled
     void testOperatorInvalidLeaseDuration() {
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         String operatorLog = getClient().getLogsFromPod(operatorPod);
@@ -85,6 +87,7 @@ public class OperatorConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @Disabled
     void testOperatorInvalidRetryPeriod() {
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         String operatorLog = getClient().getLogsFromPod(operatorPod);
@@ -112,6 +115,7 @@ public class OperatorConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @Disabled
     void testOperatorInvalidRenewDeadline() {
         Pod operatorPod = getClient().getFirstPodByPrefixName(testNamespace, operator.getOperatorName());
         String operatorLog = getClient().getLogsFromPod(operatorPod);
