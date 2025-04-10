@@ -15,11 +15,15 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 @Tag(Constants.TAG_OPERATOR)
 @TestValidSince(ArtemisVersion.VERSION_2_33)
+@Timeout(value = 5, unit = TimeUnit.MINUTES)
 public class OperatorConfigurationTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorConfigurationTests.class);
     private final String testNamespace = getRandomNamespaceName("opr-cfg-tests", 3);
