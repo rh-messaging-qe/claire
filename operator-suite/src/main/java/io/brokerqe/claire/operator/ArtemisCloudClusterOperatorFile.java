@@ -300,7 +300,7 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         return operatorCODeployment.getMetadata().getName();
     }
 
-    public void updateArgs(String oldValue, String newValue) {
+    public void updateArgs(String oldValue, String newValue, boolean waitForReadiness) {
         Deployment deployment = kubeClient.getDeployment(getDeploymentNamespace(), getOperatorName());
         Pod pod = kubeClient.getFirstPodByPrefixName(getDeploymentNamespace(), getOperatorName());
         List<String> args = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getArgs();
@@ -322,7 +322,7 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
         if (!args.equals(argsUpdated)) {
             deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setArgs(argsUpdated);
             kubeClient.setDeployment(getDeploymentNamespace(), deployment);
-            kubeClient.waitForPodReload(getDeploymentNamespace(), pod, getOperatorName());
+            kubeClient.waitForPodReload(getDeploymentNamespace(), pod, getOperatorName(), waitForReadiness);
             LOGGER.info("[{}] Changed operator {} args {} to {}", getDeploymentNamespace(), getOperatorName(), oldValue, newValue);
         } else {
             LOGGER.debug("[{}] Reload is not needed, operator {} args are the same", getDeploymentNamespace(), getOperatorName());
@@ -332,25 +332,25 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
     @Override
     public void setOperatorLogLevel(String logLevel) {
         if (ArtemisCloudClusterOperator.ZAP_LOG_LEVELS.contains(logLevel)) {
-            updateArgs(ZAP_LOG_LEVEL_OPTION, ZAP_LOG_LEVEL_OPTION + "=" + logLevel.toLowerCase(Locale.ROOT));
+            updateArgs(ZAP_LOG_LEVEL_OPTION, ZAP_LOG_LEVEL_OPTION + "=" + logLevel.toLowerCase(Locale.ROOT), true);
         } else {
             LOGGER.error("[{}] Unable to set provided log level to operator {}", getDeploymentNamespace(), getOperatorName());
         }
     }
 
     @Override
-    public void setOperatorLeaseDuration(int durationInSeconds) {
-        updateArgs(LEASE_DURATION_OPTION, LEASE_DURATION_OPTION + "=" + durationInSeconds);
+    public void setOperatorLeaseDuration(int durationInSeconds, boolean waitForReadiness) {
+        updateArgs(LEASE_DURATION_OPTION, LEASE_DURATION_OPTION + "=" + durationInSeconds, waitForReadiness);
     }
 
     @Override
-    public void setOperatorRenewDeadlineDuration(int durationInSeconds) {
-        updateArgs(RENEW_DEADLINE_OPTION, RENEW_DEADLINE_OPTION + "=" + durationInSeconds);
+    public void setOperatorRenewDeadlineDuration(int durationInSeconds, boolean waitForReadiness) {
+        updateArgs(RENEW_DEADLINE_OPTION, RENEW_DEADLINE_OPTION + "=" + durationInSeconds, waitForReadiness);
     }
 
     @Override
-    public void setOperatorRetryPeriodDuration(int durationInSeconds) {
-        updateArgs(RETRY_PERIOD_OPTION, RETRY_PERIOD_OPTION + "=" + durationInSeconds);
+    public void setOperatorRetryPeriodDuration(int durationInSeconds, boolean waitForReadiness) {
+        updateArgs(RETRY_PERIOD_OPTION, RETRY_PERIOD_OPTION + "=" + durationInSeconds, waitForReadiness);
     }
 
     public static String getLastVersionFromOperatorFile(String imageType, Deployment operator) {

@@ -35,6 +35,7 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
@@ -307,7 +308,7 @@ public class KubeClient {
         if (podPrefixName == null) {
             podPrefixName = pod.getMetadata().getName();
         }
-        waitForPodReload(namespace, pod, podPrefixName, Constants.DURATION_90_SECONDS);
+        waitForPodReload(namespace, pod, podPrefixName, Constants.DURATION_90_SECONDS, true);
     }
 
     public Pod getFirstPodByPrefixName(String namespaceName, String podNamePrefix) {
@@ -332,9 +333,25 @@ public class KubeClient {
     }
 
     public void waitUntilPodIsReady(String namespaceName, Pod pod, long maxTimeoutMinutes) {
-        // this method seems to be bugged in 6.8.1 java kubernetes fabric8
         LOGGER.debug("[{}] Waiting for readiness of pod {}", namespaceName, pod.getMetadata().getName());
-        client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(maxTimeoutMinutes, TimeUnit.MINUTES);
+//        client.pods().inNamespace(namespaceName).resource(pod).waitUntilReady(maxTimeoutMinutes, TimeUnit.MINUTES);
+        Predicate<Pod> readyCondition = tmpPod -> {
+            if (tmpPod == null || tmpPod.getStatus() == null || tmpPod.getStatus().getConditions() == null ||
+                    !"Running".equalsIgnoreCase(tmpPod.getStatus().getPhase())) {
+                return false;
+            }
+
+            return tmpPod.getStatus().getConditions().stream()
+                    .anyMatch(cond ->
+                            ArtemisConstants.CONDITION_TYPE_READY.equalsIgnoreCase(cond.getType()) &&
+                            ArtemisConstants.CONDITION_TRUE.equalsIgnoreCase(cond.getStatus())
+                    );
+        };
+
+        Resource<Pod> podResource = client.pods()
+                .inNamespace(pod.getMetadata().getNamespace())
+                .withName(pod.getMetadata().getName());
+        podResource.waitUntilCondition(readyCondition, maxTimeoutMinutes, TimeUnit.MINUTES);
     }
 
     public void waitUntilPodCondition(String namespaceName, Pod pod, Predicate<Pod> condition) {
@@ -348,10 +365,18 @@ public class KubeClient {
     }
 
     public Pod waitForPodReload(String namespace, Pod pod, String podName) {
-        return waitForPodReload(namespace, pod, podName, Constants.DURATION_1_MINUTE);
+        return waitForPodReload(namespace, pod, podName, Constants.DURATION_1_MINUTE, true);
+    }
+
+    public Pod waitForPodReload(String namespace, Pod pod, String podName, boolean checkReadiness) {
+        return waitForPodReload(namespace, pod, podName, Constants.DURATION_1_MINUTE, checkReadiness);
     }
 
     public Pod waitForPodReload(String namespace, Pod pod, String podName, long maxTimeoutMs) {
+        return waitForPodReload(namespace, pod, podName, maxTimeoutMs, true);
+    }
+
+    public Pod waitForPodReload(String namespace, Pod pod, String podName, long maxTimeoutMs, boolean checkReadiness) {
         String originalUid = pod.getMetadata().getUid();
 
         LOGGER.info("[{}] Waiting {}s for pod {} reload", namespace, Duration.ofMillis(maxTimeoutMs).toSeconds(), podName);
@@ -359,7 +384,9 @@ public class KubeClient {
             Pod newPod;
             List<Pod> newPods = listPodsByPrefixName(namespace, podName);
             if (newPods.size() != 1) {
-                LOGGER.warn("[{}], We are expecting only 1 pod to be spawned. Got 0 or {}, so try again", namespace, newPods.size());
+                LOGGER.warn("[{}] We are expecting exactly 1 pod to be spawned. Got {}, so try again", namespace, newPods.size());
+                List<String> podUids = newPods.stream().map(p -> p.getMetadata().getUid()).toList();
+                LOGGER.warn("[{}] Unexpected UIDs: {}", namespace, String.join(", ", podUids));
                 newPod = null;
             } else {
                 newPod = newPods.get(0);
@@ -374,8 +401,10 @@ public class KubeClient {
             if (podTmp.getMetadata().getUid().equals(originalUid)) {
                 waitUntilPodIsDeleted(namespace, podTmp);
             }
-            if (!podTmp.getMetadata().getUid().equals(originalUid)) {
-                waitUntilPodIsReady(namespace, podTmp, Duration.ofSeconds(maxTimeoutMs).toMinutes());
+            if (checkReadiness) {
+                if (!podTmp.getMetadata().getUid().equals(originalUid)) {
+                    waitUntilPodIsReady(namespace, podTmp, Duration.ofSeconds(maxTimeoutMs).toMinutes());
+                }
             }
         }
         LOGGER.debug("[{}] Returning reloaded pod {}", namespace, podName);

@@ -208,6 +208,10 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     public void updateSubscriptionEnvVar(String name, String value) {
+        updateSubscriptionEnvVar(name, value, true);
+    }
+
+    public void updateSubscriptionEnvVar(String name, String value, boolean checkReadiness) {
         Subscription subscription = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).withName(subscriptionName).get();
         SubscriptionConfig subscriptionConfig = subscription.getSpec().getConfig();
         if (subscriptionConfig == null) {
@@ -238,7 +242,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         Pod operatorPod = kubeClient.getFirstPodByPrefixName(getDeploymentNamespace(), getOperatorName());
         subscription.getSpec().setConfig(subscriptionConfig);
         ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().resource(subscription).createOrReplace();
-        kubeClient.waitForPodReload(getDeploymentNamespace(), operatorPod, getOperatorName());
+        kubeClient.waitForPodReload(getDeploymentNamespace(), operatorPod, getOperatorName(), checkReadiness);
     }
 
     @Override
@@ -248,18 +252,18 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     @Override
-    public void setOperatorLeaseDuration(int durationInSeconds) {
-        updateSubscriptionEnvVar(LEASE_DURATION_OPTION, String.valueOf(durationInSeconds));
+    public void setOperatorLeaseDuration(int durationInSeconds, boolean waitForReadiness) {
+        updateSubscriptionEnvVar(LEASE_DURATION_OPTION, String.valueOf(durationInSeconds), waitForReadiness);
     }
 
     @Override
-    public void setOperatorRenewDeadlineDuration(int durationInSeconds) {
-        updateSubscriptionEnvVar(RENEW_DEADLINE_OPTION, String.valueOf(durationInSeconds));
+    public void setOperatorRenewDeadlineDuration(int durationInSeconds, boolean waitForReadiness) {
+        updateSubscriptionEnvVar(RENEW_DEADLINE_OPTION, String.valueOf(durationInSeconds), waitForReadiness);
     }
 
     @Override
-    public void setOperatorRetryPeriodDuration(int durationInSeconds) {
-        updateSubscriptionEnvVar(RETRY_PERIOD_OPTION, String.valueOf(durationInSeconds));
+    public void setOperatorRetryPeriodDuration(int durationInSeconds, boolean waitForReadiness) {
+        updateSubscriptionEnvVar(RETRY_PERIOD_OPTION, String.valueOf(durationInSeconds), waitForReadiness);
     }
 
     protected void updateSubscription(Subscription updatedSubscription) {

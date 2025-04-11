@@ -4,13 +4,16 @@
  */
 package io.brokerqe.claire.operator;
 
+import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.EnvironmentOperator;
 import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 public abstract class ArtemisCloudClusterOperator {
 
@@ -59,6 +63,14 @@ public abstract class ArtemisCloudClusterOperator {
     abstract public void deployOperator(boolean waitForDeployment);
 
     abstract public void undeployOperator(boolean waitForUndeployment);
+
+    abstract public void setOperatorLogLevel(String logLevel);
+
+    abstract public void setOperatorLeaseDuration(int durationInSeconds, boolean waitForReadiness);
+
+    abstract public void setOperatorRenewDeadlineDuration(int durationInSeconds, boolean waitReadiness);
+
+    abstract public void setOperatorRetryPeriodDuration(int durationInSeconds, boolean waitReadiness);
 
     public void waitForCoDeployment() {
         // operator pod/deployment name activemq-artemis-controller-manager vs amq-broker-controller-manager
@@ -120,12 +132,25 @@ public abstract class ArtemisCloudClusterOperator {
         }
     }
 
-    abstract public void setOperatorLogLevel(String logLevel);
+    public boolean isOperatorReady(long maxTimeout) {
+        LOGGER.debug("[{}] Waiting for readiness of operator pod {}", deploymentNamespace, operatorName);
+        Predicate<Pod> readyCondition = tmpPod -> {
+            if (tmpPod == null || tmpPod.getStatus() == null || tmpPod.getStatus().getConditions() == null ||
+                    !"Running".equalsIgnoreCase(tmpPod.getStatus().getPhase())) {
+                return false;
+            }
+            return tmpPod.getStatus().getConditions().stream()
+                    .anyMatch(cond ->
+                            ArtemisConstants.CONDITION_TYPE_READY.equalsIgnoreCase(cond.getType()) &&
+                                    ArtemisConstants.CONDITION_TRUE.equalsIgnoreCase(cond.getStatus())
+                    );
+        };
 
-    abstract public void setOperatorLeaseDuration(int durationInSeconds);
-
-    abstract public void setOperatorRenewDeadlineDuration(int durationInSeconds);
-
-    abstract public void setOperatorRetryPeriodDuration(int durationInSeconds);
+        Resource<Pod> podResource = kubeClient.getKubernetesClient().pods()
+                .inNamespace(deploymentNamespace)
+                .withName(operatorName);
+        podResource.waitUntilCondition(readyCondition, maxTimeout, TimeUnit.MILLISECONDS);
+        return podResource.isReady();
+    }
 
 }
