@@ -2,10 +2,9 @@
  * Copyright Broker QE authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.brokerqe.claire.upgrade;
+package io.brokerqe.claire.versions;
 
 import io.brokerqe.claire.AbstractSystemTests;
-import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubernetesVersion;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
@@ -16,7 +15,6 @@ import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageChannel;
 import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +31,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @DisableOnNoPackageManifestFile
-@Tag(Constants.TAG_UPGRADE)
 @TestMinimumKubernetesVersion(KubernetesVersion.VERSION_1_26)
 public class OperatorOlmVersionTests extends AbstractSystemTests {
 
