@@ -14,6 +14,7 @@ import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifest;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,6 +131,28 @@ public abstract class ArtemisCloudClusterOperator {
         } else {
             throw new ClaireRuntimeException("Operator is not installed using OLM!");
         }
+    }
+
+    public PackageManifest getRelatedPackageManifestOlm(boolean filterByCustomCatalogSource) {
+        if (environmentOperator.isOlmInstallation()) {
+            List<PackageManifest> pms = ResourceManager.getKubeClient().getPackageManifests(ArtemisCloudClusterOperatorOlm.getAmqOperatorName());
+            for (PackageManifest pm : pms) {
+                LOGGER.info("PM: {} -> CS: {}", pm.getMetadata().getName(), pm.getStatus().getCatalogSource());
+                if (filterByCustomCatalogSource) {
+                    String catalogSourceName = ((ArtemisCloudClusterOperatorOlm) this).getBrokerCatalogSourceName();
+                    if (pm.getStatus().getCatalogSource().equals(catalogSourceName)) {
+                        LOGGER.info("Returning PM: {} with CS: {}", pm.getMetadata().getName(), pm.getStatus().getCatalogSource());
+                        return pm;
+                    }
+                } else {
+                    LOGGER.info("Returning first found PM: {} with CS: {}", pm.getMetadata().getName(), pm.getStatus().getCatalogSource());
+                    return pm;
+                }
+            }
+        } else {
+            throw new ClaireRuntimeException("Operator is not installed using OLM!");
+        }
+        return null;
     }
 
     public boolean isOperatorReady(long maxTimeout) {

@@ -72,6 +72,10 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         return subscriptionName;
     }
 
+    public String getBrokerCatalogSourceName() {
+        return brokerCatalogSourceName;
+    }
+
     private void getPackageManifestChannel(boolean isLts) {
         String olmCSV;
         PackageChannel nonLtsChannel;
