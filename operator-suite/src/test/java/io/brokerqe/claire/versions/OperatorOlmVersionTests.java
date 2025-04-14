@@ -113,6 +113,7 @@ public class OperatorOlmVersionTests extends AbstractSystemTests {
         }
     }
 
+    // Read PACKAGE_MANIFEST file
     private Map<String, List<String>> getOrderedProvidedVersions() {
         String oprVersions = ResourceManager.getEnvironment().getTestUpgradePackageManifestContent();
         String[] versions = oprVersions.split("\\n");

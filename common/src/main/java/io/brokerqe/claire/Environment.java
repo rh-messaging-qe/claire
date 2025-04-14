@@ -77,7 +77,7 @@ public abstract class Environment {
         if (testUpgradePackageManifest != null) {
             return TestUtils.readFileContent(new File(testUpgradePackageManifest));
         } else {
-            throw new IllegalArgumentException(Constants.EV_UPGRADE_PACKAGE_MANIFEST + " variable has not been set!");
+            throw new IllegalArgumentException(Constants.EV_PACKAGE_MANIFEST + " variable has not been set!");
         }
     }
 

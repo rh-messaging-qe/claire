@@ -47,7 +47,7 @@ If you would want to try your own OLM operator, you would need to specify only f
 | OLM_IIB                                                 | OLM Index Image Bundle to use                                       | not set                     | \<iib image registry url\>                       |
 | OLM_CHANNEL                                             | OLM channel to use with Subscription                                | not set                     | \<channel\>                                      |
 | DISABLE_RANDOM_NAMESPACES                               | Whether to use random string suffices                               | not set (`false`)           | `true`, `false`                                  |
-| UPGRADE_PACKAGE_MANIFEST                                | Provide a list of supported AMQ Broker Operator versions            | not set                     | see below                                        |
+| PACKAGE_MANIFEST                                        | Provide a list of supported AMQ Broker Operator versions            | not set                     | see below                                        |
 | LOGS_LOCATION                                           | Location where to generate collected logs                           | `test-logs`                 | \<directory\>                                    |
 | TEST_LOG_LEVEL                                          | Set logging level of test suite                                     | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
 | CLUSTER_OPERATOR_MANAGED                                | Whether test suite manages CO or not (Makefile)                     | `true`                      | `false`                                          |
@@ -70,7 +70,7 @@ By default, we use `INFO` level. Supported values are `TRACE`, `DEBUG`, `INFO`, 
 Set environment variable `DISABLE_RANDOM_NAMESPACES` to `false` to disable using random suffix in namespace names. This is useful for debugging purposes.
 Example `test-namespace-2a6c` will be always `test-namespace`.
 
-## Structure of UPGRADE_PACKAGE_MANIFEST file
+## Structure of PACKAGE_MANIFEST file
 A list of expected AMQ Broker Operator versions, for example:
 ```shell
 7.10.0.OPR.4.CR1

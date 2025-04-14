@@ -81,7 +81,7 @@ public class EnvironmentOperator extends Environment {
         projectManagedClusterOperator = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_CLUSTER_OPERATOR_MANAGED, "true"));
 
         testUpgradePlan = System.getenv(Constants.EV_UPGRADE_PLAN);
-        testUpgradePackageManifest = System.getenv(Constants.EV_UPGRADE_PACKAGE_MANIFEST);
+        testUpgradePackageManifest = System.getenv(Constants.EV_PACKAGE_MANIFEST);
         olmIndexImageBundle = System.getenv().getOrDefault(Constants.EV_OLM_IIB, null);
         olmChannel = System.getenv().getOrDefault(Constants.EV_OLM_CHANNEL, null);
         olmReleased = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_OLM_RELEASED, "false"));
@@ -162,7 +162,7 @@ public class EnvironmentOperator extends Environment {
             envVarsSB.append(Constants.EV_UPGRADE_PLAN).append("=").append(testUpgradePlan).append(Constants.LINE_SEPARATOR);
         }
         if (testUpgradePackageManifest != null) {
-            envVarsSB.append(Constants.EV_UPGRADE_PACKAGE_MANIFEST).append("=").append(testUpgradePackageManifest).append(Constants.LINE_SEPARATOR);
+            envVarsSB.append(Constants.EV_PACKAGE_MANIFEST).append("=").append(testUpgradePackageManifest).append(Constants.LINE_SEPARATOR);
         }
         if (logsDirLocation != null) {
             envVarsSB.append(Constants.EV_LOGS_LOCATION).append("=").append(logsDirLocation).append(Constants.LINE_SEPARATOR);
