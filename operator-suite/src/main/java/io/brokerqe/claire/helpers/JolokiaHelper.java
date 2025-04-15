@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -23,7 +24,7 @@ public class JolokiaHelper {
 
 
     private static URI getJolokiaAddress(String host, String requestPath) {
-        String jolokiaParams = ArtemisConstants.JOLOKIA_EXEC_ENDPOINT + ArtemisConstants.JOLOKIA_BROKER_PARAM + requestPath;
+        String jolokiaParams = ArtemisConstants.JOLOKIA_EXEC_ENDPOINT + URLEncoder.encode(ArtemisConstants.JOLOKIA_BROKER_PARAM) + requestPath;
         URI fullUrl = null;
         try {
             fullUrl = new URI("http://" + host + jolokiaParams);

@@ -18,7 +18,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -32,10 +31,13 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.function.Function;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 
 public class AddressSettingsTests extends AbstractSystemTests {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddressSettingsTests.class);
@@ -182,12 +184,14 @@ public class AddressSettingsTests extends AbstractSystemTests {
         return setting;
     }
 
-    //This test verifies that all settings are set on broker side without verifying the effects of each setting.
-    //Somewhat reasonable defaults are chosen for this.
+    // This test verifies known settings and logs everything which is unexpected in the test log
+    // This should be updated when old releases stop being supported
+    // Ideally, this should include all the settings which earliest stupported version has
+    // At the moment of writing, it is 7.11
     @Test
     @Tag(Constants.TAG_OPERATOR)
-    @Disabled("Needs fixing")
     void basicAddressSettingsTest() throws IOException {
+        AddressSetting settings = getDefaultAddressSetting("#");
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
             .editOrNewMetadata()
                 .withName(brokerName)
@@ -201,7 +205,7 @@ public class AddressSettingsTests extends AbstractSystemTests {
                     .withExpose(true)
                 .endConsole()
                 .editOrNewAddressSettings()
-                    .addToAddressSetting(getDefaultAddressSetting("#"))
+                    .addToAddressSetting(settings)
                 .endAddressSettings()
             .endSpec()
             .build();
@@ -211,8 +215,87 @@ public class AddressSettingsTests extends AbstractSystemTests {
         String response = JolokiaHelper.getAddressSettings(getClient().getExternalAccessServiceUrl(testNamespace, brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX + "-0-svc-rte"), "someQueue");
         LOGGER.trace("Content: " + response);
         JSONObject jsonResponse = new JSONObject(response);
-        JSONObject jsonValue = new JSONObject(jsonResponse.getString("value").replace("\\", ""));
-        LOGGER.trace("Object: " + jsonValue);
-        assertThat("Addresssettings received are not same as expected values", verifyAddressSettingFromResource(jsonValue, KNOWN_GOOD_RESPONSE), is(true));
+        verifyAllSettings(settings, jsonResponse);
+    }
+
+    private void verifyAllSettings(AddressSetting structure, JSONObject actualValues) {
+        LOGGER.debug("Verifying correctness of address settings in JSON Response");
+
+        Map<String, Function<AddressSetting, Object>> fieldMap = new LinkedHashMap<>();
+
+        fieldMap.put("autoDeleteAddresses", AddressSetting::getAutoDeleteAddresses);
+        fieldMap.put("autoCreateAddresses", AddressSetting::getAutoCreateAddresses);
+        fieldMap.put("addressFullMessagePolicy", AddressSetting::getAddressFullPolicy);
+        fieldMap.put("autoCreateDeadLetterResources", AddressSetting::getAutoCreateDeadLetterResources);
+        fieldMap.put("autoCreateExpiryResources", AddressSetting::getAutoCreateExpiryResources);
+        fieldMap.put("autoCreateJmsQueues", AddressSetting::getAutoCreateJmsQueues);
+        fieldMap.put("autoCreateJmsTopics", AddressSetting::getAutoCreateJmsTopics);
+        fieldMap.put("autoCreateQueues", AddressSetting::getAutoCreateQueues);
+        fieldMap.put("autoDeleteAddressesDelay", AddressSetting::getAutoDeleteAddressesDelay);
+        fieldMap.put("autoDeleteCreatedQueues", AddressSetting::getAutoDeleteCreatedQueues);
+        fieldMap.put("autoDeleteJmsQueues", AddressSetting::getAutoDeleteJmsQueues);
+        fieldMap.put("autoDeleteJmsTopics", AddressSetting::getAutoDeleteJmsTopics);
+        fieldMap.put("autoDeleteQueues", AddressSetting::getAutoDeleteQueues);
+        fieldMap.put("autoDeleteQueuesDelay", AddressSetting::getAutoDeleteQueuesDelay);
+        fieldMap.put("autoDeleteQueuesMessageCount", AddressSetting::getAutoDeleteQueuesMessageCount);
+        fieldMap.put("configDeleteAddresses", AddressSetting::getConfigDeleteAddresses);
+        fieldMap.put("configDeleteDiverts", AddressSetting::getConfigDeleteDiverts);
+        fieldMap.put("configDeleteQueues", AddressSetting::getConfigDeleteQueues);
+        fieldMap.put("deadLetterAddress", AddressSetting::getDeadLetterAddress);
+        fieldMap.put("deadLetterQueuePrefix", AddressSetting::getDeadLetterQueuePrefix);
+        fieldMap.put("deadLetterQueueSuffix", AddressSetting::getDeadLetterQueueSuffix);
+        fieldMap.put("defaultAddressRoutingType", AddressSetting::getDefaultAddressRoutingType);
+        fieldMap.put("defaultConsumersBeforeDispatch", AddressSetting::getDefaultConsumersBeforeDispatch);
+        fieldMap.put("defaultConsumerWindowSize", AddressSetting::getDefaultConsumerWindowSize);
+        fieldMap.put("defaultGroupBuckets", AddressSetting::getDefaultGroupBuckets);
+        fieldMap.put("defaultDelayBeforeDispatch", AddressSetting::getDefaultDelayBeforeDispatch);
+        fieldMap.put("defaultExclusiveQueue", AddressSetting::getDefaultExclusiveQueue);
+        fieldMap.put("defaultGroupRebalance", AddressSetting::getDefaultGroupRebalance);
+        fieldMap.put("defaultGroupRebalancePauseDispatch", AddressSetting::getDefaultGroupRebalancePauseDispatch);
+        fieldMap.put("defaultGroupFirstKey", AddressSetting::getDefaultGroupFirstKey);
+        fieldMap.put("defaultLastValueKey", AddressSetting::getDefaultLastValueKey);
+        fieldMap.put("defaultLastValueQueue", AddressSetting::getDefaultLastValueQueue);
+        fieldMap.put("defaultMaxConsumers", AddressSetting::getDefaultMaxConsumers);
+        fieldMap.put("defaultNonDestructive", AddressSetting::getDefaultNonDestructive);
+        fieldMap.put("defaultPurgeOnNoConsumers", AddressSetting::getDefaultPurgeOnNoConsumers);
+        fieldMap.put("defaultQueueRoutingType", AddressSetting::getDefaultQueueRoutingType);
+        fieldMap.put("defaultRingSize", AddressSetting::getDefaultRingSize);
+        fieldMap.put("enableMetrics", AddressSetting::getEnableMetrics);
+        fieldMap.put("expiryDelay", AddressSetting::getExpiryDelay);
+        fieldMap.put("expiryQueuePrefix", AddressSetting::getExpiryQueuePrefix);
+        fieldMap.put("expiryQueueSuffix", AddressSetting::getExpiryQueueSuffix);
+        fieldMap.put("expiryAddress", AddressSetting::getExpiryAddress);
+        fieldMap.put("lastValueQueue", AddressSetting::getLastValueQueue);
+        fieldMap.put("managementBrowsePageSize", AddressSetting::getManagementBrowsePageSize);
+        fieldMap.put("maxExpiryDelay", AddressSetting::getMaxExpiryDelay);
+        fieldMap.put("managementMessageAttributeSizeLimit", AddressSetting::getManagementMessageAttributeSizeLimit);
+        fieldMap.put("maxDeliveryAttempts", AddressSetting::getMaxDeliveryAttempts);
+        fieldMap.put("maxSizeBytes", AddressSetting::getMaxSizeBytes);
+        fieldMap.put("maxRedeliveryDelay", AddressSetting::getMaxRedeliveryDelay);
+        fieldMap.put("maxSizeBytesRejectThreshold", AddressSetting::getMaxSizeBytesRejectThreshold);
+        fieldMap.put("maxSizeMessages", AddressSetting::getMaxSizeMessages);
+        fieldMap.put("messageCounterHistoryDayLimit", AddressSetting::getMessageCounterHistoryDayLimit);
+        fieldMap.put("minExpiryDelay", AddressSetting::getMinExpiryDelay);
+        fieldMap.put("pageCacheMaxSize", AddressSetting::getPageMaxCacheSize);
+        fieldMap.put("pageSizeBytes", AddressSetting::getPageSizeBytes);
+        fieldMap.put("redeliveryDelay", AddressSetting::getRedeliveryDelay);
+        fieldMap.put("redistributionDelay", AddressSetting::getRedistributionDelay);
+        fieldMap.put("retroactiveMessageCount", AddressSetting::getRetroactiveMessageCount);
+        fieldMap.put("sendToDLAOnNoRoute", AddressSetting::getSendToDlaOnNoRoute);
+        fieldMap.put("slowConsumerCheckPeriod", AddressSetting::getSlowConsumerCheckPeriod);
+        fieldMap.put("slowConsumerPolicy", AddressSetting::getSlowConsumerPolicy);
+        fieldMap.put("slowConsumerThreshold", AddressSetting::getSlowConsumerThreshold);
+        fieldMap.put("slowConsumerThresholdMeasurementUnit", AddressSetting::getSlowConsumerThresholdMeasurementUnit);
+
+        for (String key: actualValues.keySet()) {
+            if (fieldMap.containsKey(key)) {
+                Function<AddressSetting, Object> funcItem = fieldMap.get(key);
+                Object expected = actualValues.get(key);
+                Object actual = funcItem.apply(structure);
+                assertThat("Mismatch for field: " + key, actual, equalTo(expected));
+            } else {
+                LOGGER.info("Additional property found: {}", key);
+            }
+        }
     }
 }
