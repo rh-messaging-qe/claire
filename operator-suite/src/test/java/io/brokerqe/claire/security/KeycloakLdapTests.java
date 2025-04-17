@@ -74,16 +74,16 @@ public class KeycloakLdapTests extends LdapTests {
                             org.apache.activemq.jaas.properties.role="artemis-roles.properties"
                             baseDir="/home/jboss/amq-broker/etc";
 
-                       org.keycloak.adapters.jaas.BearerTokenLoginModule sufficient
+                       org.keycloak.adapters.jaas.BearerTokenLoginModule optional
                             keycloak-config-file="${secret.mount}/_keycloak-bearer-token.json"
                             role-principal-class=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
                     };
                     activemq {
-                        org.keycloak.adapters.jaas.BearerTokenLoginModule sufficient
+                        org.keycloak.adapters.jaas.BearerTokenLoginModule optional
                             keycloak-config-file="${secret.mount}/_keycloak-bearer-token.json"
                             role-principal-class=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
 
-                        org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule sufficient
+                        org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule optional
                             keycloak-config-file="${secret.mount}/_keycloak-direct-access.json"
                             role-principal-class=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
 

@@ -676,7 +676,8 @@
         "web-origins",
         "profile",
         "roles",
-        "email"
+        "email",
+        "basic"
       ],
       "optionalClientScopes": [
         "address",
