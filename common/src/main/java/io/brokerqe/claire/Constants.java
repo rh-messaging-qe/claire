@@ -157,6 +157,9 @@ public interface Constants {
     String PROP_YACFG_ARTEMIS_PROFILES_OVERRIDE_DIR = "yacfg.artemis.profiles_override_dir";
     String EV_YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR = "YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR";
     String PROP_YACFG_ARTEMIS_TEMPLATES_OVERRIDE_DIR = "yacfg.artemis.templates_override_dir";
+    String DEFAULT_IMAGE_PULL_POLICY = "default";
+    String EV_IMAGE_PULL_POLICY = "IMAGE_PULL_POLICY";
+    String PROP_IMAGE_PULL_POLICY = "container.image.pull_policy";
 
     String ARTEMIS_DEFAULT_CFG_DIR = "artemis/artemis_default_cfg";
     String ARTEMIS_TEST_CFG_DIR = "test-cfg";

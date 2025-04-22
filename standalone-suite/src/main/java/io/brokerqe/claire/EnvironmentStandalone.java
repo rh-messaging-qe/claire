@@ -16,11 +16,14 @@ import io.brokerqe.claire.container.database.PostgresqlContainer;
 import io.brokerqe.claire.container.database.ProvidedDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.images.ImagePullPolicy;
+import org.testcontainers.images.PullPolicy;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +46,7 @@ public class EnvironmentStandalone extends Environment {
     private final String providedArtemisConfig;
     private final String zookeeperContainerImage;
     private final String yacfgArtemisContainerImage;
+    private final String imagePullPolicy;
     private final String yacfgArtemisProfile;
     private final String yacfgArtemisProfilesOverrideDir;
     private final String yacfgArtemisTemplatesOverrideDir;
@@ -86,6 +90,9 @@ public class EnvironmentStandalone extends Environment {
 
         zookeeperContainerImage = getConfigurationValue(Constants.EV_ZOOKEEPER_CONTAINER_IMAGE,
                 Constants.PROP_ZOOKEEPER_CONTAINER_IMAGE, Constants.DEFAULT_ZOOKEEPER_CONTAINER_IMAGE);
+
+        imagePullPolicy = getConfigurationValue(Constants.EV_IMAGE_PULL_POLICY, Constants.PROP_IMAGE_PULL_POLICY,
+                Constants.DEFAULT_IMAGE_PULL_POLICY);
 
         artemisVersionStr = getArtemisVersionFromInstallDir();
         artemisVersion = convertArtemisVersion(artemisVersionStr);
@@ -278,6 +285,26 @@ public class EnvironmentStandalone extends Environment {
 
     public String getYacfgArtemisContainerImage() {
         return yacfgArtemisContainerImage;
+    }
+
+    public ImagePullPolicy getImagePullPolicy() {
+        ImagePullPolicy pullPolicy;
+        switch (imagePullPolicy) {
+            case "always":
+                pullPolicy = PullPolicy.alwaysPull();
+                break;
+            case "default":
+                pullPolicy = PullPolicy.defaultPolicy();
+                break;
+            case "ageBased-1H":
+                pullPolicy = PullPolicy.ageBased(Duration.ofHours(1));
+                break;
+            default:
+                String error = String.format("Unknown pull policy: '%s', for `IMAGE_PULL_POLICY` env var", imagePullPolicy);
+                LOGGER.error(error);
+                throw new ClaireRuntimeException(error);
+        }
+        return pullPolicy;
     }
 
     @Override

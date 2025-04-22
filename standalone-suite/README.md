@@ -41,6 +41,7 @@ See the table below for more info.
 | ZOOKEEPER_CONTAINER_IMAGE     | Zookeeper container image to use                | `zookeeper:latest`                                     | <image_registry>                                 |
 | YACFG_ARTEMIS_CONTAINER_IMAGE | yacfg container image to use                    | `quay.io/rhmessagingqe/yacfg_artemis:latest`           | <image_registry>                                 |
 | USE_EXISTING_CONFIG           | Path to existing `etc` folder or artemis        | not set                                                | \<directory\>                                    |
+| IMAGE_PULL_POLICY             | Image Pull Policy for container images          | `default`                                              | `default`, `always`, `ageBased-1H`               |
 
 **_NOTE:_** `ARTEMIS_INSTALL_ZIP` is not set by default and build it without set the environment variable will fail.
 You must set the environment variable or provide it to `make` command, i.e.:
@@ -79,6 +80,14 @@ In deployed DB way, relevant _bitnami mariadb/mysql/postgresql_, _container-regi
           --tune claire/standalone-suite/yacfg-profiles/tests/upgrade/HAReplicationUpgradeTests/primary-tune.yaml.jinja2 \
           --output primary-lala
   ```
+
+**_NOTE:_**  
+You can configure the `IMAGE_PULL_POLICY` environment variable to control whether container images should be pulled at runtime.
+The supported values are:
+- **`default`** – Uses the default pull policy (usually skips pulling if the image exists locally).
+- **`always`** – Always pulls the image from a registry, regardless of whether it exists locally.
+- **`ageBased-1H`** – Pulls the image only if the existing local image is older than 1 hour.
+You can also define a Custom pull policy by implementing the `org.testcontainers.images.AbstractImagePullPolicy` class.
 
 ## Development Hints
 - Keep the code clean :-)

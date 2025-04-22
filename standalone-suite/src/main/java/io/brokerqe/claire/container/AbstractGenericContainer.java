@@ -32,7 +32,6 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.ImagePullPolicy;
-import org.testcontainers.images.PullPolicy;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -108,7 +107,7 @@ public abstract class AbstractGenericContainer {
         if (ENVIRONMENT_STANDALONE.isLogContainers()) {
             withStdOutLog();
         }
-        withPullPolicy(PullPolicy.alwaysPull());
+        withPullPolicy(ENVIRONMENT_STANDALONE.getImagePullPolicy());
         withFileSystemBind(ETC_LOCALTIME, ETC_LOCALTIME, BindMode.READ_ONLY);
         LOGGER.debug("[{}] Starting", name);
         container.start();
