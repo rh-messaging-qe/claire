@@ -9,10 +9,8 @@ ARG claireUserGroup=root
 ARG appDir=/app
 ARG buildDir=/build
 ARG mvnCommonOpts="-Daether.connector.https.securityMode=insecure"
-ARG buildMvnOpts="${mvnCommonOpts} \
-    -Dmaven.repo.local=${buildDir}/.m2/repository"
-ARG mvnOpts="${mvnCommonOpts} \
-    -Dmaven.repo.local=${appDir}/.m2/repository"
+ARG buildMvnOpts="${mvnCommonOpts} -Dmaven.repo.local=${buildDir}/.m2/repository"
+ARG mvnOpts="${mvnCommonOpts} -Dmaven.repo.local=${appDir}/.m2/repository"
 ARG buildArch=amd64
 
 ####################
@@ -99,7 +97,7 @@ COPY --from=dependencies ${buildDir}/.m2 ${buildDir}/.m2
 COPY . ${buildDir}
 
 #  build operator suite
-RUN make ${makeParams} operator_build MVN_ADDITIONAL_PARAMS="--offline ${buildMvnOpts}" && \
+RUN make ${makeParams} operator_build MVN_ADDITIONAL_PARAMS=" ${buildMvnOpts}" && \
     rm -rf common.yaml README.md
 
 ###############
@@ -156,7 +154,7 @@ CMD ["/bin/bash"]
 # Set the current commit id
 ENV COMMIT_ID=${commitId}
 
-# Copy cliare files
+# Copy claire files
 COPY --from=build --chown=${claireUserUid}:${claireUserGroup} ${buildDir} ${appDir}
 
 # Set permissions
