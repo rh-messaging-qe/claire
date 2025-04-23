@@ -8,8 +8,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
+import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.TestUtils;
 import io.fabric8.openshift.api.model.Route;
@@ -23,6 +26,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -30,12 +35,38 @@ import java.util.Locale;
 
 public class JMXHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(JMXHelper.class);
-    private static final String JMX_CALL_BASE = ArtemisConstants.JOLOKIA_READ_ENDPOINT + ArtemisConstants.JOLOKIA_BROKER_PARAM;
 
     private String user = ArtemisConstants.JOLOKIA_DEFAULT_USER;
     private String pass = ArtemisConstants.JOLOKIA_DEFAULT_PASS;
 
     private KubeClient client;
+
+    public static String getJmxCallBase() {
+        return getJmxCallBase(ArtemisConstants.JOLOKIA_DEFAULT_BROKERNAME);
+    }
+
+    public static String getJmxCallBase(String brokerName) {
+        return ArtemisConstants.JOLOKIA_READ_ENDPOINT + getBrokerNameParam(brokerName);
+    }
+
+    public static String getBrokerNameParam() {
+        return getBrokerNameParam(ArtemisConstants.JOLOKIA_DEFAULT_BROKERNAME);
+    }
+
+    public static String getBrokerNameParam(String brokerName) {
+        return ":broker=" + getQuotedMBean(brokerName);
+    }
+
+    public static String getQuotedMBean(String quoteMe) {
+        String quotedString;
+        // Artemis 2.40+ uses new Jolokia, which quotes differently - using '!'
+        if (ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_40.getVersionNumber()) {
+            quotedString = URLEncoder.encode("\"" + quoteMe + "\"", StandardCharsets.UTF_8);
+        } else {
+            quotedString = URLEncoder.encode("!\"" + quoteMe + "!\"", StandardCharsets.UTF_8);
+        }
+        return quotedString;
+    }
 
     public JMXHelper withUser(String user) {
         this.user = user;
@@ -65,8 +96,7 @@ public class JMXHelper {
     private String performJmxCall(String host, String jmxPath) throws IOException {
         HttpURLConnection con = (HttpURLConnection) TestUtils.makeHttpRequest("http://" + host + jmxPath, Constants.GET);
         con.setRequestProperty("Authorization", getBasicAuth());
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(con.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
         StringBuffer content = new StringBuffer();
         while ((inputLine = in.readLine()) != null) {
@@ -78,7 +108,7 @@ public class JMXHelper {
     }
 
     private List<String> getAllAddresses(String host) throws IOException {
-        String jmxPath = JMX_CALL_BASE + "/AddressNames";
+        String jmxPath = getJmxCallBase() + "/AddressNames";
         String content = performJmxCall(host, jmxPath);
         JSONObject json = new JSONObject(content);
 
@@ -97,14 +127,13 @@ public class JMXHelper {
 
 
     private int getMessageCount(String host, String address, String routingType, String queue) throws IOException {
-        String jmxTemplate = JMX_CALL_BASE +
+        String jmxPath = getJmxCallBase() +
                 ",component=addresses" +
-                ",address=!\"%s!\"" +
+                ",address=" + getQuotedMBean(address) +
                 ",subcomponent=queues" +
-                ",routing-type=!\"%s!\"" +
-                ",queue=!\"%s!\"" +
+                ",routing-type=" + getQuotedMBean(routingType.toLowerCase(Locale.ROOT)) +
+                ",queue=" + getQuotedMBean(queue) +
                 "/MessageCount";
-        String jmxPath = String.format(jmxTemplate, address, routingType.toLowerCase(Locale.ROOT), queue);
         String content = performJmxCall(host, jmxPath);
         JSONObject json = new JSONObject(content);
         int result;
@@ -119,10 +148,7 @@ public class JMXHelper {
     }
 
     private List<String> getQueueNames(String host, String address) throws IOException {
-        String jmxTemplate = JMX_CALL_BASE +
-                ",component=addresses" +
-                ",address=!\"%s!\"/QueueNames";
-        String jmxPath = String.format(jmxTemplate, address);
+        String jmxPath = getJmxCallBase() + ",component=addresses,address=" + JMXHelper.getQuotedMBean(address) + "/QueueNames";
         String content = performJmxCall(host, jmxPath);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode json = mapper.readTree(content);
@@ -147,8 +173,7 @@ public class JMXHelper {
             }
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new ClaireRuntimeException("[JMX] Error with " +  e.getMessage());
         }
     }
 

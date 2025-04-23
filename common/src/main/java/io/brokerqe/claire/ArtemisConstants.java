@@ -24,12 +24,12 @@ public interface ArtemisConstants {
     String WEBCONSOLE_URI_PREFIX = "wconsj";
     String JOLOKIA_EXEC_ENDPOINT = "/console/jolokia/exec/org.apache.activemq.artemis";
     String JOLOKIA_READ_ENDPOINT = "/console/jolokia/read/org.apache.activemq.artemis";
-    String JOLOKIA_BROKER_PARAM = ":broker=\"amq-broker\"";
     String JOLOKIA_ADDRESSETTINGS_ENDPOINT = "/getAddressSettingsAsJSON/";
     String JOLOKIA_STATUS_ENDPOINT = "/Status";
     String JOLOKIA_ORIGIN_HEADER = "http://localhost:8161";
     String JOLOKIA_DEFAULT_USER = "admin";
     String JOLOKIA_DEFAULT_PASS = "admin";
+    String JOLOKIA_DEFAULT_BROKERNAME = "amq-broker";
 
     int CONSOLE_PORT = 8161;
     int DEFAULT_ALL_PROTOCOLS_PORT = 61616;

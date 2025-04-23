@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -24,7 +23,7 @@ public class JolokiaHelper {
 
 
     private static URI getJolokiaAddress(String host, String requestPath) {
-        String jolokiaParams = ArtemisConstants.JOLOKIA_EXEC_ENDPOINT + URLEncoder.encode(ArtemisConstants.JOLOKIA_BROKER_PARAM) + requestPath;
+        String jolokiaParams = ArtemisConstants.JOLOKIA_EXEC_ENDPOINT + JMXHelper.getBrokerNameParam() + requestPath;
         URI fullUrl = null;
         try {
             fullUrl = new URI("http://" + host + jolokiaParams);
@@ -42,9 +41,9 @@ public class JolokiaHelper {
         return getAddressSettings(host, queue, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS);
     }
 
-    public static Boolean checkJolokiaConnection(String host) {
-        HttpRequest request = null;
-        String userpass = ArtemisConstants.ADMIN_NAME + ":" + ArtemisConstants.ADMIN_PASS;
+    public static Boolean checkJolokiaConnection(String host, String user, String pass) {
+        HttpRequest request;
+        String userpass =  user + ":" + pass;
         String basicAuth = new String(Base64.getEncoder().encode(userpass.getBytes()));
         try {
             request = HttpRequest.newBuilder(getJolokiaAddress(host, ArtemisConstants.JOLOKIA_STATUS_ENDPOINT))
@@ -74,7 +73,7 @@ public class JolokiaHelper {
      */
     public static String getAddressSettings(String host, String queue, String user, String pass) {
         HttpRequest request = null;
-        String userpass =  ArtemisConstants.ADMIN_NAME + ":" + ArtemisConstants.ADMIN_PASS;
+        String userpass =  user + ":" + pass;
         String basicAuth = new String(Base64.getEncoder().encode(userpass.getBytes()));
         try {
             request = HttpRequest.newBuilder(getJolokiaAddressCallURL(host, queue))

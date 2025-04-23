@@ -87,11 +87,18 @@ public class WebConsoleTests extends AbstractSystemTests {
             checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_UNAVAILABLE, "Application is not available");
 
             url = "http://" + serviceUrl;
-            if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() <= ArtemisVersion.VERSION_2_28.getVersionNumber()) {
+            if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_40.getVersionNumber()) {
                 url = "http://" + serviceUrl + "/console/auth/login";
+                LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
+                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login");
+            } else {
+                // 2.40+
+                url = "http://" + serviceUrl + "/console/login";
+                LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
+                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "ActiveMQ Artemis Console");
             }
-            LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
-            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login");
+
+
         }
         ResourceManager.deleteArtemis(testNamespace, artemis);
     }

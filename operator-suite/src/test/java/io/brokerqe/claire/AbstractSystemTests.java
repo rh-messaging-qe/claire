@@ -366,10 +366,10 @@ public abstract class AbstractSystemTests implements TestSeparator {
 
     public void waitConsoleReady(String url, long pool, long timeout) {
         TestUtils.waitFor("wait for console be ready", pool, timeout,
-                () -> isHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login"));
+                () -> isHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, ".*ActiveMQ Artemis Console.*|.*hawtio-login.*"));
     }
 
-    public boolean isHttpResponse(URLConnection connection, int expectedCode, String expectedString) {
+    public boolean isHttpResponse(URLConnection connection, int expectedCode, String matchesString) {
         InputStream response;
         try {
             response = connection.getInputStream();
@@ -377,7 +377,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
             Scanner scanner = new Scanner(response);
             String responseBody = scanner.useDelimiter("\\A").next();
             response.close();
-            return responseBody.contains(expectedString);
+            return responseBody.matches(matchesString);
         } catch (IOException e) {
             // carry on with execution, we've got expected exception
             if (e.getMessage().contains(String.valueOf(expectedCode))) {

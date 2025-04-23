@@ -382,8 +382,14 @@ public class SmokeTests extends AbstractSystemTests {
                 brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX).get(0);
         String serviceUrl = "http://" + getClient().getExternalAccessServiceUrl(testNamespace, webserviceUrl.getMetadata().getName());
         waitConsoleReady(serviceUrl, 500, 5000);
-        String url = serviceUrl + "/redhat-branding/plugin/amq-broker-version";
-        checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, testEnvironmentOperator.getArtemisVersion());
+
+        if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_40.getVersionNumber()) {
+            String url = serviceUrl + "/redhat-branding/plugin/amq-broker-version";
+            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, testEnvironmentOperator.getArtemisVersion());
+        } else {
+            String url = serviceUrl + "/console/hawtconfig.json";
+            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, testEnvironmentOperator.getArtemisVersion());
+        }
 
     }
 
