@@ -189,7 +189,7 @@ public class BaseWebUITests extends AbstractSystemTests {
             case Queues -> artemisPage.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName("Queues")).click(clicker);
             case BrokerDiagram -> artemisPage.getByText("Broker Diagram").click(clicker);
         }
-        TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
+        TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
         return artemisPage;
     }
 
