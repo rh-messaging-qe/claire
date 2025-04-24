@@ -432,7 +432,7 @@ public class BaseWebUITests extends AbstractSystemTests {
         filterBy(artemisPage, "Name", OperationFilter.Equals, queueName, null);
         artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Kebab toggle")).click(clicker);
         artemisPage.getByText("Send Message").click(clicker);
-        TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
+        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
 
         artemisPage.locator("button").filter(new Locator.FilterOptions().setHasText(Pattern.compile("^xml$|^plaintext$"))).click(clicker);
         artemisPage.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName("plaintext")).click();
@@ -446,6 +446,7 @@ public class BaseWebUITests extends AbstractSystemTests {
             artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Editor content")).fill("");
             artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Editor content")).fill(msgContentTmp, filler);
             artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Send")).click(clicker);
+            TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
         });
         artemisPage.getByText("Cancel").click(clicker);
     }
