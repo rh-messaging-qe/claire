@@ -381,7 +381,7 @@ public class SmokeTests extends AbstractSystemTests {
         HasMetadata webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace,
                 brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX).get(0);
         String serviceUrl = "http://" + getClient().getExternalAccessServiceUrl(testNamespace, webserviceUrl.getMetadata().getName());
-        waitConsoleReady(serviceUrl, 500, 5000);
+        waitConsoleReady(serviceUrl, Constants.DURATION_1_SECOND, Constants.DURATION_10_SECONDS);
 
         if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_40.getVersionNumber()) {
             String url = serviceUrl + "/redhat-branding/plugin/amq-broker-version";
