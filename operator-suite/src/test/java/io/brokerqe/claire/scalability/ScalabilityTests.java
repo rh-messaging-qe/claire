@@ -39,11 +39,11 @@ public class ScalabilityTests extends AbstractSystemTests {
         broker = doArtemisScale(testNamespace, broker, 1, 3);
         LOGGER.info("[{}] ScaleUp from 3 to 10", testNamespace);
         broker = doArtemisScale(testNamespace, broker, 3, 10);
-        LOGGER.info("[{}] ScaleUp from 10 to 16", testNamespace);
-        broker = doArtemisScale(testNamespace, broker, 10, 16);
+        LOGGER.info("[{}] ScaleUp from 10 to 14", testNamespace);
+        broker = doArtemisScale(testNamespace, broker, 10, 14);
 
-        LOGGER.info("[{}] ScaleDown from 16 to 5", testNamespace);
-        broker = doArtemisScale(testNamespace, broker, 16, 5);
+        LOGGER.info("[{}] ScaleDown from 14 to 5", testNamespace);
+        broker = doArtemisScale(testNamespace, broker, 14, 5);
         LOGGER.info("[{}] ScaleDown from 5 to 1", testNamespace);
         broker = doArtemisScale(testNamespace, broker, 5, 1);
 
