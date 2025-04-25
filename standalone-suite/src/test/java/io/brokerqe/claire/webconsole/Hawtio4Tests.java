@@ -96,11 +96,20 @@ public class Hawtio4Tests extends BaseWebUITests {
 
     @Test
     @Tag(Constants.TAG_WEBCONSOLE)
+    void createDeleteAddressQueueTest() {
+        int addressCount = 5;
+        String prefix = "tralala";
+        createAddressQueue(artemisPage, prefix, prefix, addressCount);
+        deleteAddressQueue(artemisPage, prefix, prefix, addressCount);
+    }
+
+    @Test
+    @Tag(Constants.TAG_WEBCONSOLE)
     public void testJolokiaCommands() {
         context.grantPermissions(Arrays.asList("clipboard-read", "clipboard-write"));
         String addressName = "jolokia-address";
         String queueName = "jolokia-queue";
-        clickBrokerOperations(artemisPage);
+        clickBrokerJMXOperations(artemisPage);
 
         LOGGER.info("Create Address using Jolokia URL");
         String jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "createAddress(String,");
@@ -122,7 +131,7 @@ public class Hawtio4Tests extends BaseWebUITests {
                 Map.of("header-option-1", String.valueOf(msgCount - 1)));
         navigateHome(artemisPage);
 
-        clickBrokerOperations(artemisPage);
+        clickBrokerJMXOperations(artemisPage);
         LOGGER.info("Delete forcefully address using Jolokia URL");
         jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "deleteAddress(String, boolean)");
         executeJolokiaCommandLocally(artemisInstance, jolokiaUrlCommand, String.format("%s/true", addressName));

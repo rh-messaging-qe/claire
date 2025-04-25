@@ -149,7 +149,7 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         LOGGER.info("[{}] Delete broker {} via UI", namespace, brokerName);
         navigateWorkloadBrokers(page, brokerName);
         try {
-            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Kebab toggle")).click(new Locator.ClickOptions().setTimeout(5000));
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Kebab toggle")).click(clicker);
         } catch (TimeoutError e) {
             page.getByLabel("Actions").click();
         }
