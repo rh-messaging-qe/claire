@@ -93,20 +93,27 @@ public final class TestUtils {
 
     // ========== Execute command Operations ==========
 
-    public static String executeLocalCommand(String cmd) {
+    public static CommandResult executeLocalCommand(String cmd) {
         return executeLocalCommand(cmd.split(" "));
     }
 
-    public static String executeLocalCommand(String... cmd) {
+    public static CommandResult executeLocalCommand(String... cmd) {
         return executeLocalCommand(10, cmd);
     }
 
-    public static String executeLocalCommand(long timeoutSecs, String... cmd) {
+    public static CommandResult executeLocalCommand(long timeoutSecs, File directory, String... cmd) {
+        LocalExecutor executor = new LocalExecutor();
+        LOGGER.debug("[CMD][local] {} {}", directory, String.join(" ", cmd));
+        return executor.executeCommand(timeoutSecs, directory, cmd);
+    }
+
+    public static CommandResult executeLocalCommand(long timeoutSecs, String... cmd) {
         LocalExecutor executor = new LocalExecutor();
         LOGGER.debug("[CMD][local] {}", String.join(" ", cmd));
-        executor.executeCommand(cmd);
-        return executor.getCommandData(Duration.ofSeconds(timeoutSecs).toSeconds());
+        return executor.executeCommand(timeoutSecs, cmd);
     }
+
+
 
     // ========== Junit Test Operations ==========
     public static String getClassName(ExtensionContext extensionContext) {

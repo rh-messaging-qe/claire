@@ -44,7 +44,7 @@ public class KeycloakLdapTests extends LdapTests {
         openldap = ResourceManager.getOpenldapInstance(testNamespace);
         openldap.deployLdap();
         keycloak = ResourceManager.getKeycloakInstance(testNamespace);
-        keycloak.deployOperator();
+        keycloak.deploy();
         setupEnvironment();
     }
 
@@ -52,7 +52,7 @@ public class KeycloakLdapTests extends LdapTests {
     void teardownClusterOperator() {
         ResourceManager.deleteArtemis(testNamespace, broker);
         getClient().deleteConfigMap(testNamespace, secretConfigName);
-        keycloak.undeployOperator();
+        keycloak.undeploy();
         openldap.undeployLdap();
         teardownDefaultClusterOperator(testNamespace);
     }

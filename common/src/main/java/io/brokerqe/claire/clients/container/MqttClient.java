@@ -119,7 +119,7 @@ public abstract class MqttClient extends SystemtestClient {
     public int sendMessages() {
         String cmdOutput;
         String[] command = constructClientCommand(SENDER);
-        cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+        cmdOutput = deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command).stdout;
         LOGGER.debug("[{}][TX] \n{}", deployableClient.getContainerName(), cmdOutput);
         this.sentMessages = parseMessages(cmdOutput, SENDER);
         return sentMessages.size();
@@ -139,7 +139,7 @@ public abstract class MqttClient extends SystemtestClient {
             // executed client on foreground
             String cmdOutput;
             String[] command = constructClientCommand(MessagingClient.RECEIVER);
-            cmdOutput = (String) deployableClient.getExecutor().executeCommand(duration, command);
+            cmdOutput = deployableClient.getExecutor().executeCommand(duration, command).stdout;
             LOGGER.debug("[{}][RX] \n{}", deployableClient.getContainerName(), cmdOutput);
             this.receivedMessages = parseMessages(cmdOutput, RECEIVER);
             return receivedMessages.size();
@@ -173,7 +173,7 @@ public abstract class MqttClient extends SystemtestClient {
     public String testBroker() {
         String cmdOutput;
         String[] command = constructClientCommand("test");
-        cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_5_MINUTES, command);
+        cmdOutput = deployableClient.getExecutor().executeCommand(Constants.DURATION_5_MINUTES, command).stdout;
         LOGGER.debug("[{}][TEST] \n{}", deployableClient.getContainerName(), cmdOutput);
         return cmdOutput;
     }

@@ -36,7 +36,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     private String olmChannel;
     private String indexImageBundle;
     private String brokerCatalogSourceName = "broker-source-" + TestUtils.getRandomString(2);
-    private String subscriptionName = getAmqOperatorName() + "-" + TestUtils.getRandomString(2);
+    private final String subscriptionName = getAmqOperatorName() + "-" + TestUtils.getRandomString(2);
     private String sourceNamespace;
     private List<HasMetadata> olmResources = new ArrayList<>();
 
@@ -193,6 +193,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         } catch (WaitException | KubernetesClientTimeoutException e) {
             LOGGER.error("[{}] Unable to deploy OLM based ClusterOperator! Undeploying", deploymentNamespace);
             undeployOperator(true);
+            throw new ClaireRuntimeException("Error while deploying operator!");
         }
     }
 

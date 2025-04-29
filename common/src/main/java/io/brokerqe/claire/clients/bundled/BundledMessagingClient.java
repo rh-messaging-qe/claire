@@ -147,7 +147,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
         String cmdOutput;
         String[] command = constructClientCommand(PRODUCER);
         try {
-            cmdOutput = (String) deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+            cmdOutput = deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command).stdout;
             LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
             return parseMessageCount(cmdOutput, PRODUCER);
         } catch (ClaireRuntimeException e) {
@@ -169,7 +169,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
             // executed client on foreground
             String cmdOutput;
             String[] command = constructClientCommand(CONSUMER);
-            cmdOutput = (String) deployableClient.getExecutor().executeCommand(duration, command);
+            cmdOutput = deployableClient.getExecutor().executeCommand(duration, command).stdout;
             if (!disableOutput) {
                 LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
             }

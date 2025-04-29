@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.clients.container;
 
+import io.brokerqe.claire.CommandResult;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.executor.Executor;
 import org.assertj.core.api.Assertions;
@@ -19,7 +20,7 @@ class AmqpProtonDotnetClientTest {
         Executor executor = Mockito.mock();
         DeployableClient deployableClient = Mockito.mock();
         Mockito.when(deployableClient.getExecutor()).thenReturn(executor);
-        Mockito.when(executor.executeCommand(Mockito.anyLong(), Mockito.any(String[].class))).thenReturn("{}");
+        Mockito.when(executor.executeCommand(Mockito.anyLong(), Mockito.any(String[].class))).thenReturn(new CommandResult(0, "{}", "{}"));
 
         AmqpProtonDotnetClient c = new AmqpProtonDotnetClient(deployableClient, "someUrl", "5672", "someAddress", "someAddress", 1);
         int sent = c.sendMessages();

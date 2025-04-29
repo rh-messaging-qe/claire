@@ -43,7 +43,7 @@ public abstract class Environment {
     private Database database;
     private static Environment environment;
     private Properties appProperties;
-
+    private String path = System.getenv("PATH") + ":/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin";
 
     public <T extends Environment> void set(T env) {
         environment = env;
@@ -144,5 +144,9 @@ public abstract class Environment {
             String error = String.format("Error loading properties file %s: %s", propertiesFile, e.getMessage());
             throw new ClaireRuntimeException(error, e);
         }
+    }
+
+    public String getEnvironmentDefaultPath() {
+        return path;
     }
 }

@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.executor;
 
+import io.brokerqe.claire.CommandResult;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
@@ -28,11 +29,11 @@ public class ExecutorStandalone implements Executor {
     }
 
     @Override
-    public Object executeCommand(String... command) {
+    public CommandResult executeCommand(String... command) {
         return executeCommand(Constants.DURATION_30_SECONDS, command);
     }
 
-    public String executeCommand(long maxExecMs, String... command) {
+    public CommandResult executeCommand(long maxExecMs, String... command) {
         LOGGER.debug("[{}] Executing command {}", container.getContainerName(), String.join(" ", command));
         try {
             Container.ExecResult execResult = container.execInContainer(command);
@@ -43,7 +44,7 @@ public class ExecutorStandalone implements Executor {
                 LOGGER.error("[ExecutorStandalone] {}", errMsg);
                 throw new ClaireRuntimeException(execResult.getStderr(), new Throwable(errMsg));
             }
-            return execResult.getStdout();
+            return new CommandResult(execResult.getExitCode(), execResult.getStdout(), execResult.getStderr());
         } catch (IOException | InterruptedException e) {
             String errMsg = String.format("Error on executing command '%s' in container %s: %s",
                     String.join(" ", command), container.getContainerName(), e.getMessage());

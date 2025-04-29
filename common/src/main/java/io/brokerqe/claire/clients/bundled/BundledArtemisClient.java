@@ -85,7 +85,7 @@ public class BundledArtemisClient {
     public Object executeCommand(long maxTimeout, boolean disableOutput) {
         String cmdOutput;
         String[] command = constructClientCommand();
-        cmdOutput = (String) deployableClient.getExecutor().executeCommand(maxTimeout, command);
+        cmdOutput = deployableClient.getExecutor().executeCommand(maxTimeout, command).stdout;
         if (artemisCommand.equals(ArtemisCommand.PERF_CLIENT)) {
             LOGGER.debug("[PERF] Client detected, to see it's output use trace logging.");
             LOGGER.trace(cmdOutput);

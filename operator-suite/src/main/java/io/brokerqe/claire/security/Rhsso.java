@@ -26,16 +26,19 @@ public class Rhsso extends Keycloak {
         super(testEnvironmentOperator, kubeClient, namespace);
     }
 
-    public void deployOperator() {
+    @Override
+    public Rhsso deploy() {
         // setupKeycloak();
         applyOperatorGroup();
         applySubscription();
         deployPostgres();
         applyKeycloakResources();
         setupAdminLogin();
+        return this;
     }
 
-    public void undeployOperator() {
+    @Override
+    public void undeploy() {
         if (keycloakResources != null) {
             keycloakResources.forEach(resource -> {
                 if (resource != null) {

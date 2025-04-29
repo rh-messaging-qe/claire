@@ -15,6 +15,7 @@ import com.microsoft.playwright.junit.UsePlaywright;
 import com.microsoft.playwright.options.AriaRole;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.ResourceManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -36,6 +37,9 @@ public class BaseWebUITests extends AbstractSystemTests {
     static Locator.ClickOptions clicker;
     static Locator.FillOptions filler;
 
+    String dashboardsUrl = getClient().getKubernetesClient().getMasterUrl().getHost().replace("api", "https://console-openshift-console.apps") + "/dashboards";
+    String[] kubeCredentials = ResourceManager.getEnvironment().getKubeCredentials();
+
     @BeforeAll
     static void launchBrowser() {
         playwright = Playwright.create();
@@ -46,7 +50,7 @@ public class BaseWebUITests extends AbstractSystemTests {
                     .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
         }
         browser = playwright.chromium().launch(options);
-        clicker = new Locator.ClickOptions().setTimeout(5000);
+        clicker = new Locator.ClickOptions().setTimeout(10000);
         filler = new Locator.FillOptions().setTimeout(5000);
     }
 
@@ -63,11 +67,13 @@ public class BaseWebUITests extends AbstractSystemTests {
                 .setIgnoreHTTPSErrors(true);
 
         // TODO: enable video if needed
-//        if (EnvironmentOperator.get().isPlaywrightDebug()) {
-//            contextOptions.setRecordVideoDir(Paths.get(Environment.get().getLogsDirLocation() + "/playwright-videos/"));
-//        }
+        if (Environment.get().isPlaywrightDebug()) {
+            LOGGER.warn("[TEST] Storing web ui testing video into {}", Environment.get().getLogsDirLocation() + "/playwright-videos/");
+            contextOptions.setRecordVideoDir(Paths.get(Environment.get().getLogsDirLocation() + "/playwright-videos/"));
+        }
         context = browser.newContext(contextOptions);
         page = context.newPage();
+        loginToOcp(dashboardsUrl, kubeCredentials[0], kubeCredentials[1]);
     }
 
     @AfterEach
@@ -82,6 +88,7 @@ public class BaseWebUITests extends AbstractSystemTests {
         page.getByText("Username").fill(username);
         page.getByText("Password").fill(password);
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
+        page.waitForLoadState();
     }
 
     void makeScreenshot(String testName) {

@@ -64,7 +64,7 @@ public abstract class StClientDeployment implements DeployableClient<AbstractGen
         unit = unit == null ? "KiB" : unit;
         String fileName = "/tmp/" + name;
         getExecutor().executeCommand(String.format("fallocate -l %d%s %s", size, unit, fileName).split(" "));
-        String fileInfo = (String) getExecutor().executeCommand("ls", "-l", fileName);
+        String fileInfo = getExecutor().executeCommand("ls", "-l", fileName).stdout;
         LOGGER.debug("[{}] Created file {}", getContainerName(), fileInfo);
         return fileName;
     }

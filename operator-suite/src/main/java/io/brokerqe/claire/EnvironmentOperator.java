@@ -47,6 +47,8 @@ public class EnvironmentOperator extends Environment {
     private String keycloakOperatorName;
     private String keycloakVersion;
     private String keycloakChannel;
+    private String jolokiaApiUrl;
+    private String sppUrl;
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     private Map<String, KubeClient> kubeClients;
     private final boolean collectTestData;
@@ -92,6 +94,9 @@ public class EnvironmentOperator extends Environment {
         brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
         operatorImage = System.getenv(Constants.EV_OPERATOR_IMAGE);
         bundleImage = System.getenv(Constants.EV_BUNDLE_IMAGE);
+
+        jolokiaApiUrl = System.getenv(Constants.EV_JOLOKIA_API_URL);
+        sppUrl = System.getenv(Constants.EV_SPP_URL);
 
         Properties projectSettings = new Properties();
         FileInputStream projectSettingsFile;
@@ -180,6 +185,12 @@ public class EnvironmentOperator extends Environment {
         }
         if (playwrightDebug) {
             envVarsSB.append(Constants.EV_PLAYWRIGHT_DEBUG).append("=").append(playwrightDebug).append(Constants.LINE_SEPARATOR);
+        }
+        if (jolokiaApiUrl != null) {
+            envVarsSB.append(Constants.EV_JOLOKIA_API_URL).append("=").append(jolokiaApiUrl).append(Constants.LINE_SEPARATOR);
+        }
+        if (sppUrl != null) {
+            envVarsSB.append(Constants.EV_SPP_URL).append("=").append(sppUrl).append(Constants.LINE_SEPARATOR);
         }
 
         LOGGER.info(envVarsSB.toString());
@@ -428,5 +439,13 @@ public class EnvironmentOperator extends Environment {
             LOGGER.warn("Unknown serialization type! Defaulting to YAML format.");
             return SerializationFormat.YAML;
         }
+    }
+
+    public String getJolokiaApiUrl() {
+        return jolokiaApiUrl;
+    }
+
+    public String getSppUrl() {
+        return sppUrl;
     }
 }

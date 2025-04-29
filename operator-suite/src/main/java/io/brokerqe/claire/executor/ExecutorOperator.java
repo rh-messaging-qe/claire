@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.executor;
 
+import io.brokerqe.claire.CommandResult;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
@@ -69,19 +70,19 @@ public class ExecutorOperator implements AutoCloseable, Executor {
     }
 
     @Override
-    public Object executeCommand(String... cmd) {
+    public CommandResult executeCommand(String... cmd) {
         return executeCommand(Constants.DURATION_30_SECONDS, cmd);
     }
 
     @Override
-    public String executeCommand(long maxExecMs, String... cmd) {
+    public CommandResult executeCommand(long maxExecMs, String... cmd) {
         storeCommand(cmd);
         LOGGER.debug("[{}] {} Running command: {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(),
                 String.join(" ", cmd));
 
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch execWatch = execCmdOnPod(pod, data, cmd)) {
-            return data.get(maxExecMs, TimeUnit.MILLISECONDS);
+            return new CommandResult(0, data.get(maxExecMs, TimeUnit.MILLISECONDS), null);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             LOGGER.error("Failed to finish execution in time!");
             return null;

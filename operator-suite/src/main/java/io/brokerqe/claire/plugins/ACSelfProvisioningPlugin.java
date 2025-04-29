@@ -5,6 +5,7 @@
 package io.brokerqe.claire.plugins;
 
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.CustomTool;
 import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
@@ -30,13 +31,13 @@ import java.util.concurrent.TimeUnit;
  * https://github.com/artemiscloud/activemq-artemis-jolokia-api-server
  *
  */
-public class ACSelfProvisioningPlugin {
+public class ACSelfProvisioningPlugin implements CustomTool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ACSelfProvisioningPlugin.class);
-    private static final String JOLOKIA_API_DEFAULT_NAMESPACE = "activemq-artemis-jolokia-api-server";
-    private static final String SPP_DEFAULT_NAMESPACE = "activemq-artemis-self-provisioning-plugin";
-    private static KubeClient kubeClient = ResourceManager.getKubeClient();
-    private static List<HasMetadata> deployedResources = new ArrayList<>();
+    protected static final String JOLOKIA_API_DEFAULT_NAMESPACE = "activemq-artemis-jolokia-api-server";
+    protected static final String SPP_DEFAULT_NAMESPACE = "activemq-artemis-self-provisioning-plugin";
+    protected static KubeClient kubeClient = ResourceManager.getKubeClient();
+    protected static List<HasMetadata> deployedResources = new ArrayList<>();
     private static final List<URL> JOLOKIA_API_DEPLOYMENT_URLS;
     private static final List<URL> SPP_DEPLOYMENT_URLS;
     static {
@@ -56,7 +57,8 @@ public class ACSelfProvisioningPlugin {
         }
     }
 
-    public static void deploy() {
+    @Override
+    public ACSelfProvisioningPlugin deploy() {
         kubeClient.createNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
         kubeClient.createNamespace(SPP_DEFAULT_NAMESPACE);
 
@@ -107,9 +109,11 @@ public class ACSelfProvisioningPlugin {
             throw new RuntimeException(e);
         }
         DataStorer.dumpResourceToFile(deployedResources);
+        return this;
     }
 
-    public static void undeploy() {
+    @Override
+    public void undeploy() {
         LOGGER.info("[{}] Undeploying ActiveMQ Artemis Self-provisioning Plugin & ActiveMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
         kubeClient.getKubernetesClient().resourceList(deployedResources).delete();
         kubeClient.deleteNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
@@ -127,7 +131,7 @@ public class ACSelfProvisioningPlugin {
 
     private static void printCurrentPlugins() {
         String[] actualPluginsCmd = {"/bin/bash", "-c", "oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins'"};
-        String actualPlugins = TestUtils.executeLocalCommand(actualPluginsCmd);
+        String actualPlugins = TestUtils.executeLocalCommand(actualPluginsCmd).stdout;
         LOGGER.debug("[PATCH] Actually present plugins: {}", actualPlugins);
     }
 
@@ -137,7 +141,7 @@ public class ACSelfProvisioningPlugin {
 //        oc patch consoles.operator.openshift.io cluster --type=merge --patch '{ "spec": { "plugins": $plugins } }'
         String[] getPluginsCmd = {"/bin/bash", "-c",
                                   "oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins | map(select(. != \"activemq-artemis-self-provisioning-plugin\"))'"};
-        JSONArray jsonPlugins = new JSONArray(TestUtils.executeLocalCommand(getPluginsCmd).replaceAll("\"", "'"));
+        JSONArray jsonPlugins = new JSONArray(TestUtils.executeLocalCommand(getPluginsCmd).stdout.replaceAll("\"", "'"));
         String pluginsStr = jsonPlugins.toString().replaceAll("\"", "\\\"");
 
         String[] patchCmd = {"/bin/bash", "-c", String.format("oc patch consoles.operator.openshift.io cluster --type=merge --patch '{ \"spec\": { \"plugins\": %s } }'", pluginsStr)};

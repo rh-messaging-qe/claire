@@ -80,6 +80,8 @@ public class ResourceManager {
     private static Map<Deployment, String> deployedContainers = new HashMap<>();
     private static List<String> deployedNamespaces = new ArrayList<>();
     private static List<ActiveMQArtemis> deployedBrokers = new ArrayList<>();
+    private static List<CustomTool> deployedCustomTools = new ArrayList<>();
+
     private static List<ActiveMQArtemisAddress> deployedAddresses = new ArrayList<>();
     private static List<ActiveMQArtemisSecurity> deployedSecurity = new ArrayList<>();
     private static Boolean projectCODeploy;
@@ -1012,11 +1014,14 @@ public class ResourceManager {
     // Keycloak/Rhsso Resources
     public static Keycloak getKeycloakInstance(String namespace) {
         // Keycloak resources managed
+        Keycloak kc;
         if (environmentOperator.isUpstreamArtemis()) {
-            return new Keycloak(environmentOperator, kubeClient, namespace);
+            kc = new Keycloak(environmentOperator, kubeClient, namespace);
         } else {
-            return new Rhsso(environmentOperator, kubeClient, namespace);
+            kc = new Rhsso(environmentOperator, kubeClient, namespace);
         }
+        ResourceManager.addDeployedCustomTool(kc);
+        return kc;
     }
 
     public static Openldap getOpenldapInstance(String namespace) {
@@ -1036,6 +1041,7 @@ public class ResourceManager {
         ResourceManager.undeployAllArtemisAddress();
         ResourceManager.undeployAllArtemisBroker();
         ResourceManager.undeployAllNamespaces();
+        ResourceManager.undeployCustomTools();
     }
 
     public static void undeployAllArtemisClusterOperators() {
@@ -1070,6 +1076,22 @@ public class ResourceManager {
         for (Deployment deployment : deployedContainers.keySet()) {
             LOGGER.info("[{}] Undeploying orphaned MessagingClient {}!", deployedContainers.get(deployment), deployment.getMetadata().getName());
             kubeClient.getKubernetesClient().apps().deployments().inNamespace(deployedContainers.get(deployment)).resource(deployment).delete();
+        }
+    }
+
+    public static void addDeployedCustomTool(CustomTool customTool) {
+        deployedCustomTools.add(customTool);
+    }
+
+    public static void removeDeployedCustomTool(CustomTool customTool) {
+        deployedCustomTools.remove(customTool);
+    }
+
+    public static void undeployCustomTools() {
+        LOGGER.info("[TEARDOWN] Checking for undeploy of custom tools");
+        for (CustomTool customTool : deployedCustomTools) {
+            LOGGER.info("[TEARDOWN] Undeploying forgotten {} custom tools", customTool.getClass().getName());
+            customTool.undeploy();
         }
     }
 

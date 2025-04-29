@@ -52,7 +52,7 @@ public class LogAccessTests extends AbstractSystemTests {
 
             LOGGER.info(String.format("Run artemis %s command with user %s", commandType, withContainerUser));
             String[] commandFull = constructArtemisCommand(commandType, withContainerUser);
-            String logOutput = (String) artemis.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, commandFull);
+            String logOutput = artemis.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, commandFull).stdout;
 
             LOGGER.debug(commandType + " log: " + logOutput);
             LOGGER.info(String.format("Ensure artemis %s logs have no errors and contains valid information", commandType));
@@ -74,7 +74,7 @@ public class LogAccessTests extends AbstractSystemTests {
 
         LOGGER.info(String.format("Ensure user %s was successfully created", newContainerUsername));
         String[] userInfoCmd = {"getent", "passwd", newContainerUsername};
-        String userInfo = (String) artemis.getExecutor().executeCommand(Constants.DURATION_2_SECONDS, userInfoCmd);
+        String userInfo = artemis.getExecutor().executeCommand(Constants.DURATION_2_SECONDS, userInfoCmd).stdout;
         assertThat(userInfo).contains(newContainerUsername);
 
         LOGGER.info(String.format("Test artemis commands with new user: %s", newContainerUsername));

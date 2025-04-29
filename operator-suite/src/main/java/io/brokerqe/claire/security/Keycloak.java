@@ -7,6 +7,7 @@ package io.brokerqe.claire.security;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.CustomTool;
 import io.brokerqe.claire.EnvironmentOperator;
 import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
@@ -38,7 +39,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
-public class Keycloak {
+public class Keycloak implements CustomTool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Keycloak.class);
     protected final EnvironmentOperator testEnvironmentOperator;
@@ -117,14 +118,17 @@ public class Keycloak {
         this.keycloakVersion = testEnvironmentOperator.getKeycloakVersion();
     }
 
-    public void deployOperator() {
+    @Override
+    public Keycloak deploy() {
         setupKeycloakOperator();
         deployPostgres();
         applyKeycloakResources();
         setupAdminLogin();
+        return this;
     }
 
-    public void undeployOperator() {
+    @Override
+    public void undeploy() {
         kubeClient.getKubernetesClient().resourceList(keycloakResources).inNamespace(namespace).delete();
         if (deployRealmFilePath != null) {
             TestUtils.deleteFile(Paths.get(deployRealmFilePath));
