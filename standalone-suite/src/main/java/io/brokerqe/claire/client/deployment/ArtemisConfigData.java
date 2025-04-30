@@ -14,6 +14,7 @@ import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.container.YacfgArtemisContainer;
 import io.brokerqe.claire.database.Database;
 
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ public class ArtemisConfigData {
 
     private String installDir;
     private String instanceDir;
+    private String instanceBinDir;
     private Map<String, String> primaryEnvVars = new HashMap<>();
     private Map<String, String> backupEnvVars = new HashMap<>();
     private Map<String, String> envVars = new HashMap<>();
@@ -103,6 +105,15 @@ public class ArtemisConfigData {
         return this;
     }
 
+    public ArtemisConfigData withInstanceBinDir(String defaultInstanceBinDir) {
+        if (instanceDir == null) {
+            instanceBinDir = defaultInstanceBinDir;
+        } else {
+            instanceBinDir = Paths.get(instanceDir, ArtemisConstants.BIN_DIR).toString();
+        }
+        return this;
+    }
+
     public ArtemisConfigData withInstanceDir(String instanceDir) {
         this.instanceDir = instanceDir;
         return this;
@@ -110,6 +121,7 @@ public class ArtemisConfigData {
 
     public ArtemisConfigData withArtemisVersionString(String artemisVersion) {
         this.artemisVersionString = artemisVersion;
+        this.artemisVersion = Environment.get().convertArtemisVersion(artemisVersion);
         return this;
     }
 
@@ -178,6 +190,10 @@ public class ArtemisConfigData {
 
     public String getInstanceDir() {
         return instanceDir;
+    }
+
+    public String getInstanceBinDir() {
+        return instanceBinDir;
     }
 
     public ArtemisVersion getArtemisTestVersion() {

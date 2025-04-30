@@ -71,7 +71,11 @@ public class ArtemisDeployment {
                 "ARTEMIS_INSTANCE_ETC=" + ArtemisContainer.ARTEMIS_INSTANCE_ETC_DIR,
                 true);
 
-        return new ArtemisConfigData().withInstallDir(installDir).withInstanceDir(instanceDir);
+        ArtemisConfigData defaultACD = new ArtemisConfigData()
+                .withInstallDir(installDir)
+                .withInstanceDir(instanceDir)
+                .withInstanceBinDir(Paths.get(instanceDir, ArtemisConstants.BIN_DIR).toString());
+        return defaultACD;
     }
 
     public static ArtemisConfigData createArtemisInstanceFromUrl(TestInfo testInfo, String artemisUrl, String version,
@@ -179,19 +183,28 @@ public class ArtemisDeployment {
         }
 
         if (providedInstanceDir == null) {
-            LOGGER.debug("[Config] Using default installDir {}", instanceDir);
-            TestUtils.createDirectory(instanceDir + ArtemisConstants.BIN_DIR);
+            LOGGER.debug("[Config] Using default instanceDir {}", instanceDir);
             TestUtils.createDirectory(instanceDir + ArtemisConstants.DATA_DIR);
             TestUtils.createDirectory(instanceDir + ArtemisConstants.ETC_DIR);
             TestUtils.createDirectory(instanceDir + ArtemisConstants.LIB_DIR);
             TestUtils.createDirectory(instanceDir + ArtemisConstants.LOG_DIR);
             TestUtils.createDirectory(instanceDir + ArtemisConstants.TMP_DIR);
+            String binDir = instanceDir + ArtemisConstants.BIN_DIR;
+            TestUtils.createDirectory(binDir);
+            if (artemisConfigData.getInstanceBinDir() != null) {
+                // use hack - default artemis instance for given version test-cfg/upgrade/X/install-7.12.4
+                TestUtils.copyDirectories(artemisConfigData.getInstanceBinDir(), binDir);
+            } else {
+                //if does not exist use Claire default artemis instance artemis/artemis_default_cfg
+                TestUtils.copyDirectories(Constants.ARTEMIS_DEFAULT_CFG_BIN_DIR, binDir);
+            }
         } else {
             LOGGER.debug("[YACFG] Using provided instanceDir {}", providedInstanceDir);
             TestUtils.copyDirectories(providedInstanceDir, instanceDir);
-            artemisInstance.setConfigBinDir(instanceDir + ArtemisConstants.BIN_DIR);
         }
         artemisInstance.withInstanceDir(instanceDir);
+        artemisConfigData.withInstanceDir(instanceDir);
+        artemisInstance.setConfigBinDir(instanceDir + ArtemisConstants.BIN_DIR);
 
         String artemisConfig = EnvironmentStandalone.getInstance().getProvidedArtemisConfig();
         if (artemisConfig != null) {
@@ -237,6 +250,7 @@ public class ArtemisDeployment {
             });
             yacfgParams.removeIf(tunePredicate);
             yacfg.withParams(yacfgParams);
+            yacfg.withArtemisConfigData(artemisConfigData);
             yacfg.start();
             TimeHelper.waitFor(e -> yacfg.getStatus().equalsIgnoreCase("exited"), Constants.DURATION_500_MILLISECONDS,
                     Constants.DURATION_5_SECONDS);

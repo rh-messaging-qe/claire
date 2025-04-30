@@ -30,7 +30,7 @@ public class HASharedStoreUpgradeTests extends HAUpgradeTests {
         return 1;
     }
 
-    void initialDeployment(String version, String artemisVersion, String installDir, int haPairs) {
+    void initialDeployment(ArtemisConfigData defaultVersionACD, String artemisVersion, int haPairs) {
         artemises.put(PRIMARY, new ArrayList<>());
         artemises.put(BACKUP, new ArrayList<>());
 
@@ -41,7 +41,8 @@ public class HASharedStoreUpgradeTests extends HAUpgradeTests {
                 .withArtemisVersionString(artemisVersion)
                 .withStartTimeout(Duration.ofMinutes(2))
                 .withIsSharedStore(true)
-                .withInstallDir(installDir);
+                .withInstanceBinDir(defaultVersionACD.getInstanceBinDir())
+                .withInstallDir(defaultVersionACD.getInstallDir());
 
         for (int i = 0; i < haPairs; i++) {
             String artemisPrimaryName = PRIMARY + "-" + i;

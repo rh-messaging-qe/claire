@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.clients.bundled;
 
+import io.brokerqe.claire.CommandResult;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
@@ -37,7 +38,7 @@ public abstract class BundledMessagingClient implements MessagingClient {
     private Executor subscriberExecutor;
     private int timeout;
     private boolean disableOutput;
-
+    private CommandResult commandResult;
 
     public BundledMessagingClient(BundledClientOptions options) {
         this.protocol = getProtocol();
@@ -147,10 +148,12 @@ public abstract class BundledMessagingClient implements MessagingClient {
         String cmdOutput;
         String[] command = constructClientCommand(PRODUCER);
         try {
-            cmdOutput = deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command).stdout;
+            commandResult = deployableClient.getExecutor().executeCommand(Constants.DURATION_3_MINUTES, command);
+            cmdOutput = commandResult.stdout;
             LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
             return parseMessageCount(cmdOutput, PRODUCER);
         } catch (ClaireRuntimeException e) {
+            LOGGER.error("Error client exited: {}\n{}", commandResult.exitCode, commandResult.stderr);
             throw new MessagingClientException(e.getMessage(), e);
         }
     }
@@ -169,7 +172,8 @@ public abstract class BundledMessagingClient implements MessagingClient {
             // executed client on foreground
             String cmdOutput;
             String[] command = constructClientCommand(CONSUMER);
-            cmdOutput = deployableClient.getExecutor().executeCommand(duration, command).stdout;
+            commandResult = deployableClient.getExecutor().executeCommand(duration, command);
+            cmdOutput = commandResult.stdout;
             if (!disableOutput) {
                 LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
             }

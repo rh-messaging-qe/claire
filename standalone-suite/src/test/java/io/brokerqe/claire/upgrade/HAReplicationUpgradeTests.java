@@ -28,14 +28,15 @@ public class HAReplicationUpgradeTests extends HAUpgradeTests {
         return 3;
     }
 
-    void initialDeployment(String version, String artemisVersion, String installDir, int haPairs) {
+    void initialDeployment(ArtemisConfigData defaultVersionACD, String artemisVersion, int haPairs) {
         artemises.put(PRIMARY, new ArrayList<>());
         artemises.put(BACKUP, new ArrayList<>());
 
         ArtemisConfigData artemisConfigData = new ArtemisConfigData()
                 .withArtemisVersionString(artemisVersion)
                 .withArtemisVersion(Environment.get().convertArtemisVersion(artemisVersion))
-                .withInstallDir(installDir)
+                .withInstallDir(defaultVersionACD.getInstallDir())
+                .withInstanceBinDir(defaultVersionACD.getInstanceBinDir())
                 .withPrimaryTuneFile("primary-tune.yaml.jinja2")
                 .withBackupTuneFile("backup-tune.yaml.jinja2");
 

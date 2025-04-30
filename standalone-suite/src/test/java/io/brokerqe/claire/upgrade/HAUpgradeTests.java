@@ -5,6 +5,7 @@
 package io.brokerqe.claire.upgrade;
 
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
 import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
@@ -16,6 +17,7 @@ import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +31,7 @@ public abstract class HAUpgradeTests extends UpgradeTests {
 
     abstract Logger getLogger();
     abstract int getHaPairs();
-    abstract void initialDeployment(String version, String artemisVersion, String installDir, int haPairs);
+    abstract void initialDeployment(ArtemisConfigData defaultArtemisConfigData, String artemisVersion, int haPairs);
 
     @ParameterizedTest
     @MethodSource("getUpgradePlanArguments")
@@ -40,10 +42,13 @@ public abstract class HAUpgradeTests extends UpgradeTests {
 
         int haPairs = getHaPairs();
         String installDir = ArtemisDeployment.downloadPrepareArtemisInstallDir(testInfo, artemisZipUrl, version, getTestConfigDir());
+        String defaultVersionInstance = "artemis-default-instance-" + version;
+        String defaultInstancePath = Paths.get(getTestConfigDir(), defaultVersionInstance).toString();
+        ArtemisConfigData artemisConfigDataVersioned = ArtemisDeployment.createArtemisInstanceFromInstallDir(installDir, defaultVersionInstance, defaultInstancePath);
 
         if (argumentsAccessor.getInvocationIndex() <= 1) {
             getLogger().info("[UPGRADE] Deploying initial broker pair(s)");
-            initialDeployment(version, artemisVersion, installDir, haPairs);
+            initialDeployment(artemisConfigDataVersioned, artemisVersion, haPairs);
             ArtemisContainer primary0 = artemises.get(PRIMARY).get(0);
             preUpgradeProcedure(primary0);
 

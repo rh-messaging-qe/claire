@@ -8,6 +8,7 @@ import com.sun.security.auth.module.UnixSystem;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
@@ -36,6 +37,7 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
             + "tunes";
 
     private final List<String> params = new ArrayList<>();
+    private ArtemisConfigData artemisConfigData;
 
     public YacfgArtemisContainer(String name) {
         super(name, ENVIRONMENT_STANDALONE.getYacfgArtemisContainerImage());
@@ -63,6 +65,10 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
     public void withParam(String paramName, String paramValue) {
         params.add(paramName);
         params.add(paramValue);
+    }
+
+    public void withArtemisConfigData(ArtemisConfigData artemisConfigData) {
+        this.artemisConfigData = artemisConfigData;
     }
 
     public void withHostOutputDir(String hostOutputDir) {
@@ -109,7 +115,7 @@ public class YacfgArtemisContainer extends AbstractGenericContainer {
         if (!ENVIRONMENT_STANDALONE.isUpstreamArtemis()) {
             String bootstrapOpts = "bootstrap_apps=[";
 
-            if (ENVIRONMENT_STANDALONE.getArtemisTestVersion().getVersionNumber() > ArtemisVersion.VERSION_2_39.getVersionNumber()) {
+            if (artemisConfigData.getArtemisTestVersion().getVersionNumber() > ArtemisVersion.VERSION_2_39.getVersionNumber()) {
                 bootstrapOpts += "{url: console, war: console.war},";
                 bootstrapOpts += "{url: metrics, war: metrics.war}";
             } else {

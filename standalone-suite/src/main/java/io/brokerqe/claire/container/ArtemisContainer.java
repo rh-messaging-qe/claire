@@ -15,6 +15,8 @@ import io.brokerqe.claire.client.deployment.BundledClientDeployment;
 import io.brokerqe.claire.clients.DeployableClient;
 import io.brokerqe.claire.clients.MessagingClient;
 import io.brokerqe.claire.clients.Protocol;
+import io.brokerqe.claire.clients.bundled.BundledClientOptions;
+import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
 import io.brokerqe.claire.clients.container.AmqpQpidClient;
 import io.brokerqe.claire.database.Database;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
@@ -112,7 +114,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
             default -> throw new IllegalArgumentException("Unknown port!");
         }
 
-        brokerUri = getBrokerHostUri(brokerUri);
+        brokerUri = getBrokerHostUri(brokerUri, protocol);
         // TODO use port as well? - currently no, as all client expect port as separate argument
 //        if (port != null) {
 //            brokerUri = String.format(brokerUri, getInstanceNameAndPort(port));
@@ -120,7 +122,15 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         return brokerUri;
     }
 
-    private String getBrokerHostUri(String brokerUri) {
+    /**
+     * Test valid broker uri - hostname vs IP usage in broker uri.
+     * Test using Core/AMQP client.
+     *
+     * @param brokerUri
+     * @param protocol
+     * @return
+     */
+    private String getBrokerHostUri(String brokerUri, Protocol protocol) {
         String brokerUriName = String.format(brokerUri, getName());
         String brokerUriAddress = String.format(brokerUri, getContainerIpAddress());
 
@@ -133,15 +143,34 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         }
 
         try {
-            LOGGER.info("Checking to use artemis container name in brokerURI.");
-            Map<String, String> clientOptions = Map.of(
-                    "conn-username", ArtemisConstants.ADMIN_NAME,
-                    "conn-password", ArtemisConstants.ADMIN_PASS,
-                    "address", "internaltestAddress",
-                    "count", "0"
-            );
-            MessagingClient messagingClient = new AmqpQpidClient(deployableClient, brokerUriName + ":" + ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT, clientOptions, clientOptions);
-            messagingClient.sendMessages();
+            MessagingClient messagingTestClient;
+            String testAddress = "internaltestAddress";
+            if (protocol == Protocol.AMQP) {
+                LOGGER.info("Checking to use artemis container name in brokerURI.");
+                Map<String, String> clientOptions = Map.of(
+                        "conn-username", ArtemisConstants.ADMIN_NAME,
+                        "conn-password", ArtemisConstants.ADMIN_PASS,
+                        "address", testAddress,
+                        "count", "0"
+                );
+
+                messagingTestClient = new AmqpQpidClient(deployableClient, brokerUriName + ":" + ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT, clientOptions, clientOptions);
+                // should we use new StJavaDeployment instead?
+//                messagingTestClient = new AmqpQpidClient(new StJavaClientDeployment(), brokerUriName + ":" + ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT, clientOptions, clientOptions);
+            } else {
+                BundledClientOptions options = new BundledClientOptions()
+                        .withDeployableClient(deployableClient)
+                        .withDestinationAddress(testAddress)
+                        .withDestinationPort(String.valueOf(ArtemisConstants.DEFAULT_ALL_PROTOCOLS_PORT))
+                        .withMessageCount(0)
+                        .withPassword(ArtemisConstants.ADMIN_NAME)
+                        .withUsername(ArtemisConstants.ADMIN_PASS)
+                        .withDestinationQueue(testAddress)
+                        .withDestinationUrl(name);
+                messagingTestClient = new BundledCoreMessagingClient(options);
+            }
+
+            messagingTestClient.sendMessages();
 
             containerNameConnectionTested = true;
             isContainerNameUsable = true;
@@ -187,6 +216,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public String getConfigBinDir() {
         return configBinDir != null ? configBinDir : TestUtils.getProjectRelativeFile(Constants.ARTEMIS_DEFAULT_CFG_BIN_DIR);
     }
+
     public void setConfigBinDir(String configBinDir) {
         this.configBinDir = configBinDir;
     }
@@ -355,7 +385,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
                     t.addSuppressed(t2);
                 } else {
                     String errMsg = String.format("Error on executing command '%s' in container %s: %s",
-                        String.join(" ", command), container.getContainerName(), t2.getMessage());
+                            String.join(" ", command), container.getContainerName(), t2.getMessage());
                     LOGGER.error(errMsg);
                     throw new ClaireRuntimeException(errMsg, t2);
                 }
@@ -423,6 +453,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public boolean isPrimary() {
         return isPrimary;
     }
+
     public void setPrimary(boolean primary) {
         isPrimary = primary;
     }
@@ -430,6 +461,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public void setBackup(boolean backup) {
         isBackup = backup;
     }
+
     public boolean isBackup() {
         return isBackup;
     }
@@ -437,6 +469,7 @@ public final class ArtemisContainer extends AbstractGenericContainer {
     public void setActive(boolean active) {
         this.isActive = active;
     }
+
     public boolean isActive() {
         return isActive();
     }
