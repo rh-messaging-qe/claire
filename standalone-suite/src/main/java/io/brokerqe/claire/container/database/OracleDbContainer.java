@@ -49,11 +49,11 @@ public class OracleDbContainer extends DatabaseContainer {
 
     public void setupDatabase() {
         String createScript = String.format("echo '%s' > %s", sqlAdminContent, containerSqlStartupFilename);
-        executeCommand("sh", "-c", createScript);
+        executeCommand("sh", "-ic", createScript);
         // podman exec -it <oracle-db> sqlplus sys/<your_password>@FREE as sysdba
 
         String setupCommand = String.format("echo exit | sqlplus sys/%s@FREEPDB1 as sysdba @%s", adminPassword, containerSqlStartupFilename);
-        executeCommand("sh", "-c", setupCommand);
+        executeCommand("sh", "-ic", setupCommand);
     }
 
 

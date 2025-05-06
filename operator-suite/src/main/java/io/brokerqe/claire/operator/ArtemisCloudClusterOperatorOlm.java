@@ -160,7 +160,6 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
 
     public void deployOperatorGroup() {
         HasMetadata operatorGroup = kubeClient.createOperatorGroup(deploymentNamespace, subscriptionName, watchedNamespaces);
-        LOGGER.info("[OLM] Creating OperatorGroup");
         olmResources.add(operatorGroup);
     }
 

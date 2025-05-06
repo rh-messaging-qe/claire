@@ -37,7 +37,7 @@ public class LogAccessTests extends AbstractSystemTests {
 
     private String[] constructArtemisCommand(String artemisCommand, String withContainerUser) {
         String cmd = String.format("%s/artemis %s --user %s --password %s", artemisBinDir, artemisCommand, username, password);
-        return new String[]{"sudo", "-E", "-H", "-u", withContainerUser, "/bin/bash", "-c", cmd};
+        return new String[]{"sudo", "-E", "-H", "-u", withContainerUser, "/bin/bash", "-ic", cmd};
     }
 
     private void doTestArtemisCommands(String withContainerUser) {

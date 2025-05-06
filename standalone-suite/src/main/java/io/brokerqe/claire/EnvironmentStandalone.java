@@ -158,7 +158,7 @@ public class EnvironmentStandalone extends Environment {
         Path installBinDir = TestUtils.getProjectRelativeFilePath(ArtemisConstants.INSTALL_DIR
                 + Constants.FILE_SEPARATOR + ArtemisConstants.BIN_DIR);
         try {
-            String[] versionCmd = {"/bin/sh", "-c", installBinDir.toAbsolutePath() + Constants.FILE_SEPARATOR
+            String[] versionCmd = {"/bin/sh", "-ic", installBinDir.toAbsolutePath() + Constants.FILE_SEPARATOR
                     + "artemis version | grep \"Apache ActiveMQ Artemis \" | cut -d \" \" -f4"};
             Process versionProcess = Runtime.getRuntime().exec(versionCmd);
             versionProcess.waitFor(Constants.DURATION_5_SECONDS, TimeUnit.MILLISECONDS);
@@ -195,7 +195,7 @@ public class EnvironmentStandalone extends Environment {
         String version;
 
         try {
-            String[] distroCmd = {"/bin/sh", "-c", "cat /etc/os-release |grep \"^ID=\" |cut -d \"=\" -f2 | sed -e 's/\"//g'"};
+            String[] distroCmd = {"/bin/sh", "-ic", "cat /etc/os-release |grep \"^ID=\" |cut -d \"=\" -f2 | sed -e 's/\"//g'"};
             Process distroProcess = Runtime.getRuntime().exec(distroCmd);
             distroProcess.waitFor(Constants.DURATION_5_SECONDS, TimeUnit.MILLISECONDS);
             if (distroProcess.exitValue() != 0) {
@@ -211,7 +211,7 @@ public class EnvironmentStandalone extends Environment {
             in.close();
             distroProcess.destroyForcibly();
 
-            String[] versionCmd = {"/bin/sh", "-c", "cat /etc/os-release |grep \"^VERSION_ID=\" |cut -d \"=\" -f2 | sed -e 's/\"//g'"};
+            String[] versionCmd = {"/bin/sh", "-ic", "cat /etc/os-release |grep \"^VERSION_ID=\" |cut -d \"=\" -f2 | sed -e 's/\"//g'"};
             Process versionProcess = Runtime.getRuntime().exec(versionCmd);
             versionProcess.waitFor(Constants.DURATION_5_SECONDS, TimeUnit.MILLISECONDS);
             if (versionProcess.exitValue() != 0) {

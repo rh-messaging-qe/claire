@@ -21,6 +21,8 @@ import io.brokerqe.claire.junit.TestOLMSupported;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.plugins.ACSelfProvisioningPlugin;
 import io.brokerqe.claire.plugins.AMQSelfProvisioningPlugin;
+import io.brokerqe.claire.webconsole.ArtemisMenu;
+import io.brokerqe.claire.webconsole.WebconsoleCommon;
 import io.fabric8.kubernetes.api.model.Pod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -86,7 +88,7 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         Locator menuContentLoc = workloadsMenuButton.locator("..").getByRole(AriaRole.LIST);
         List<String> menuContent = menuContentLoc.allInnerTexts();
         if (menuContent.isEmpty()) {
-            workloadsMenuButton.click(clicker);
+            workloadsMenuButton.click(WebconsoleCommon.getClicker());
             page.waitForLoadState();
             menuContent = workloadsMenuButton.locator("..").getByRole(AriaRole.LIST).allInnerTexts();
         }
@@ -95,37 +97,37 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
             LOGGER.error("Workloads menu does not contain 'Brokers'! {}", menuContent);
             throw new ClaireRuntimeException("Workloads menu does not contain Brokers! Deployment problem?");
         }
-        page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Brokers")).click(clicker);
+        page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Brokers")).click(WebconsoleCommon.getClicker());
         page.waitForLoadState();
         if (brokerName != null) {
-            page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(brokerName)).click(clicker);
+            page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(brokerName)).click(WebconsoleCommon.getClicker());
         }
         page.waitForLoadState();
     }
 
     ActiveMQArtemis createBrokerSpp(Page page, String brokerName, String namespace, int initialSize, String port, boolean externalAccess) {
         LOGGER.info("[{}] Create broker {} via UI", namespace, brokerName);
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Create Broker")).click(clicker);
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Create Broker")).click(WebconsoleCommon.getClicker());
 //        TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
         page.getByText("CR Name").fill(brokerName);
         Locator plus = page.getByLabel("plus");
-        IntStream.rangeClosed(1, initialSize - 1).forEach(i -> plus.click(clicker));
+        IntStream.rangeClosed(1, initialSize - 1).forEach(i -> plus.click(WebconsoleCommon.getClicker()));
 
         LOGGER.info("[{}] set namespace {}", namespace, namespace);
-        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Project:")).click(clicker);
-        page.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(namespace)).click(clicker);
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Project:")).click(WebconsoleCommon.getClicker());
+        page.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(namespace)).click(WebconsoleCommon.getClicker());
 
         LOGGER.info("[{}] Add acceptor, ports & create broker", namespace);
-        page.getByText("Add an acceptor").click(clicker);
+        page.getByText("Add an acceptor").click(WebconsoleCommon.getClicker());
         page.getByText("Port").fill(port);
         page.getByRole(AriaRole.CHECKBOX, new Page.GetByRoleOptions().setName("Expose")).check();
 
         if (externalAccess) {
             String certName = "spp-test-issuer";
-            page.getByText("Apply preset").click(clicker);
+            page.getByText("Apply preset").click(WebconsoleCommon.getClicker());
             TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
-            page.locator("#selectable-first-card").click(clicker);
-            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Create a new chain of trust")).click(clicker);
+            page.locator("#selectable-first-card").click(WebconsoleCommon.getClicker());
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Create a new chain of trust")).click(WebconsoleCommon.getClicker());
             Locator issuerText = page.getByText(Pattern.compile("creation of 3 elements", Pattern.CASE_INSENSITIVE));
             issuerText.locator("..").getByRole(AriaRole.TEXTBOX).fill(certName); // select parent and search within
 
@@ -150,7 +152,7 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
 
         TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
         ActiveMQArtemis broker = ResourceManager.getArtemisClient().inNamespace(namespace).withName(brokerName).get();
-        ResourceManager.waitForBrokerDeployment(namespace, broker);
+        ResourceManager.waitForBrokerDeployment(namespace, broker, false, null, ResourceManager.calculateWaitTime(broker));
         return broker;
     }
 
@@ -169,6 +171,7 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         LOGGER.info("[{}] Check non existence of brokers.", namespace);
         navigateWorkloadBrokers(page);
         page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Brokers")).click(clicker);
+        page.waitForLoadState();
         String emptyMessage = page.locator("[data-test='empty-box']").textContent();
         assertEquals("Not found", emptyMessage);
     }
@@ -193,10 +196,11 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
     void checkMessageCountInAddress(Page page, String brokerName, String addressName, int messageCount) {
         LOGGER.info("[{}] Check addresses & message count", testNamespace);
         navigateWorkloadBrokers(page, brokerName);
-        page.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName("Pods")).click(clicker);
+        WebconsoleCommon.setMenu(page, ArtemisMenu.Pods);
+
         Pod pod = getClient().getFirstPodByPrefixName(testNamespace, brokerName);
         page.locator("a", new Page.LocatorOptions().setHasText(pod.getMetadata().getName())).click(clicker);
-        page.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName("Addresses")).click(clicker);
+        WebconsoleCommon.setMenu(page, ArtemisMenu.Addresses);
         page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(addressName)).click(clicker);
         page.getByPlaceholder("Search by attribute name...").fill("RoutedMessageCount");
 
@@ -280,7 +284,7 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         LOGGER.info("[{}] Will execute locally provided `artemis check` command: \n{}", testNamespace, artemisMsgCheckCmd);
         String artemisDefaultDir = TestUtils.getStandaloneArtemisDefaultDir().toString();
         // remove initial "." from provided command
-        TestUtils.executeLocalCommand(20, "/bin/bash", "-c", artemisDefaultDir + artemisMsgCheckCmd.substring(1));
+        TestUtils.executeLocalCommand(20, "/bin/bash", "-ic", artemisDefaultDir + artemisMsgCheckCmd.substring(1));
 
         String addressName = "TEST"; // default address used in command
         checkMessageCountInAddress(page, brokerName, addressName, 10);
@@ -289,6 +293,14 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
     }
 
     String getBrokerSize(String brokerName) {
-        return page.getByRole(AriaRole.ROW, new Page.GetByRoleOptions().setName(brokerName)).locator("td[data-label='Size']").textContent();
+//        if (ResourceManager.getEnvironment().isUpstreamArtemis()) {
+        try {
+            // upstream code <td id="Size" class="pf-v5-c-table__td" role="gridcell">1</td>
+            Locator sizeCell = page.locator("#Size");
+            return sizeCell.textContent();
+        } catch (TimeoutError e) {
+            // downstream code
+            return page.getByRole(AriaRole.ROW, new Page.GetByRoleOptions().setName(brokerName)).locator("td[data-label='Size']").textContent();
+        }
     }
 }

@@ -55,7 +55,7 @@ public class Hawtio4Tests extends BaseWebUITests {
 
     @BeforeEach
     void beforeEach() {
-        navigateHome(artemisPage);
+        WebconsoleCommon.navigateHome(artemisPage);
     }
 
     @Test
@@ -63,15 +63,15 @@ public class Hawtio4Tests extends BaseWebUITests {
     void addressQueueStatsTest() {
         int addressCount = 10;
         String prefix = "lala";
-        checkVersions(artemisPage);
-        createOperationMany(artemisPage, prefix, prefix, addressCount);
+        WebconsoleCommon.checkVersions(artemisPage);
+        WebconsoleCommon.createOperationMany(artemisPage, getArtemisContainer().getName(), prefix, prefix, addressCount);
 
         testSimpleSendReceive(artemisInstance, null, artemisInstance.getBrokerUri(Protocol.AMQP) + ":" + DEFAULT_AMQP_PORT,
                 "lala0", ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, false);
         sendReceiveMessagesNoCheck(artemisInstance, "lala1", 100, 50);
 
-        checkAddressesPresence(artemisPage, addressCount, prefix);
-        checkQueuesPresence(artemisPage, addressCount, prefix);
+        WebconsoleCommon.checkAddressesPresence(artemisPage, addressCount, prefix);
+        WebconsoleCommon.checkQueuesPresence(artemisPage, addressCount, prefix);
 
         Map<String, String> expectedMapLala0 = Map.of(
             "Address", "lala0",
@@ -80,7 +80,7 @@ public class Hawtio4Tests extends BaseWebUITests {
             "Total Messages Acked", "1",
             "Message Count", "0"
         );
-        checkQueueStats(artemisPage, "lala0", expectedMapLala0);
+        WebconsoleCommon.checkQueueStats(artemisPage, "lala0", expectedMapLala0);
 
         Map<String, String> expectedMapLala1 = Map.of(
             "Address", "lala1",
@@ -89,9 +89,9 @@ public class Hawtio4Tests extends BaseWebUITests {
             "Total Messages Acked", "50",
             "Message Count", "50"
         );
-        checkQueueStats(artemisPage, "lala1", expectedMapLala1);
-        deleteAddressOperationMany(artemisPage, prefix, addressCount);
-        checkAddressesPresence(artemisPage, 0, "lala");
+        WebconsoleCommon.checkQueueStats(artemisPage, "lala1", expectedMapLala1);
+        WebconsoleCommon.deleteAddressOperationMany(artemisPage, getArtemisContainer().getName(), prefix, addressCount);
+        WebconsoleCommon.checkAddressesPresence(artemisPage, 0, "lala");
     }
 
     @Test
@@ -99,8 +99,8 @@ public class Hawtio4Tests extends BaseWebUITests {
     void createDeleteAddressQueueTest() {
         int addressCount = 5;
         String prefix = "tralala";
-        createAddressQueue(artemisPage, prefix, prefix, addressCount);
-        deleteAddressQueue(artemisPage, prefix, prefix, addressCount);
+        WebconsoleCommon.createAddressQueue(artemisPage, prefix, prefix, addressCount);
+        WebconsoleCommon.deleteAddressQueue(artemisPage, prefix, prefix, addressCount);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class Hawtio4Tests extends BaseWebUITests {
         context.grantPermissions(Arrays.asList("clipboard-read", "clipboard-write"));
         String addressName = "jolokia-address";
         String queueName = "jolokia-queue";
-        clickBrokerJMXOperations(artemisPage);
+        WebconsoleCommon.clickBrokerJMXOperations(artemisPage, getArtemisContainer().getName());
 
         LOGGER.info("Create Address using Jolokia URL");
         String jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "createAddress(String,");
@@ -118,51 +118,51 @@ public class Hawtio4Tests extends BaseWebUITests {
         LOGGER.info("Create Queue using Jolokia URL");
         jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "createQueue(String, String, boolean)");
         executeJolokiaCommandLocally(artemisInstance, jolokiaUrlCommand, String.format("%s/%s/true", addressName, queueName));
-        navigateHome(artemisPage);
+        WebconsoleCommon.navigateHome(artemisPage);
 
         LOGGER.info("Send messages using Jolokia URL");
         int msgCount = 20;
-        sendMessageQueue(artemisPage, queueName, "This is a test message content #", msgCount);
-        navigateHome(artemisPage);
+        WebconsoleCommon.sendMessageQueue(artemisPage, queueName, "This is a test message content #", msgCount);
+        WebconsoleCommon.navigateHome(artemisPage);
 
         LOGGER.info("Browse message using Jolokia URL");
-        browseMessages(artemisPage, queueName, "This is a test message content #",
+        WebconsoleCommon.browseMessages(artemisPage, queueName, "This is a test message content #",
                 Map.of("address", "jolokia-address::jolokia-queue"),
                 Map.of("header-option-1", String.valueOf(msgCount - 1)));
-        navigateHome(artemisPage);
+        WebconsoleCommon.navigateHome(artemisPage);
 
-        clickBrokerJMXOperations(artemisPage);
+        WebconsoleCommon.clickBrokerJMXOperations(artemisPage, getArtemisContainer().getName());
         LOGGER.info("Delete forcefully address using Jolokia URL");
         jolokiaUrlCommand = getJolokiaUrlCommand(artemisPage, "deleteAddress(String, boolean)");
         executeJolokiaCommandLocally(artemisInstance, jolokiaUrlCommand, String.format("%s/true", addressName));
-        checkAddressesPresence(artemisPage, 0, addressName);
+        WebconsoleCommon.checkAddressesPresence(artemisPage, 0, addressName);
     }
 
     @Test
     @Tag(Constants.TAG_WEBCONSOLE)
     public void tesDeployedQueues() {
         LOGGER.info("Check deployed 500 broker addresses & queues");
-        setTab(artemisPage, ArtemisTabs.Addresses);
+        WebconsoleCommon.setTab(artemisPage, ArtemisTabs.Addresses);
         checkDestinations(artemisPage, "my_test_\\d+", 500);
 
-        setTab(artemisPage, ArtemisTabs.Queues);
+        WebconsoleCommon.setTab(artemisPage, ArtemisTabs.Queues);
         checkDestinations(artemisPage, "my_test_\\d+", 500);
     }
 
     private void checkDestinations(Page artemisPage, String destinationPattern, int destinationCount) {
-        artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(Pattern.compile(".* of .* items"))).click(clicker);
-        artemisPage.getByText("100 per page").click(clicker);
+        artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(Pattern.compile(".* of .* items"))).click(WebconsoleCommon.getClicker());
+        artemisPage.getByText("100 per page").click(WebconsoleCommon.getClicker());
         TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
-        filterBy(artemisPage, "Name", OperationFilter.Contains, "my_test_", "ID");
+        WebconsoleCommon.filterBy(artemisPage, "Name", OperationFilter.Contains, "my_test_", "ID");
 
         Locator buttonNext = artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("next"));
         Locator buttonPrev = artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("previous"));
 
-        List<Map<String, String>> addressesData = new ArrayList<>(getTableData(artemisPage));
+        List<Map<String, String>> addressesData = new ArrayList<>(WebconsoleCommon.getTableData(artemisPage));
         do {
-            buttonNext.click(clicker);
+            buttonNext.click(WebconsoleCommon.getClicker());
             TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
-            addressesData.addAll(getTableData(artemisPage));
+            addressesData.addAll(WebconsoleCommon.getTableData(artemisPage));
         } while (buttonNext.isEnabled());
         for (Map<String, String> addressData : addressesData) {
             LOGGER.trace("{}", addressData);

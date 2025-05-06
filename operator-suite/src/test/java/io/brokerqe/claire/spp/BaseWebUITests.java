@@ -50,8 +50,6 @@ public class BaseWebUITests extends AbstractSystemTests {
                     .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
         }
         browser = playwright.chromium().launch(options);
-        clicker = new Locator.ClickOptions().setTimeout(10000);
-        filler = new Locator.FillOptions().setTimeout(5000);
     }
 
     @AfterAll

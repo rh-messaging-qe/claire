@@ -162,7 +162,7 @@ public abstract class MqttClient extends SystemtestClient {
 
     @Override
     public void unsubscribe() {
-        String[] command = {"sh", "-c",
+        String[] command = {"sh", "-ic",
                 String.format("for proc in /proc/[0-9]*/cmdline; " +
                         "do echo $(basename $(dirname $proc)) $(cat $proc | tr \"\\0\" \" \"); done | " +
                         "grep %s | grep -v grep | cut -d ' ' -f 1 | xargs kill", identifierReceiver)};
