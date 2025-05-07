@@ -37,19 +37,23 @@ public class BaseWebUITests extends AbstractSystemTests {
     static Locator.ClickOptions clicker;
     static Locator.FillOptions filler;
 
-    String dashboardsUrl = getClient().getKubernetesClient().getMasterUrl().getHost().replace("api", "https://console-openshift-console.apps") + "/dashboards";
+    String dashboardsUrl = getClient().getKubernetesClient().getMasterUrl().getHost().replace("api", "https://console-openshift-console.apps") + "/auth/login";
     String[] kubeCredentials = ResourceManager.getEnvironment().getKubeCredentials();
 
     @BeforeAll
     static void launchBrowser() {
         playwright = Playwright.create();
-        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
-        if (ResourceManager.getEnvironment().isPlaywrightDebug()) {
-            options = new BrowserType.LaunchOptions()
-                    .setHeadless(false)
-                    .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
+        if (true) { // local-execution
+            BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
+            if (ResourceManager.getEnvironment().isPlaywrightDebug()) {
+                options = new BrowserType.LaunchOptions()
+                        .setHeadless(false)
+                        .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
+            }
+            browser = playwright.chromium().launch(options);
+        } else { // exec in CI
+            browser = playwright.chromium().connect("ws://127.0.0.1:3000/");
         }
-        browser = playwright.chromium().launch(options);
     }
 
     @AfterAll
@@ -82,11 +86,12 @@ public class BaseWebUITests extends AbstractSystemTests {
     void loginToOcp(String dashboardsUrl, String username, String password) {
         LOGGER.info("Logging into {}", dashboardsUrl);
         page.navigate(dashboardsUrl);
-        page.getByText("htpasswd").click();
+        page.getByText("htpasswd").click(clicker);
         page.getByText("Username").fill(username);
         page.getByText("Password").fill(password);
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
         page.waitForLoadState();
+        LOGGER.info(page.content());
     }
 
     void makeScreenshot(String testName) {

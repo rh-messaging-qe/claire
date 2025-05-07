@@ -77,15 +77,24 @@ public class ExecutorOperator implements AutoCloseable, Executor {
     @Override
     public CommandResult executeCommand(long maxExecMs, String... cmd) {
         storeCommand(cmd);
-        LOGGER.debug("[{}] {} Running command: {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(),
-                String.join(" ", cmd));
+        LOGGER.debug("[{}] {} Running command: {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(), String.join(" ", cmd));
 
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch execWatch = execCmdOnPod(pod, data, cmd)) {
             return new CommandResult(0, data.get(maxExecMs, TimeUnit.MILLISECONDS), null);
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            LOGGER.error("Failed to finish execution in time!");
-            return null;
+        } catch (TimeoutException te) {
+            LOGGER.warn("Command execution timed out after {} ms", maxExecMs, te);
+            return new CommandResult(124, "", "Timeout after " + maxExecMs + "ms");
+        } catch (ExecutionException e) {
+            LOGGER.error("Execution failed while running command", e);
+            return new CommandResult(1, "", e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // restore interrupt status
+            LOGGER.error("Execution interrupted", e);
+            return new CommandResult(130, "", "Interrupted");
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error while executing command", e);
+            return new CommandResult(1, "", "Unexpected error: " + e.getMessage());
         }
     }
 

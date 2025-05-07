@@ -12,8 +12,10 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.ClientType;
 import io.brokerqe.claire.clients.MessagingClient;
+import io.brokerqe.claire.clients.MessagingClientException;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.fabric8.kubernetes.api.model.Pod;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,12 @@ public class MirroringUnsecuredTests extends MirroringTests {
         drBrokerPods = null;
         prodBrokerPod = null;
         drBrokerPod = null;
+        setupDeployment(1);
+    }
+
+    @AfterEach
+    void teardown() {
+        teardownDeployment(false);
     }
 
     void setupDeployment(int size) {
@@ -202,7 +210,8 @@ public class MirroringUnsecuredTests extends MirroringTests {
 
     @Test
     void simpleMirroringTest() {
-        setupDeployment(1);
+        String addressA = "queue_a";
+        String addressB = "queue_b";
         Pod prodBrokerPod = getClient().getFirstPodByPrefixName(prodNamespace, PROD_BROKER_NAME);
         Pod drBrokerPod = getClient().getFirstPodByPrefixName(drNamespace, DR_BROKER_NAME);
         testMessaging(ClientType.BUNDLED_CORE, prodNamespace, prodBrokerPod, addressB, addressB, 10, ADMIN, ADMIN_PASS);
@@ -274,13 +283,10 @@ public class MirroringUnsecuredTests extends MirroringTests {
         assertThrows(NullPointerException.class, () -> {
             checkMessageCount(drNamespace, drBrokerPod, "different-queue-deletion-name", 0, ADMIN, ADMIN_PASS);
         });
-
-        teardownDeployment(false);
     }
 
     @Test
     void addressFilteringTest() {
-        setupDeployment(1);
         LOGGER.info("=== Testing of DR mirror: Address creation & deletion ===");
         List<String> mirrorFilter = List.of("AMQPConnections.dr.connectionElements.mirror.addressFilter=\"am,x,lala,!eu\"");
         prodBroker = ResourceManager.addToBrokerProperties(prodBroker, mirrorFilter, true);
@@ -337,8 +343,9 @@ public class MirroringUnsecuredTests extends MirroringTests {
 
         LOGGER.info("[{}] Receive {} messages from excluded address {} (expecting fail)", drNamespace, addressAmsgs, addressA);
         MessagingClient drReceiverA = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, drBrokerPod, allDefaultPort, addressA, addressAmsgs, ADMIN, ADMIN_PASS);
-        Throwable t = assertThrows(NullPointerException.class, () -> drReceiverA.receiveMessages(Constants.DURATION_1_MINUTE));
-        assertThat(t.getMessage(), containsString("Cannot invoke \"String.split(String)\" because \"clientStdout\" is null"));
+        Throwable t = assertThrows(MessagingClientException.class, () -> drReceiverA.receiveMessages(Constants.DURATION_10_SECONDS));
+        // Unable to parse number of message || Command execution timed out after 60000 ms
+        assertThat(t.getMessage(), containsString("Unable to parse number of messages "));
 
         int receivedA = prodClientA.receiveMessages();
         assertThat("Received different amount of messages than expected", receivedA, equalTo(addressAmsgs));
@@ -354,14 +361,11 @@ public class MirroringUnsecuredTests extends MirroringTests {
         MessagingClient lalaDrClient = ResourceManager.createMessagingClient(ClientType.BUNDLED_CORE, drBrokerPod, allDefaultPort, lalaAddr, addressAmsgs, ADMIN, ADMIN_PASS);
         int lalaReceived = lalaDrClient.receiveMessages();
         assertThat("Received different amount of messages than expected", lalaReceived, equalTo(addressAmsgs));
-
-        teardownDeployment(false);
     }
 
     @Test
     @Disabled("ENTMQBR-9474")
     void scaleUpDownTest() {
-        setupDeployment(1);
         int scaleUpSize = 4;
         int scaleDownSize = 2;
         // Scale to 4
@@ -414,8 +418,6 @@ public class MirroringUnsecuredTests extends MirroringTests {
 
         assertThat("Total sentA != totalReceivedA!", totalSentA, equalTo(totalReceivedA));
         assertThat("Total sentB != totalReceivedB!", totalSentB, equalTo(totalReceivedB));
-
-        teardownDeployment(false);
     }
 
     private void updateCheckDeployment(int expectedA, int expectedB) {

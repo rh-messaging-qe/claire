@@ -30,11 +30,6 @@ import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(TestMinimumKubernetesVersion.MinimumKubernetesCountCondition.class)
 public @interface TestMinimumKubernetesVersion {
-    // 1.28 - 4.15
-    // 1.29 - 4.16
-    // 1.30 - 4.17
-    // 1.31 - 4.18
-    // 1.32 - 4.19
     KubernetesVersion value();
 
     class MinimumKubernetesCountCondition implements ExecutionCondition {
