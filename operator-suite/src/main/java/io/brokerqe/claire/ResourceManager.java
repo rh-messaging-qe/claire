@@ -229,6 +229,9 @@ public class ResourceManager {
 
     public static long calculateWaitTime(ActiveMQArtemis artemisBroker) {
         long waitTime = Constants.DURATION_1_MINUTE + Constants.DURATION_30_SECONDS;
+        if (artemisBroker == null) {
+            return waitTime;
+        }
         if (artemisBroker.getSpec() != null && artemisBroker.getSpec().getDeploymentPlan() != null && artemisBroker.getSpec().getDeploymentPlan().getSize() != null) {
             int size = artemisBroker.getSpec().getDeploymentPlan().getSize();
             if (size > 1) {

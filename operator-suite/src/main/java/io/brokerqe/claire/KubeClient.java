@@ -413,7 +413,7 @@ public class KubeClient {
 
     public String executeCommandInPod(Pod pod, String cmd, long timeout) {
         ExecutorOperator executor = new ExecutorOperator(pod);
-        executor.executeCommand(Constants.DURATION_30_SECONDS, "/bin/bash", "-ic", String.join(" ", cmd));
+        executor.executeCommand(Constants.DURATION_30_SECONDS, "/bin/bash", "-c", String.join(" ", cmd));
         return executor.getCommandData(timeout);
     }
 
