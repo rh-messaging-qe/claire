@@ -81,6 +81,10 @@ public abstract class Environment {
         }
     }
 
+    public Boolean isLocalExecution() {
+        return Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_LOCAL_EXEC, "false"));
+    }
+
     public String getArtemisMajorMinorMicroVersion(String strVersion) {
         return strVersion.replaceAll("(^[0-9]+\\.[0-9]+\\.[0-9]+).*", "$1");
     }

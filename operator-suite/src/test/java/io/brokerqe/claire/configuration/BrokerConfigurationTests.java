@@ -696,6 +696,18 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
                 .build();
 
+        Secret addressSecret = getSecretForAddress(address);
+        Secret addressSecondSecret = getSecretForAddress(secondAddress);
+
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(addressSecret).createOrReplace();
+        getKubernetesClient().secrets().inNamespace(testNamespace).resource(addressSecondSecret).createOrReplace();
+
+        ExtraMounts mounts = new ExtraMountsBuilder().withSecrets(
+                List.of(addressSecret.getMetadata().getName(),
+                        addressSecondSecret.getMetadata().getName()
+                )
+        ).build();
+
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()
                 .editOrNewMetadata()
                     .withName(brokerName)
@@ -705,15 +717,13 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                     .editOrNewDeploymentPlan()
                         .withSize(1)
                         .withManagementRBACEnabled()
+                        .withExtraMounts(mounts)
                     .endDeploymentPlan()
                 .withAcceptors(amqpAcceptors)
                 .editOrNewConsole()
                     .withExpose(true)
                 .endConsole()
                 .endSpec().build();
-
-        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress(address)).createOrReplace();
-        getKubernetesClient().secrets().inNamespace(testNamespace).resource(getSecretForAddress(secondAddress)).createOrReplace();
 
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
 
@@ -739,6 +749,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .withQueueName(queueName)
                 .withRoutingType(ArtemisConstants.ROUTING_TYPE_ANYCAST)
                 .build();
+
         ExtraMounts mounts = new ExtraMountsBuilder().withSecrets("broker-0-bp").build();
 
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()

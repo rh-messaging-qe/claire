@@ -65,18 +65,25 @@ operator-suite/container/scripts/run-test.sh --help
 
 ## List of shared Environment Variables
 
-| Name                 | Description                                                    | Default                     | Possible values                                  |
-|----------------------|----------------------------------------------------------------|-----------------------------|--------------------------------------------------|
-| ARTEMIS_VERSION      | ArtemisCloud Version to be used (Makefile)                     | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
-| ARTEMIS_TEST_VERSION | ArtemisCloud Version to be used by tests                       | not set                     | \<major\>.\<minor\>                              |
-| LOGS_LOCATION        | Location where to generate collected logs                      | `test-logs`                 | \<directory\>                                    |
-| TEST_LOG_LEVEL       | Set logging level of test suite                                | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
-| COLLECT_TEST_DATA    | Whether to gather test data on error or not                    | `true`                      | `true`, `false`                                  |
-| TESTS                | Which tests to execute (maven syntax)                          | not set                     | <mvn-regexp>                                     |
-| PLAYWRIGHT_DEBUG     | Playwright will run in head mode (show browser) & record video | `false`                     | `true`, `false`                                  |
+| Name                                    | Description                                                     | Default                     | Possible values                                  |
+|-----------------------------------------|-----------------------------------------------------------------|-----------------------------|--------------------------------------------------|
+| ARTEMIS_VERSION                         | ArtemisCloud Version to be used (Makefile)                      | 7.10.2                      | \<major\>.\<minor\>.\<micro\>                    |
+| ARTEMIS_TEST_VERSION                    | ArtemisCloud Version to be used by tests                        | not set                     | \<major\>.\<minor\>                              |
+| LOGS_LOCATION                           | Location where to generate collected logs                       | `test-logs`                 | \<directory\>                                    |
+| TEST_LOG_LEVEL                          | Set logging level of test suite                                 | `INFO` set in `logback.xml` | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF` |
+| COLLECT_TEST_DATA                       | Whether to gather test data on error or not                     | `true`                      | `true`, `false`                                  |
+| TESTS                                   | Which tests to execute (maven syntax)                           | not set                     | <mvn-regexp>                                     |
+| PLAYWRIGHT_DEBUG                        | Playwright will run in head mode (show browser) & record video  | `false`                     | `true`, `false`                                  |
+| TEST_LOCAL_EXEC                         | Execute locally - some tests work only in local execution (SPP) | `false`                     | `true`, `false`                                  |
 
 ## More information
 For more information about subprojects - refer to README.md files in `operator-suite` or `standalone-suite` folders, which contain more details about usage, more environment variables, etc.
+
+## Known issues
+Playwright WebUI tests need browser dependencies. That is fine for standalone container and local executions, but they are a big problem for Operator test suite.
+Currently, our amq-broker-tools container which runs these tests in CI (based on UBI8) is unable to execute browser tests.
+Hence, these tests are disabled for now and can be executed only when provided `TEST_LOCAL_EXEC=true`.
+This will be fixed in https://issues.redhat.com/browse/ENTMQBR-9800
 
 ## Hints
 - keep code clean

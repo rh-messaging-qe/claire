@@ -28,6 +28,7 @@ public interface Constants {
     String TAG_UPGRADE = "upgrade";
 
     // Environment Variables
+    String EV_LOCAL_EXEC = "LOCAL_EXECUTION";
     String EV_KUBE_CONTEXT = "KUBE_CONTEXT";
     String EV_KUBE_CREDENTIALS = "KUBE_CREDENTIALS";
     String EV_ARTEMIS_VERSION = "ARTEMIS_VERSION";

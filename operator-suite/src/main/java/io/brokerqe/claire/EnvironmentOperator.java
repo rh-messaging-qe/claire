@@ -126,6 +126,7 @@ public class EnvironmentOperator extends Environment {
         envVarsSB.append(Constants.EV_COLLECT_TEST_DATA).append("=").append(collectTestData).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_DUMP_ENABLED).append("=").append(serializationEnabled).append(Constants.LINE_SEPARATOR);
         envVarsSB.append(Constants.EV_TEARDOWN).append("=").append(teardownEnv).append(Constants.LINE_SEPARATOR);
+        envVarsSB.append(Constants.EV_LOCAL_EXEC).append("=").append(isLocalExecution()).append(Constants.LINE_SEPARATOR);
 
         if (kubeCredentials != null) {
             envVarsSB.append(Constants.EV_KUBE_CREDENTIALS).append("=").append(kubeCredentials).append(Constants.LINE_SEPARATOR);
