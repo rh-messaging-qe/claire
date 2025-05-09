@@ -55,8 +55,16 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     public static String getAmqOperatorName() {
+        return getAmqOperatorName(null);
+    }
+
+    public static String getAmqOperatorName(String olmChannel) {
         String rhelVersion;
-        if (ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber() >= ArtemisVersion.VERSION_2_40.getVersionNumber()) {
+        Integer testVersion = (olmChannel != null)
+                ? ResourceManager.getEnvironment().convertArtemisVersion(olmChannel.replace("x", "0")).getVersionNumber()
+                : ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber();
+
+        if (testVersion >= ArtemisVersion.VERSION_2_40.getVersionNumber()) {
             rhelVersion = "9";
         } else {
             rhelVersion = "8";
@@ -146,7 +154,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
               name: %s
               source: %s
               sourceNamespace: openshift-marketplace
-            """, subscriptionName, deploymentNamespace, olmChannel, getAmqOperatorName(), brokerCatalogSourceName);
+            """, subscriptionName, deploymentNamespace, olmChannel, getAmqOperatorName(olmChannel), brokerCatalogSourceName);
 
         LOGGER.info("[OLM] Creating Subscription");
         deployOlmResource(subscriptionString);
@@ -292,7 +300,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         }
     }
 
-    public ArtemisCloudClusterOperatorOlm upgradeClusterOperator(String olmChannel, String indexImageBundle) {
+    public ArtemisCloudClusterOperatorOlm upgradeClusterOperator(Pod operatorPod, String olmChannel, String indexImageBundle) {
         deployCatalogSource(indexImageBundle);
         this.indexImageBundle = indexImageBundle;
         if (!getOlmChannel().equals(olmChannel)) {
@@ -304,6 +312,8 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
             this.olmChannel = olmChannel;
             waitForCoDeployment();
         }
+
+        kubeClient.waitForPodReload(deploymentNamespace, operatorPod, getOperatorName(), Constants.DURATION_5_MINUTES);
         return this;
     }
 }

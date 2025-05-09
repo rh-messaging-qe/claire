@@ -76,8 +76,8 @@ public class Rhsso extends Keycloak {
         String keycloakVersion = testEnvironmentOperator.getKeycloakVersion();
 
 //        LOGGER.warn("==== TEMPORARY WORKAROUND - latest (any) 26 seems to be broken ====");
-//        keycloakChannel = "stable-v24";
-//        keycloakVersion = "rhbk-operator.v24.0.10-opr.1";
+        keycloakChannel = "stable-v24";
+        keycloakVersion = "rhbk-operator.v24.0.10-opr.1";
 //        keycloakChannel = "stable-v26";
 //        keycloakVersion = "rhbk-operator.v26.0.9-opr.1";
 

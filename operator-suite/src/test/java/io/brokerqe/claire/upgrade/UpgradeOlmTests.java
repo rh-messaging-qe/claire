@@ -77,7 +77,7 @@ public class UpgradeOlmTests extends AbstractSystemTests {
         if (upgradeOlmOperator == null) {
             upgradeOlmOperator = ResourceManager.deployArtemisClusterOperatorOlm(testNamespace, List.of(testNamespace), channel, indexImageBundle);
         } else {
-            upgradeOlmOperator = upgradeOlmOperator.upgradeClusterOperator(channel, indexImageBundle);
+            upgradeOlmOperator = upgradeOlmOperator.upgradeClusterOperator(operatorPod, channel, indexImageBundle);
         }
         return upgradeOlmOperator;
     }
