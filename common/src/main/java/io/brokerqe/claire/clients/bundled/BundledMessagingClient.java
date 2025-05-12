@@ -153,7 +153,8 @@ public abstract class BundledMessagingClient implements MessagingClient {
             LOGGER.debug("[{}] {}", deployableClient.getContainerName(), cmdOutput);
             return parseMessageCount(cmdOutput, PRODUCER);
         } catch (ClaireRuntimeException e) {
-            LOGGER.error("Error client exited: {}\n{}", commandResult.exitCode, commandResult.stderr);
+            //LOGGER.error("Error client exited: {}\n{}", commandResult.exitCode, commandResult.stderr);
+            LOGGER.error("Error client exited: \n{}", e.getMessage());
             throw new MessagingClientException(e.getMessage(), e);
         }
     }

@@ -38,6 +38,7 @@ public class ExecutorStandalone implements Executor {
         try {
             Container.ExecResult execResult = container.execInContainer(command);
             int cmdReturnCode = execResult.getExitCode();
+            // TODO: Manage this method to return CommandResult obj. even if the command exec. fails, not just exception
             if (cmdReturnCode != 0) {
                 String errMsg = String.format("Error on executing command '%s' in container %s, return code: %s\n%s",
                         String.join(" ", command), container.getContainerName(), cmdReturnCode, execResult.getStderr());
