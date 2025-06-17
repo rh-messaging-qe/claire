@@ -203,7 +203,10 @@ public class ArtemisDeployment {
             TestUtils.copyDirectories(providedInstanceDir, instanceDir);
         }
         artemisInstance.withInstanceDir(instanceDir);
-        artemisConfigData.withInstanceDir(instanceDir);
+
+        // TODO: Removed due to issues in FailoverReplicationTests; verify if 100% safe to delete
+        //artemisConfigData.withInstanceDir(instanceDir);
+
         artemisInstance.setConfigBinDir(instanceDir + ArtemisConstants.BIN_DIR);
 
         String artemisConfig = EnvironmentStandalone.getInstance().getProvidedArtemisConfig();
