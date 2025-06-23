@@ -45,13 +45,7 @@ public class DefaultNamespaceTests extends AbstractSystemTests {
 
     @AfterAll
     void teardownClusterOperator() {
-        if (ResourceManager.isClusterOperatorManaged()) {
-            if (operator == null) {
-                LOGGER.warn("[{}] Skipping teardown of cluster Operator as it is null! (Already removed?)", testNamespace);
-            } else {
-                ResourceManager.undeployArtemisClusterOperator(operator);
-            }
-        }
+        ResourceManager.undeployArtemisClusterOperator(operator);
     }
 
     @Test
