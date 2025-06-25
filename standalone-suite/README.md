@@ -81,7 +81,7 @@ In deployed DB way, relevant _bitnami mariadb/mysql/postgresql_, _container-regi
           --output primary-lala
   ```
 
-**_NOTE:_**  
+## Image Pull Policy 
 You can configure the `IMAGE_PULL_POLICY` environment variable to control whether container images should be pulled at runtime.
 The supported values are:
 - **`default`** – Uses the default pull policy (usually skips pulling if the image exists locally).

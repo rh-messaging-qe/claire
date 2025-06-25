@@ -21,10 +21,11 @@ user_cluster_connections:
 
 user_ha:
   policy: replication
-  role: primary
+  role: master
   properties:
     initial_replication_sync_timeout: 9876
     retry_replication_wait: 12345
+    check_for_live_server: true
     manager:
       properties:
         - key: 'connect-string'
