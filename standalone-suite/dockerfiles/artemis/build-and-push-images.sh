@@ -78,7 +78,11 @@ done
 
 if [[ "${SKIP_PUSH}" == "false" ]]; then
   for base_image_name in "${BASE_IMAGES[@]}"; do
-
+    claire_standalone_image_name="${CLAIRE_STANDALONE_IMAGE_BASE_NAME}:${base_image_name}"
+    if [[ "${DEV_TAG}" == "true" ]]; then
+      claire_standalone_image_name+="-dev"
+    fi
+    claire_standalone_registry_image="${CLAIRE_STANDALONE_IMAGE_REGISTRY}/${claire_standalone_image_name}"
     echo ""
     echo "Pushing local image ${claire_standalone_image_name} to ${claire_standalone_registry_image}"
     docker push "${claire_standalone_registry_image}"
