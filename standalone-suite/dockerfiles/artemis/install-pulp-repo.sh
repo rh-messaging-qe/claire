@@ -4,7 +4,7 @@ set -e
 BASE_IMAGE="$1"
 
 echo "############################"
-echo "running install-pulp-repo.sh"
+echo -e "[${BASE_IMAGE}]\nrunning install-pulp-repo.sh"
 echo "############################"
 echo ""
 echo "BASE_IMAGE = ${BASE_IMAGE}"

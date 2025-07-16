@@ -40,12 +40,6 @@ EXPOSE \
 # Expose some outstanding folders
 VOLUME ["${artemis_instance_home}", "${artemis_install_home}"]
 
-COPY openjdk-java-*.tar.xz oracle-java-*.tar.gz /tmp
-COPY install-java-versions.sh /usr/local/bin/
-RUN /usr/local/bin/install-java-versions.sh "${BASE_IMAGE}" \
-    && rm -rf /usr/local/bin/install-java-versions.sh \
-    && rm -rf /tmp/openjdk-java-*.tar.xz /tmp/oracle-java-*.tar.gz
-
 COPY pulp-repository-*.repo /tmp
 COPY install-pulp-repo.sh install-packages.sh /usr/local/bin
 RUN yum --assumeyes upgrade \
@@ -53,6 +47,12 @@ RUN yum --assumeyes upgrade \
  && /usr/local/bin/install-packages.sh "${BASE_IMAGE}" \
  && yum --assumeyes clean all \
  && rm -rf /usr/local/bin/install-pulp-repo.sh /usr/local/bin/install-packages.sh /tmp/pulp-repository-*.repo /etc/yum.repos.d/pulp-repository-*.repo
+
+COPY openjdk-java-*.tar.xz oracle-java-*.tar.gz /tmp
+COPY install-java-versions.sh /usr/local/bin/
+RUN /usr/local/bin/install-java-versions.sh "${BASE_IMAGE}" \
+    && rm -rf /usr/local/bin/install-java-versions.sh \
+    && rm -rf /tmp/openjdk-java-*.tar.xz /tmp/oracle-java-*.tar.gz
 
 RUN echo "${artemis_user} ALL=(ALL)       NOPASSWD: /usr/bin/mount, /usr/bin/umount" > /etc/sudoers.d/${artemis_user}
 

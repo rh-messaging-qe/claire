@@ -3,14 +3,14 @@
 set -e
 BASE_IMAGE="$1"
 
-COMMON_PACKAGES=(libaio nfs-utils sudo)
+COMMON_PACKAGES=(libaio nfs-utils sudo xz)
 FEDORA_PACKAGES=("${COMMON_PACKAGES[@]}" procps-ng)
 UBI7_PACKAGES=("${COMMON_PACKAGES[@]}" sysvinit-tools)
 UBI8_PACKAGES=("${FEDORA_PACKAGES[@]}")
 UBI9_PACKAGES=("${FEDORA_PACKAGES[@]}")
 
 echo "############################"
-echo "running install-packages.sh"
+echo -e "[${BASE_IMAGE}]\nrunning install-packages.sh"
 echo "############################"
 echo ""
 echo "BASE_IMAGE = ${BASE_IMAGE}"
