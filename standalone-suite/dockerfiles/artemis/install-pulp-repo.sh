@@ -20,6 +20,9 @@ case ${BASE_IMAGE} in
     *ubi9:*)
         cp /tmp/pulp-repository-rhel9.repo /etc/yum.repos.d
         ;;
+    *ubi10:*)
+        cp /tmp/pulp-repository-rhel10.repo /etc/yum.repos.d
+        ;;
     *)
         echo "pulp-repository not installed as base image name does not match one of expected images"
         ;;

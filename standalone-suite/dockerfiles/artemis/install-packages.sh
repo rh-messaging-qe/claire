@@ -8,6 +8,7 @@ FEDORA_PACKAGES=("${COMMON_PACKAGES[@]}" procps-ng)
 UBI7_PACKAGES=("${COMMON_PACKAGES[@]}" sysvinit-tools)
 UBI8_PACKAGES=("${FEDORA_PACKAGES[@]}")
 UBI9_PACKAGES=("${FEDORA_PACKAGES[@]}")
+UBI10_PACKAGES=("${FEDORA_PACKAGES[@]}")
 
 echo "############################"
 echo -e "[${BASE_IMAGE}]\nrunning install-packages.sh"
@@ -28,6 +29,9 @@ case ${BASE_IMAGE} in
         ;;
     *ubi9:*)
         dnf install --assumeyes "${UBI9_PACKAGES[@]}"
+        ;;
+    *ubi10:*)
+        dnf install --assumeyes "${UBI10_PACKAGES[@]}"
         ;;
     *)
         echo "packages were not installed as base image name does not match one of expected images"

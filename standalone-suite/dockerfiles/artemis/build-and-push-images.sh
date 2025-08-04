@@ -7,51 +7,52 @@ DEV_TAG="${2:-false}"
 
 BASE_IMAGE_REGISTRY="registry.access.redhat.com"
 BASE_IMAGES=(
-  fedora
-  ubi7
-  ubi8
-  ubi9
+#  fedora
+#  ubi7
+#  ubi8
+#  ubi9
+  ubi10
 )
 
 CLAIRE_STANDALONE_IMAGE_REGISTRY="quay.io/rhmessagingqe"
 CLAIRE_STANDALONE_IMAGE_BASE_NAME="claire-standalone-artemis"
-
-echo ""
-echo "#######################################################################"
-echo "Downloading additional Java JDK: openjdk-java-11"
-wget -nv -c -O openjdk-java-11.tar.xz \
-    https://download.eng.bos.redhat.com/released/OpenJDK/11.0.25/java-11-openjdk-11.0.25.0.9-1.portable.jdk.el.x86_64.tar.xz
-tar -Jtf openjdk-java-11.tar.xz > /dev/null
-
-echo "Downloading additional Java JDK: openjdk-java-17"
-wget -nv -c -O openjdk-java-17.tar.xz \
-    https://download.eng.bos.redhat.com/released/OpenJDK/17.0.12/java-17-openjdk-17.0.12.0.7-1.portable.jdk.el.x86_64.tar.xz
-tar -Jtf openjdk-java-17.tar.xz > /dev/null
-
-echo "Downloading additional Java JDK: openjdk-java-21"
-wget -nv -c -O openjdk-java-21.tar.xz \
-    https://download.eng.bos.redhat.com/released/OpenJDK/21.0.4/java-21-openjdk-21.0.4.0.7-1.portable.jdk.x86_64.tar.xz
-tar -Jtf openjdk-java-21.tar.xz > /dev/null
-
-echo "Downloading additional Java JDK: oracle-java-11"
-wget -nv -c -O oracle-java-11.tar.gz \
-  https://repository.engineering.redhat.com/nexus/repository/rhm-qe-amq-clients-raw/jdk/jdk-11.0.15.1_linux-x64_bin.tar.gz
-tar -ztf oracle-java-11.tar.gz > /dev/null
-
-echo "Downloading additional Java JDK: oracle-java-17 (17.0.12)"
-# pinned to 17.0.12 - we can't use newer
-wget -nv -c -O oracle-java-17.tar.gz https://download.oracle.com/java/17/archive/jdk-17.0.12_linux-x64_bin.tar.gz
-tar -ztf oracle-java-17.tar.gz > /dev/null
-
-echo "Downloading additional Java JDK: oracle-java-21"
-wget -nv -c -O oracle-java-21.tar.gz https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz
-tar -ztf oracle-java-21.tar.gz > /dev/null
+#
+#echo ""
+#echo "#######################################################################"
+#echo "Downloading additional Java JDK: openjdk-java-11"
+#wget -nv -c -O openjdk-java-11.tar.xz \
+#    https://download.eng.bos.redhat.com/released/OpenJDK/11.0.25/java-11-openjdk-11.0.25.0.9-1.portable.jdk.el.x86_64.tar.xz
+#tar -Jtf openjdk-java-11.tar.xz > /dev/null
+#
+#echo "Downloading additional Java JDK: openjdk-java-17"
+#wget -nv -c -O openjdk-java-17.tar.xz \
+#    https://download.eng.bos.redhat.com/released/OpenJDK/17.0.12/java-17-openjdk-17.0.12.0.7-1.portable.jdk.el.x86_64.tar.xz
+#tar -Jtf openjdk-java-17.tar.xz > /dev/null
+#
+#echo "Downloading additional Java JDK: openjdk-java-21"
+#wget -nv -c -O openjdk-java-21.tar.xz \
+#    https://download.eng.bos.redhat.com/released/OpenJDK/21.0.4/java-21-openjdk-21.0.4.0.7-1.portable.jdk.x86_64.tar.xz
+#tar -Jtf openjdk-java-21.tar.xz > /dev/null
+#
+#echo "Downloading additional Java JDK: oracle-java-11"
+#wget -nv -c -O oracle-java-11.tar.gz \
+#  https://repository.engineering.redhat.com/nexus/repository/rhm-qe-amq-clients-raw/jdk/jdk-11.0.15.1_linux-x64_bin.tar.gz
+#tar -ztf oracle-java-11.tar.gz > /dev/null
+#
+#echo "Downloading additional Java JDK: oracle-java-17 (17.0.12)"
+## pinned to 17.0.12 - we can't use newer
+#wget -nv -c -O oracle-java-17.tar.gz https://download.oracle.com/java/17/archive/jdk-17.0.12_linux-x64_bin.tar.gz
+#tar -ztf oracle-java-17.tar.gz > /dev/null
+#
+#echo "Downloading additional Java JDK: oracle-java-21"
+#wget -nv -c -O oracle-java-21.tar.gz https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz
+#tar -ztf oracle-java-21.tar.gz > /dev/null
 
 echo "Download of all JDKs finished"
 echo "Base images: ${BASE_IMAGES[@]}"
 
 for base_image_name in "${BASE_IMAGES[@]}"; do
-  if [[ "${base_image_name}" =~ ubi[0-9] ]]; then
+  if [[ "${base_image_name}" =~ ubi[0-9]+ ]]; then
     base_image="${BASE_IMAGE_REGISTRY}/${base_image_name}:latest"
   else
     base_image="${base_image_name}:latest"
