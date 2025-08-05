@@ -6,6 +6,7 @@ package io.brokerqe.claire.webconsole;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.options.AriaRole;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
@@ -150,10 +151,16 @@ public class Hawtio4Tests extends BaseWebUITests {
     }
 
     private void checkDestinations(Page artemisPage, String destinationPattern, int destinationCount) {
-        artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(Pattern.compile(".* of .* items"))).click(WebconsoleCommon.getClicker());
+        try {
+            // 7.13.0
+            artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(Pattern.compile(".* of .* items"))).click(WebconsoleCommon.getClicker());
+        } catch (TimeoutError e) {
+            // 7.13.1+
+            artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(Pattern.compile(".* of .*"))).click(WebconsoleCommon.getClicker());
+        }
         artemisPage.getByText("100 per page").click(WebconsoleCommon.getClicker());
         TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
-        WebconsoleCommon.filterBy(artemisPage, "Name", OperationFilter.Contains, "my_test_", "ID");
+        WebconsoleCommon.filterBy(artemisPage, "Name", OperationFilter.Contains, "my_test_", "Name");
 
         Locator buttonNext = artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("next"));
         Locator buttonPrev = artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("previous"));

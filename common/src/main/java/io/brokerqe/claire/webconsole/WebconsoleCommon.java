@@ -12,6 +12,7 @@ import com.microsoft.playwright.options.AriaRole;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,7 @@ public class WebconsoleCommon {
     }
 
     public static Page setTab(Page artemisPage, ArtemisTabs tabName) {
+        TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
         switch (tabName) {
             // BUGGED!
             case Status -> artemisPage.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName("Connections")).nth(0).click(clicker);
@@ -371,15 +373,26 @@ public class WebconsoleCommon {
 
     public static void filterBy(Page artemisPage, String predicateFilterName, OperationFilter operation, String objectName, String sortBy) {
         String operationName = operation.name().replaceAll("_", " ");
-        Pattern objectFilterPattern = Pattern.compile("^Name$|^ID$");
-        Pattern operationFilterPattern = Pattern.compile("^Equals$|^Contains$|^Does Not Contain$|^Greater Than$|^Less Than$");
-        artemisPage.locator("div").filter(new Locator.FilterOptions().setHasText(objectFilterPattern)).click(clicker);
+
+//        Pattern objectFilterPattern = Pattern.compile("^Name$|^ID$");
+//        artemisPage.locator("div").filter(new Locator.FilterOptions().setHasText(objectFilterPattern)).click(clicker);
+            // click on ObjectFilter nth(0) - default ID was removed in 7.13.1
+        artemisPage.locator("div.pf-m-search-filter > button.pf-v5-c-menu-toggle").nth(0).click(clicker);
 
         // Filter by Name
         artemisPage.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(predicateFilterName)).click(clicker);
+        artemisPage.mouse().move(0, 0); // move to corner because tooltip might obstruct clicking
 
         // Filter by operation
-        artemisPage.locator("div").filter(new Locator.FilterOptions().setHasText(operationFilterPattern)).click(clicker);
+        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
+        try {
+            Pattern operationFilterPattern = Pattern.compile("^Equals$|^Contains$|^Does Not Contain$|^Greater Than$|^Less Than$");
+            artemisPage.locator("div").filter(new Locator.FilterOptions().setHasText(operationFilterPattern)).click(clicker);
+        } catch (TimeoutError e) {
+            LOGGER.warn("Falling back to locator - menu-toggle nth-1");
+            artemisPage.locator("div.pf-m-search-filter > button.pf-v5-c-menu-toggle").nth(1).click(clicker);
+        }
+        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
         artemisPage.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(operationName)).click(clicker);
 
         artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions()).fill(objectName);
@@ -411,9 +424,13 @@ public class WebconsoleCommon {
             artemisPage.getByLabel("value-input-0").fill(String.valueOf(n), filler);
 
             String msgContentTmp = msgContent + n;
-            artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Editor content")).fill("");
-            artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Editor content")).fill(msgContentTmp, filler);
-            artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Send")).click(clicker);
+            try {
+                artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Editor content")).fill("");
+                artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Editor content")).fill(msgContentTmp, filler);
+                artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Send")).click(clicker);
+            } catch (TimeoutError e) {
+                throw new ClaireRuntimeException("BUG 7.13.1 - Does not work to enter message text data input.");
+            }
             TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
         });
         artemisPage.getByText("Cancel").click(clicker);
