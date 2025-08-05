@@ -41,8 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @TestOLMSupported
 @TestValidSince(ArtemisVersion.VERSION_2_40)
 @TestMinimumKubernetesVersion(KubernetesVersion.VERSION_1_29)
-// TODO: ENTMQBR-9800
-@TestLocalExecutionOnly
 public class SelfProvisioningPluginUITests extends BaseWebUITests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SelfProvisioningPluginUITests.class);
