@@ -70,9 +70,9 @@ public class AMQSelfProvisioningPlugin extends ACSelfProvisioningPlugin implemen
 
     public void undeploy() {
         LOGGER.info("[{}] Undeploying AMQ Artemis Self-provisioning Plugin", SPP_DEFAULT_NAMESPACE);
-        TestUtils.executeLocalCommand(20, new File(sppFolder), "/bin/bash", "-lc", "sh undeploy-plugin.sh");
+        TestUtils.executeLocalCommand(60, new File(sppFolder), "/bin/bash", "-lc", "sh undeploy-plugin.sh");
         LOGGER.info("[{}] Undeploying AMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
-        TestUtils.executeLocalCommand(20, new File(jolokiaFolder), "/bin/bash", "-lc", "sh undeploy.sh -c cert-manager");
+        TestUtils.executeLocalCommand(120, new File(jolokiaFolder), "/bin/bash", "-lc", "sh undeploy.sh -c cert-manager");
 
         kubeClient.deleteNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
         kubeClient.deleteNamespace(SPP_DEFAULT_NAMESPACE);
