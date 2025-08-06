@@ -103,8 +103,8 @@ public class OperatorTestDataCollector extends TestDataCollector {
     private void collectResourceStats(String namespace, String dirName) {
         try {
             LOGGER.debug("[{}] Gathering node/pod resources into files.", namespace);
-            String topNode = TestUtils.executeLocalCommand("/bin/bash", "-ic", "$(which oc) adm top node").stdout;
-            String namespacePod = TestUtils.executeLocalCommand("/bin/bash", "-ic", "$(which oc) adm top pod -n " + namespace).stdout;
+            String topNode = TestUtils.executeLocalCommand("/bin/bash", "-lc", "$(which oc) adm top node").stdout;
+            String namespacePod = TestUtils.executeLocalCommand("/bin/bash", "-lc", "$(which oc) adm top pod -n " + namespace).stdout;
             String nodeFileName = dirName + Constants.FILE_SEPARATOR + "stats_node.log";
             String podFileName = dirName + Constants.FILE_SEPARATOR + "stats_pod.log";
             TestUtils.createFile(nodeFileName, topNode);

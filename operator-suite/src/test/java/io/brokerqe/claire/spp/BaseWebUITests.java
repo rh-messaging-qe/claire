@@ -17,6 +17,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.ResourceManager;
+import io.brokerqe.claire.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -76,6 +77,8 @@ public class BaseWebUITests extends AbstractSystemTests {
         context = browser.newContext(contextOptions);
         page = context.newPage();
         loginToOcp(dashboardsUrl, kubeCredentials[0], kubeCredentials[1]);
+        page.waitForLoadState();
+        TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
     }
 
     @AfterEach
@@ -86,12 +89,14 @@ public class BaseWebUITests extends AbstractSystemTests {
     void loginToOcp(String dashboardsUrl, String username, String password) {
         LOGGER.info("Logging into {}", dashboardsUrl);
         page.navigate(dashboardsUrl);
+        TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
+        page.waitForLoadState();
         page.getByText("htpasswd").click(clicker);
         page.getByText("Username").fill(username);
         page.getByText("Password").fill(password);
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
         page.waitForLoadState();
-        LOGGER.info(page.content());
+        LOGGER.info("Logged in!");
     }
 
     void makeScreenshot(String testName) {

@@ -284,7 +284,7 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         LOGGER.info("[{}] Will execute locally provided `artemis check` command: \n{}", testNamespace, artemisMsgCheckCmd);
         String artemisDefaultDir = TestUtils.getStandaloneArtemisDefaultDir().toString();
         // remove initial "." from provided command
-        TestUtils.executeLocalCommand(20, "/bin/bash", "-ic", artemisDefaultDir + artemisMsgCheckCmd.substring(1));
+        TestUtils.executeLocalCommand(20, "/bin/bash", "-lc", artemisDefaultDir + artemisMsgCheckCmd.substring(1));
 
         String addressName = "TEST"; // default address used in command
         checkMessageCountInAddress(page, brokerName, addressName, 10);

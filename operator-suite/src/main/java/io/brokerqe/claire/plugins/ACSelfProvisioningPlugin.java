@@ -124,14 +124,14 @@ public class ACSelfProvisioningPlugin implements CustomTool {
 
     private static void applyPatch() {
         LOGGER.info("[PATCH] Applying 'activemq-artemis-self-provisioning-plugin' to consoles.operator.openshift.io cluster");
-        String[] patchOc = {"/bin/bash", "-ic",
+        String[] patchOc = {"/bin/bash", "-lc",
                             "oc patch consoles.operator.openshift.io cluster --type=json --patch '[{ \"op\": \"add\", \"path\": \"/spec/plugins/-\", \"value\": \"activemq-artemis-self-provisioning-plugin\" }]'"};
         TestUtils.executeLocalCommand(patchOc);
         printCurrentPlugins();
     }
 
     private static void printCurrentPlugins() {
-        String[] actualPluginsCmd = {"/bin/bash", "-ic", "oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins'"};
+        String[] actualPluginsCmd = {"/bin/bash", "-lc", "oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins'"};
         String actualPlugins = TestUtils.executeLocalCommand(actualPluginsCmd).stdout;
         LOGGER.debug("[PATCH] Actually present plugins: {}", actualPlugins);
     }
@@ -140,12 +140,12 @@ public class ACSelfProvisioningPlugin implements CustomTool {
         LOGGER.info("[PATCH] Removing 'activemq-artemis-self-provisioning-plugin' from consoles.operator.openshift.io cluster");
 //        plugins=$(oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins | map(select(. != "activemq-artemis-self-provisioning-plugin"))')
 //        oc patch consoles.operator.openshift.io cluster --type=merge --patch '{ "spec": { "plugins": $plugins } }'
-        String[] getPluginsCmd = {"/bin/bash", "-ic",
+        String[] getPluginsCmd = {"/bin/bash", "-lc",
                                   "oc get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins | map(select(. != \"activemq-artemis-self-provisioning-plugin\"))'"};
         JSONArray jsonPlugins = new JSONArray(TestUtils.executeLocalCommand(getPluginsCmd).stdout.replaceAll("\"", "'"));
         String pluginsStr = jsonPlugins.toString().replaceAll("\"", "\\\"");
 
-        String[] patchCmd = {"/bin/bash", "-ic", String.format("oc patch consoles.operator.openshift.io cluster --type=merge --patch '{ \"spec\": { \"plugins\": %s } }'", pluginsStr)};
+        String[] patchCmd = {"/bin/bash", "-lc", String.format("oc patch consoles.operator.openshift.io cluster --type=merge --patch '{ \"spec\": { \"plugins\": %s } }'", pluginsStr)};
         TestUtils.executeLocalCommand(patchCmd);
         printCurrentPlugins();
     }

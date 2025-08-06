@@ -52,13 +52,14 @@ public class AMQSelfProvisioningPlugin extends ACSelfProvisioningPlugin implemen
         TestUtils.unzip(sppZip, tmpDirLocation);
 
         LOGGER.info("[{}] Deploying AMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
-        TestUtils.executeLocalCommand(120, new File(jolokiaFolder), "/bin/bash", "-ic", "sh deploy.sh -c cert-manager");
+        TestUtils.executeLocalCommand(120, new File(jolokiaFolder), "/bin/bash", "-lc", "sh deploy.sh -c cert-manager");
         TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
         Pod jolokiaApiServerPod = kubeClient.getFirstPodByPrefixName(JOLOKIA_API_DEFAULT_NAMESPACE, JOLOKIA_API_DEFAULT_NAMESPACE);
+        // BUG pod is null?!
         kubeClient.waitUntilPodIsReady(JOLOKIA_API_DEFAULT_NAMESPACE, jolokiaApiServerPod);
 
         LOGGER.info("[{}] Deploying AMQ Artemis Self-provisioning Plugin", SPP_DEFAULT_NAMESPACE);
-        TestUtils.executeLocalCommand(120, new File(sppFolder), "/bin/bash", "-ic", "sh deploy-plugin.sh");
+        TestUtils.executeLocalCommand(120, new File(sppFolder), "/bin/bash", "-lc", "sh deploy-plugin.sh");
         TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
         Pod sppPod = kubeClient.getFirstPodByPrefixName(SPP_DEFAULT_NAMESPACE, SPP_DEFAULT_NAMESPACE);
         kubeClient.waitUntilPodIsReady(JOLOKIA_API_DEFAULT_NAMESPACE, sppPod);
@@ -69,9 +70,9 @@ public class AMQSelfProvisioningPlugin extends ACSelfProvisioningPlugin implemen
 
     public void undeploy() {
         LOGGER.info("[{}] Undeploying AMQ Artemis Self-provisioning Plugin", SPP_DEFAULT_NAMESPACE);
-        TestUtils.executeLocalCommand(20, new File(sppFolder), "/bin/bash", "-ic", "sh undeploy-plugin.sh");
+        TestUtils.executeLocalCommand(20, new File(sppFolder), "/bin/bash", "-lc", "sh undeploy-plugin.sh");
         LOGGER.info("[{}] Undeploying AMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
-        TestUtils.executeLocalCommand(20, new File(jolokiaFolder), "/bin/bash", "-ic", "sh undeploy.sh");
+        TestUtils.executeLocalCommand(20, new File(jolokiaFolder), "/bin/bash", "-lc", "sh undeploy.sh -c cert-manager");
 
         kubeClient.deleteNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
         kubeClient.deleteNamespace(SPP_DEFAULT_NAMESPACE);

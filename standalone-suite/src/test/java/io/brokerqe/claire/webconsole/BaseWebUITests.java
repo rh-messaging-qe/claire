@@ -136,7 +136,7 @@ public class BaseWebUITests extends AbstractSystemTests {
                 String.valueOf(ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT));
         String command = String.format("curl -H \"Origin:http://localhost:%d\" -u %s:%s '%s/%s'", ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT,
                 ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, jolokiaUrlCommand, parameters);
-        artemis.executeCommand("sh", "-ic", command);
+        artemis.executeCommand("sh", "-lc", command);
     }
 
     protected String getJolokiaUrlCommand(Page artemisPage, String operationText) {

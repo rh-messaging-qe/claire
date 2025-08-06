@@ -85,15 +85,23 @@ public class WebconsoleCommon {
 
     public static Page setMenu(Page artemisPage, ArtemisMenu artemisMenu) {
         switch (artemisMenu) {
-            case Artemis -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Artemis").setExact(true)).click(clicker);
-            case ArtemisJMX -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Artemis JMX")).click(clicker);
-            case JMX -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("JMX").setExact(true)).click(clicker);
-            case Runtime -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Runtime")).click(clicker);
-            case Pods -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Pods")).click(clicker);
-            case Addresses -> artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Addresses")).click(clicker);
+            case Artemis -> clickAddressTabLink(artemisPage, "Artemis");
+            case ArtemisJMX -> clickAddressTabLink(artemisPage, "Artemis JMX");
+            case JMX -> clickAddressTabLink(artemisPage, "JMX");
+            case Runtime -> clickAddressTabLink(artemisPage, "Runtime");
+            case Pods -> clickAddressTabLink(artemisPage, "Pods");
+            case Addresses -> clickAddressTabLink(artemisPage, "Addresses");
         }
         TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
         return artemisPage;
+    }
+
+    private static void clickAddressTabLink(Page artemisPage, String tabLinkName) {
+        try {
+            artemisPage.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName(tabLinkName).setExact(true)).click(clicker);
+        } catch (TimeoutError e) {
+            artemisPage.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName(tabLinkName).setExact(true)).click(clicker);
+        }
     }
 
     public static void checkVersions(Page artemisPage) {
