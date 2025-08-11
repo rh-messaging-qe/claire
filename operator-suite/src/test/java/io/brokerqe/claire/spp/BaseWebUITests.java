@@ -93,7 +93,6 @@ public class BaseWebUITests extends AbstractSystemTests {
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
         page.waitForLoadState();
         LOGGER.info("Logged in!");
-        TestUtils.threadSleep(Constants.DURATION_30_SECONDS);
     }
 
     void makeScreenshot(String testName) {
