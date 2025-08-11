@@ -172,7 +172,13 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         navigateWorkloadBrokers(page);
         page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Brokers")).click(clicker);
         page.waitForLoadState();
-        String emptyMessage = page.locator("[data-test='empty-box']").textContent();
+        String emptyMessage;
+        try {
+            page.waitForSelector("[data-test='empty-box']", new Page.WaitForSelectorOptions().setTimeout(5000));
+            emptyMessage = page.locator("[data-test='empty-box']").textContent();
+        } catch (TimeoutError e) {
+            emptyMessage = page.locator("[data-test='empty-message']").textContent();
+        }
         assertEquals("Not found", emptyMessage);
     }
 

@@ -44,17 +44,13 @@ public class BaseWebUITests extends AbstractSystemTests {
     @BeforeAll
     static void launchBrowser() {
         playwright = Playwright.create();
-        if (true) { // local-execution
-            BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
-            if (ResourceManager.getEnvironment().isPlaywrightDebug()) {
-                options = new BrowserType.LaunchOptions()
-                        .setHeadless(false)
-                        .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
-            }
-            browser = playwright.chromium().launch(options);
-        } else { // exec in CI
-            browser = playwright.chromium().connect("ws://127.0.0.1:3000/");
+        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
+        if (ResourceManager.getEnvironment().isPlaywrightDebug()) {
+            options = new BrowserType.LaunchOptions()
+                    .setHeadless(false)
+                    .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
         }
+        browser = playwright.chromium().launch(options);
     }
 
     @AfterAll
@@ -97,6 +93,7 @@ public class BaseWebUITests extends AbstractSystemTests {
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
         page.waitForLoadState();
         LOGGER.info("Logged in!");
+        TestUtils.threadSleep(Constants.DURATION_30_SECONDS);
     }
 
     void makeScreenshot(String testName) {
