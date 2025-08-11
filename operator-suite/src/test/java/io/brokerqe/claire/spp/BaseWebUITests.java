@@ -72,6 +72,7 @@ public class BaseWebUITests extends AbstractSystemTests {
         }
         context = browser.newContext(contextOptions);
         page = context.newPage();
+        page.setViewportSize(1920, 1080);
         loginToOcp(dashboardsUrl, kubeCredentials[0], kubeCredentials[1]);
         page.waitForLoadState();
         TestUtils.threadSleep(Constants.DURATION_5_SECONDS);

@@ -9,7 +9,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.junit.UsePlaywright;
 import com.microsoft.playwright.options.AriaRole;
-import com.microsoft.playwright.options.WaitForSelectorState;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
@@ -85,13 +84,14 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
     void navigateWorkloadBrokers(Page page, String brokerName) {
         LOGGER.info("[{}] Navigate to Workloads/Brokers screen", testNamespace);
         Locator navToggle = page.locator("#nav-toggle");
-        if (!navToggle.isVisible()) {
+        Locator pageSidebar = page.locator("#page-sidebar");
+
+        if (!pageSidebar.isVisible()) {
             LOGGER.debug("Click nav-menu as it is not visible");
             navToggle.click(clicker);
         }
 
         Locator workloadsMenuButton = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Workloads"));
-        workloadsMenuButton.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(60000));
         workloadsMenuButton.click();
 
         Locator menuContentLoc = workloadsMenuButton.locator("..").getByRole(AriaRole.LIST);
