@@ -188,7 +188,8 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         }
 
         try {
-            TestUtils.waitFor("broker-operator ClusterServiceVersion to be 'Succeeded'", Constants.DURATION_5_SECONDS, Constants.DURATION_5_MINUTES, () -> {
+            LOGGER.warn("[{}] [OLM] Going to wait for 10 minutes for deployment of OLM Operator", deploymentNamespace);
+            TestUtils.waitFor("broker-operator ClusterServiceVersion to be 'Succeeded'", Constants.DURATION_30_SECONDS, Constants.DURATION_10_MINUTES, () -> {
                     ClusterServiceVersion brokerCSV = kubeClient.getClusterServiceVersion(deploymentNamespace, amqBrokerOperatorName);
                     if (brokerCSV == null) return false;
                     LOGGER.debug("[{}] Checking for status phase of {}", deploymentNamespace, brokerCSV.getMetadata().getName());

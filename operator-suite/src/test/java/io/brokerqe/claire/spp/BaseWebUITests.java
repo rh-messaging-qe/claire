@@ -17,7 +17,6 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.ResourceManager;
-import io.brokerqe.claire.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 @UsePlaywright
 public class BaseWebUITests extends AbstractSystemTests {
@@ -38,16 +38,28 @@ public class BaseWebUITests extends AbstractSystemTests {
     static Locator.ClickOptions clicker;
     static Locator.FillOptions filler;
 
-    String dashboardsUrl = getClient().getKubernetesClient().getMasterUrl().getHost().replace("api", "https://console-openshift-console.apps") + "/auth/login";
+    String loginUrl = getClient().getKubernetesClient().getMasterUrl().getHost().replace("api", "https://console-openshift-console.apps") + "/auth/login";
+    String dashboardsUrl = getClient().getKubernetesClient().getMasterUrl().getHost().replace("api", "https://console-openshift-console.apps") + "/dashboards";
     String[] kubeCredentials = ResourceManager.getEnvironment().getKubeCredentials();
+    String customUserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.3";
+    String firefoxUserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0";
 
     @BeforeAll
     static void launchBrowser() {
         playwright = Playwright.create();
-        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
+        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
+                .setHeadless(false);
         if (ResourceManager.getEnvironment().isPlaywrightDebug()) {
             options = new BrowserType.LaunchOptions()
-                    .setHeadless(false)
+                    .setHeadless(true)
+                    .setArgs(Arrays.asList(
+                            "--no-sandbox",
+                            "--disable-dev-shm-usage",
+                            "--disable-gpu",
+                            "--disable-blink-features=AutomationControlled",
+                            "--window-size=1920,1080"
+                    ))
+                    .setSlowMo(100)
                     .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
         }
         browser = playwright.chromium().launch(options);
@@ -63,19 +75,19 @@ public class BaseWebUITests extends AbstractSystemTests {
         String[] credentials = ResourceManager.getEnvironment().getKubeCredentials();
         Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
                 .setHttpCredentials(credentials[0], credentials[1])
-                .setIgnoreHTTPSErrors(true);
+                .setUserAgent(firefoxUserAgent)
+                .setViewportSize(1920, 1080)
+                .setIgnoreHTTPSErrors(true)
+                .setJavaScriptEnabled(true);
 
-        // TODO: enable video if needed
         if (Environment.get().isPlaywrightDebug()) {
             LOGGER.warn("[TEST] Storing web ui testing video into {}", Environment.get().getLogsDirLocation() + "/playwright-videos/");
             contextOptions.setRecordVideoDir(Paths.get(Environment.get().getLogsDirLocation() + "/playwright-videos/"));
         }
         context = browser.newContext(contextOptions);
         page = context.newPage();
-        page.setViewportSize(1920, 1080);
-        loginToOcp(dashboardsUrl, kubeCredentials[0], kubeCredentials[1]);
+        loginToOcp(loginUrl, kubeCredentials[0], kubeCredentials[1]);
         page.waitForLoadState();
-        TestUtils.threadSleep(Constants.DURATION_5_SECONDS);
     }
 
     @AfterEach
@@ -86,14 +98,21 @@ public class BaseWebUITests extends AbstractSystemTests {
     void loginToOcp(String dashboardsUrl, String username, String password) {
         LOGGER.info("Logging into {}", dashboardsUrl);
         page.navigate(dashboardsUrl);
-        TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
         page.waitForLoadState();
         page.getByText("htpasswd").click(clicker);
         page.getByText("Username").fill(username);
         page.getByText("Password").fill(password);
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Log in")).click();
-        page.waitForLoadState();
-        LOGGER.info("Logged in!");
+
+        LOGGER.info("Logged in! Waiting for dashboards to load");
+        page.waitForURL("**/dashboards**", new Page.WaitForURLOptions().setTimeout(30000));
+
+        // Double-check login success
+        String currentUrl = page.url();
+        if (currentUrl.contains("/auth/error")) {
+            throw new RuntimeException("Login failed: " + currentUrl);
+        }
+        LOGGER.info("Logged in! Current URL: {}", currentUrl);
     }
 
     void makeScreenshot(String testName) {

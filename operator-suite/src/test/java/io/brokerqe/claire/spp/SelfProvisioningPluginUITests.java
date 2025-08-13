@@ -9,6 +9,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.junit.UsePlaywright;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import io.amq.broker.v1beta1.ActiveMQArtemis;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
@@ -83,6 +84,13 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
 
     void navigateWorkloadBrokers(Page page, String brokerName) {
         LOGGER.info("[{}] Navigate to Workloads/Brokers screen", testNamespace);
+
+        page.waitForSelector("#nav-toggle", new Page.WaitForSelectorOptions()
+                .setState(WaitForSelectorState.VISIBLE)
+                .setTimeout(60000));
+
+        page.waitForSelector("*", new Page.WaitForSelectorOptions().setTimeout(60000));
+
         Locator navToggle = page.locator("#nav-toggle");
         Locator pageSidebar = page.locator("#page-sidebar");
 
