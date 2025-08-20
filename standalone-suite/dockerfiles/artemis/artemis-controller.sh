@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-
+echo "$(ls -l /var/lib/artemis-instance/)"
 PID_FILE="/var/lib/artemis-instance/artemis.pid"
 LOG_FILE="/var/lib/artemis-instance/artemis-controller.log"
 

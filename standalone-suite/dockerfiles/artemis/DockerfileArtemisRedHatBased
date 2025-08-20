@@ -20,6 +20,7 @@ ENV ARTEMIS_GROUP_GID=${artemis_group_gid}
 ENV ARTEMIS_USER_HOME=${artemis_user_home}
 ENV ARTEMIS_INSTALL_HOME=${artemis_install_home}
 ENV ARTEMIS_INSTANCE_HOME=${artemis_instance_home}
+ENV DISPLAY=:99
 
 EXPOSE \
   # JMX Exporter
@@ -47,6 +48,8 @@ RUN yum --assumeyes upgrade \
  && /usr/local/bin/install-packages.sh "${BASE_IMAGE}" \
  && yum --assumeyes clean all \
  && rm -rf /usr/local/bin/install-pulp-repo.sh /usr/local/bin/install-packages.sh /tmp/pulp-repository-*.repo /etc/yum.repos.d/pulp-repository-*.repo
+
+RUN npm install -g playwright@latest
 
 COPY openjdk-java-*.tar.xz oracle-java-*.tar.gz /tmp
 COPY install-java-versions.sh /usr/local/bin/

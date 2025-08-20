@@ -348,6 +348,9 @@
                         <include>**/*IT.java</include>
                         <include>**/*ITCase.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <it.test>${it.test}</it.test>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>

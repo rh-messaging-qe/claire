@@ -16,6 +16,7 @@ import com.github.dockerjava.api.model.ContainerNetwork;
 import com.github.dockerjava.api.model.Volume;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.CommandResult;
 import io.brokerqe.claire.EnvironmentStandalone;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
@@ -276,6 +277,11 @@ public abstract class AbstractGenericContainer {
         TestUtils.deleteFile(Paths.get(dstTarFile));
     }
 
+    public void copyWithinContainer(String containerSrcDir, String containerDestDir) {
+        LOGGER.debug("[{}] [container] Copying directory {} to directory {}", name, containerSrcDir, containerDestDir);
+        executeCommand("cp", "-r", containerSrcDir, containerDestDir);
+    }
+
     public void withPullPolicy(ImagePullPolicy pullPolicy) {
         LOGGER.debug("[{}] Setting pull policy as {}", name, pullPolicy.getClass().getSimpleName());
         container.withImagePullPolicy(pullPolicy);
@@ -296,7 +302,7 @@ public abstract class AbstractGenericContainer {
         }
     }
 
-    public Object executeCommand(String... command) {
+    public CommandResult executeCommand(String... command) {
         // you might need to use "sh", "-c", <your-cmd>
         return getExecutor().executeCommand(command);
     }

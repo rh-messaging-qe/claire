@@ -3,12 +3,12 @@
 set -e
 BASE_IMAGE="$1"
 
-COMMON_PACKAGES=(libaio nfs-utils sudo xz)
+COMMON_PACKAGES=(libaio nodejs nfs-utils sudo xz libicu harfbuzz-icu libjpeg-turbo libwebp enchant2 libsecret)
 FEDORA_PACKAGES=("${COMMON_PACKAGES[@]}" procps-ng)
-UBI7_PACKAGES=("${COMMON_PACKAGES[@]}" sysvinit-tools)
-UBI8_PACKAGES=("${FEDORA_PACKAGES[@]}")
-UBI9_PACKAGES=("${FEDORA_PACKAGES[@]}")
-UBI10_PACKAGES=("${FEDORA_PACKAGES[@]}")
+UBI7_PACKAGES=("${COMMON_PACKAGES[@]}" xorg-x11-server-Xvfb sysvinit-tools)
+UBI8_PACKAGES=("${FEDORA_PACKAGES[@]}" xorg-x11-server-Xvfb)
+UBI9_PACKAGES=("${FEDORA_PACKAGES[@]}" xorg-x11-server-Xvfb)
+UBI10_PACKAGES=("${COMMON_PACKAGES[@]}" procps-ng)
 
 echo "############################"
 echo -e "[${BASE_IMAGE}]\nrunning install-packages.sh"
@@ -22,6 +22,7 @@ case ${BASE_IMAGE} in
         dnf install --assumeyes "${FEDORA_PACKAGES[@]}"
         ;;
     *ubi7:*)
+        curl -sL rpm.nodesource.com/setup_4.x | bash -
         yum install --assumeyes "${UBI7_PACKAGES[@]}"
         ;;
     *ubi8:*)

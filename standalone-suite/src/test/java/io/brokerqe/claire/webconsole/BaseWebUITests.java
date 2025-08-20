@@ -15,6 +15,7 @@ import com.microsoft.playwright.TimeoutError;
 import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
+import io.brokerqe.claire.CommandResult;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.EnvironmentStandalone;
 import io.brokerqe.claire.ResourceManager;
@@ -58,10 +59,11 @@ public class BaseWebUITests extends AbstractSystemTests {
 
     static void launchBrowser() {
         playwright = Playwright.create();
-        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
+        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
+                .setHeadless(true);
         if (ResourceManager.getEnvironment().isPlaywrightDebug()) {
             options = new BrowserType.LaunchOptions()
-                    .setHeadless(false)
+                    .setHeadless(true)
                     .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
         }
         browser = playwright.chromium().launch(options);
@@ -136,7 +138,8 @@ public class BaseWebUITests extends AbstractSystemTests {
                 String.valueOf(ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT));
         String command = String.format("curl -H \"Origin:http://localhost:%d\" -u %s:%s '%s/%s'", ArtemisConstants.DEFAULT_WEB_CONSOLE_PORT,
                 ArtemisConstants.ADMIN_NAME, ArtemisConstants.ADMIN_PASS, jolokiaUrlCommand, parameters);
-        artemis.executeCommand("sh", "-lc", command);
+        CommandResult cr = artemis.executeCommand("sh", "-lc", command);
+        LOGGER.debug("ECODE={}\nSTD={}\nSTE={}", cr.exitCode, cr.stdout, cr.stderr);
     }
 
     protected String getJolokiaUrlCommand(Page artemisPage, String operationText) {

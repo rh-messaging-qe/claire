@@ -46,9 +46,12 @@ public class StandaloneTestDataCollector extends TestDataCollector {
                 String containersDir =  archiveDir + Constants.FILE_SEPARATOR + CONTAINERS_STRING;
                 String containerDir = containersDir + Constants.FILE_SEPARATOR + name;
                 String dstDir = containerDir + Constants.FILE_SEPARATOR + ArtemisConstants.INSTANCE_STRING;
+                String srcTmpDir = "/tmp" + Constants.FILE_SEPARATOR + name;
                 String srcDir = ArtemisContainer.ARTEMIS_INSTANCE_DIR;
                 try {
-                    container.copyDirFrom(srcDir, dstDir);
+                    LOGGER.debug("[{}] Copy artemis folder to tmp folder and tar it, so no writes are performed during tar action.", name);
+                    container.copyWithinContainer(ArtemisContainer.ARTEMIS_INSTANCE_DIR, srcTmpDir);
+                    container.copyDirFrom(srcTmpDir, dstDir);
                 } catch (ClaireRuntimeException e) {
                     String errMsg = String.format("Error on copying directory %s from container %s to %s: %s",
                             srcDir, container.getName(), dstDir, e.getMessage());

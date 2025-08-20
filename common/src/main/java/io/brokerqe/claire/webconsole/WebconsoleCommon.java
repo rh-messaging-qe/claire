@@ -5,6 +5,7 @@
 package io.brokerqe.claire.webconsole;
 
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Mouse;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.TimeoutError;
@@ -259,7 +260,7 @@ public class WebconsoleCommon {
         artemisPage.locator("#address-name").fill(address);
         artemisPage.locator("#ANYCAST").click(clicker);
         artemisPage.getByLabel("Create Address Address Name").getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Create Address")).click(clicker);
-        TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
+        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
         artemisPage.getByText("Close").click(clicker);
         TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
     }
@@ -273,7 +274,7 @@ public class WebconsoleCommon {
         artemisPage.locator("#queue-name").fill(queue);
         artemisPage.locator("#ANYCAST").click(clicker);
         artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Create Queue")).click(clicker);
-        TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
+        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
         artemisPage.getByText("Close").click(clicker);
         TestUtils.threadSleep(Constants.DURATION_500_MILLISECONDS);
     }
@@ -386,13 +387,12 @@ public class WebconsoleCommon {
 //        artemisPage.locator("div").filter(new Locator.FilterOptions().setHasText(objectFilterPattern)).click(clicker);
             // click on ObjectFilter nth(0) - default ID was removed in 7.13.1
         artemisPage.locator("div.pf-m-search-filter > button.pf-v5-c-menu-toggle").nth(0).click(clicker);
-
         // Filter by Name
         artemisPage.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(predicateFilterName)).click(clicker);
-        artemisPage.mouse().move(0, 0); // move to corner because tooltip might obstruct clicking
+        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
+        moveMouseToCorner(artemisPage);
 
         // Filter by operation
-        TestUtils.threadSleep(Constants.DURATION_1_SECOND);
         try {
             Pattern operationFilterPattern = Pattern.compile("^Equals$|^Contains$|^Does Not Contain$|^Greater Than$|^Less Than$");
             artemisPage.locator("div").filter(new Locator.FilterOptions().setHasText(operationFilterPattern)).click(clicker);
@@ -402,18 +402,22 @@ public class WebconsoleCommon {
         }
         TestUtils.threadSleep(Constants.DURATION_1_SECOND);
         artemisPage.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(operationName)).click(clicker);
+        moveMouseToCorner(artemisPage);
 
         artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions()).fill(objectName);
         artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search")).click(clicker);
 
         // sorting
         if (sortBy != null) {
+            LOGGER.info("Sorting by {}", sortBy);
             artemisPage.getByLabel("Options menu").click(clicker);
             artemisPage.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName(sortBy)).click(clicker); // sort by QueueCount
             artemisPage.getByRole(AriaRole.MENUITEM, new Page.GetByRoleOptions().setName("Ascending")).click(clicker); // sort by QueueCount
             artemisPage.getByLabel("Options menu").click(clicker);
+            moveMouseToCorner(artemisPage);
         }
         TestUtils.threadSleep(Constants.DURATION_2_SECONDS);
+        moveMouseToCorner(artemisPage);
     }
 
     public static void sendMessageQueue(Page artemisPage, String queueName, String msgContent, int count) {
@@ -446,6 +450,11 @@ public class WebconsoleCommon {
 
     public static List<Map<String, String>> browseMessages(Page page, String queueName) {
         return browseMessages(page, queueName, null, null, null);
+    }
+
+    public static void moveMouseToCorner(Page artemisPage) {
+        artemisPage.mouse().move(10, 10); // move to corner because tooltip popup might obstruct clicking
+        artemisPage.mouse().click(0, 0, new Mouse.ClickOptions().setClickCount(2));
     }
 
     public static List<Map<String, String>> browseMessages(Page artemisPage, String queueName, String expMsgContent, Map<String, String> expHeaders, Map<String, String> expProperties) {
