@@ -5,6 +5,7 @@
 package io.brokerqe.claire.operator;
 
 import io.brokerqe.claire.ArtemisConstants;
+import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.KubeClient;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
@@ -113,6 +114,21 @@ public class ArtemisCloudClusterOperatorFile extends ArtemisCloudClusterOperator
                 throw new RuntimeException(e);
             }
         });
+
+        if (kubeClient.isAwseksPlatform()) {
+            String pullSecretFile = ResourceManager.getEnvironment().getKubePullSecret();
+            LOGGER.info("[{}] Deploy pull-secret from file {}", deploymentNamespace, pullSecretFile);
+            kubeClient.createSecretFromFile(deploymentNamespace, Constants.AMQ_BROKER_QE_PULL_SECRET, pullSecretFile);
+
+            LOGGER.info("[{}] Patch ServiceAccounts {}, {} to use pull-secret.", deploymentNamespace, "default", getOperatorName());
+            kubeClient.patchServiceAccountWithPullSecret(deploymentNamespace, "default", Constants.AMQ_BROKER_QE_PULL_SECRET);
+            kubeClient.patchServiceAccountWithPullSecret(deploymentNamespace, getOperatorName(), Constants.AMQ_BROKER_QE_PULL_SECRET);
+
+            // delete any deployed operator pods
+            Pod wrongPod = kubeClient.getFirstPodByPrefixName(deploymentNamespace, getOperatorName());
+            LOGGER.info("[{}] Deleting pod {} deployed before SA & Pull Secret updates", deploymentNamespace, wrongPod.getMetadata().getName());
+            kubeClient.deletePod(deploymentNamespace, wrongPod, true);
+        }
 
         if (waitForDeployment) {
             waitForCoDeployment();

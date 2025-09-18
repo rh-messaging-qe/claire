@@ -15,6 +15,7 @@ public interface Constants {
 
     String CPU = "cpu";
     String MEMORY = "memory";
+    String AMQ_BROKER_QE_PULL_SECRET = "amq-broker-qe-pull-secret";
 
     // Test tags
     String TAG_JAAS = "jaas";
@@ -39,6 +40,7 @@ public interface Constants {
     String EV_OLM_CHANNEL = "OLM_CHANNEL";
     String EV_OLM_RELEASED = "OLM";
     String EV_OLM_LTS = "OLM_LTS";
+    String EV_KUBE_PULL_SECRET = "KUBE_PULL_SECRET";
     String EV_OPERATOR_IMAGE = "OPERATOR_IMAGE";
     String EV_BROKER_IMAGE = "BROKER_IMAGE";
     String EV_BROKER_INIT_IMAGE = "BROKER_INIT_IMAGE";

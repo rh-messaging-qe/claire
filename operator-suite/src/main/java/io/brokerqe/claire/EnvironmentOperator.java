@@ -33,6 +33,7 @@ public class EnvironmentOperator extends Environment {
     private final boolean olmInstallation;
     private final String artemisOperatorName;
     private final String artemisOperatorType;
+    private final String kubePullSecret;
     private List<String> kubeContexts;
     private String kubeCredentials;
     private String artemisVersion;
@@ -89,6 +90,7 @@ public class EnvironmentOperator extends Environment {
         olmReleased = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_OLM_RELEASED, "false"));
         olmLts = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_OLM_LTS, "false"));
         olmInstallation = olmReleased || olmChannel != null && olmIndexImageBundle != null || testUpgradePlan != null || testUpgradePackageManifest != null;
+        kubePullSecret =  System.getenv().getOrDefault(Constants.EV_KUBE_PULL_SECRET, null);
 
         brokerImage = System.getenv(Constants.EV_BROKER_IMAGE);
         brokerInitImage = System.getenv(Constants.EV_BROKER_INIT_IMAGE);
@@ -151,7 +153,9 @@ public class EnvironmentOperator extends Environment {
         if (olmChannel != null) {
             envVarsSB.append(Constants.EV_OLM_CHANNEL).append("=").append(olmChannel).append(Constants.LINE_SEPARATOR);
         }
-
+        if (kubePullSecret != null) {
+            envVarsSB.append(Constants.EV_KUBE_PULL_SECRET).append("=").append(kubePullSecret).append(Constants.LINE_SEPARATOR);
+        }
         if (brokerImage != null) {
             envVarsSB.append(Constants.EV_BROKER_IMAGE).append("=").append(brokerImage).append(Constants.LINE_SEPARATOR);
         }
@@ -418,6 +422,9 @@ public class EnvironmentOperator extends Environment {
     }
     public boolean isOlmLts() {
         return olmLts;
+    }
+    public String getKubePullSecret() {
+        return kubePullSecret;
     }
     public void setupDatabase() {
         throw new ClaireNotImplementedException("Databases on Operator are not yet supported!");

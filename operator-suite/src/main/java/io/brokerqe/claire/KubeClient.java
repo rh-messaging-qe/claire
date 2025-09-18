@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
@@ -19,6 +20,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -118,6 +121,10 @@ public class KubeClient {
             tmpClient.close();
             tmpClient = new KubernetesClientBuilder().withConfig(config).build().adapt(KubernetesClient.class);
         }
+
+        if (tmpClient.getMasterUrl().getHost().contains("eks.amazonaws.com")) {
+            tmpPlatform = KubernetesPlatform.AWS_EKS;
+        }
         client = tmpClient;
         platform = tmpPlatform;
         kubernetesVersion = getKubernetesVersion(client);
@@ -153,6 +160,10 @@ public class KubeClient {
 
     public boolean isMicroshiftPlatform() {
         return this.platform == KubernetesPlatform.MICROSHIFT;
+    }
+
+    public boolean isAwseksPlatform() {
+        return this.platform == KubernetesPlatform.AWS_EKS;
     }
 
     public KubernetesPlatform getKubernetesPlatform(KubeClient client) {
@@ -527,6 +538,21 @@ public class KubeClient {
                 ).collect(Collectors.toList());
     }
 
+
+    public ServiceAccount patchServiceAccountWithPullSecret(String namespace, String serviceAccountName, String secretName) {
+        ServiceAccount sa = client.serviceAccounts()
+                .inNamespace(namespace)
+                .withName(serviceAccountName)
+                .edit(serviceAccount -> new ServiceAccountBuilder(serviceAccount)
+                        .addToImagePullSecrets(
+                                new LocalObjectReferenceBuilder()
+                                        .withName(secretName)
+                                        .build()
+                        )
+                .build());
+        return sa;
+    }
+
     // =====================================
     // ----------> INGRESS/ROUTE <----------
     // =====================================
@@ -899,6 +925,19 @@ public class KubeClient {
             waitForSecretCreation(namespaceName, secretName);
         }
         DataStorer.dumpResourceToFile(secret);
+        return secret;
+    }
+
+    public Secret createSecretFromFile(String namespaceName, String secretName, String secretFilePath) {
+        String fileContent = TestUtils.getFileContentAsBase64(secretFilePath);
+        Secret secret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                .endMetadata()
+                .withType("kubernetes.io/dockerconfigjson")
+                .withData(Map.of(".dockerconfigjson", fileContent))
+                .build();
+        client.secrets().inNamespace(namespaceName).create(secret);
         return secret;
     }
 
