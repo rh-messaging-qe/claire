@@ -375,7 +375,13 @@ public class WebconsoleCommon {
     }
 
     public static void filterClear(Page artemisPage) {
-        artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Reset")).click(clicker);
+        try {
+            artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Reset")).click(clicker);
+        } catch (TimeoutError e) {
+            // 7.13.2+
+            LOGGER.info("filter \"x\" button removed. Clear text instead");
+            artemisPage.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions()).fill("");
+        }
         artemisPage.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search")).click(clicker);
         TestUtils.threadSleep(Constants.DURATION_1_SECOND);
     }

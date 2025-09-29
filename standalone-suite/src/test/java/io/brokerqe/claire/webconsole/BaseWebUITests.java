@@ -63,7 +63,7 @@ public class BaseWebUITests extends AbstractSystemTests {
                 .setHeadless(true);
         if (ResourceManager.getEnvironment().isPlaywrightDebug()) {
             options = new BrowserType.LaunchOptions()
-                    .setHeadless(true)
+                    .setHeadless(false)
                     .setDownloadsPath(Paths.get(ResourceManager.getEnvironment().getTmpDirLocation()));
         }
         browser = playwright.chromium().launch(options);
