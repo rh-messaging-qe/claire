@@ -5,6 +5,7 @@
 package io.brokerqe.claire.upgrade;
 
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.client.deployment.ArtemisConfigData;
 import io.brokerqe.claire.client.deployment.ArtemisDeployment;
 import io.brokerqe.claire.clients.bundled.ArtemisCommand;
@@ -64,6 +65,7 @@ public abstract class HAUpgradeTests extends UpgradeTests {
                 upgradePrimary = performUpgradeProcedure(upgradePrimary, installDir, true);
                 assertVersionLogs(upgradePrimary, version, artemisVersion);
 
+                TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
                 upgradeBackup.ensureBrokerIsBackup();
                 upgradePrimary.ensureBrokerIsActive();
             }
