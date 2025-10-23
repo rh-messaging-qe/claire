@@ -1402,6 +1402,7 @@
     }
   ],
   "defaultDefaultClientScopes": [
+    "basic",
     "role_list",
     "profile",
     "email",
