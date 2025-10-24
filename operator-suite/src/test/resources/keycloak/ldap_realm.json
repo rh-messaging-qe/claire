@@ -744,7 +744,8 @@
         "web-origins",
         "profile",
         "roles",
-        "email"
+        "email",
+        "basic"
       ],
       "optionalClientScopes": [
         "address",
@@ -782,7 +783,8 @@
         "acr",
         "profile",
         "roles",
-        "email"
+        "email",
+        "basic"
       ],
       "optionalClientScopes": [
         "address",
