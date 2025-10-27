@@ -20,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -73,7 +75,15 @@ public abstract class ArtemisCloudClusterOperator {
 
     abstract public void setOperatorRetryPeriodDuration(int durationInSeconds, boolean waitReadiness);
 
+    public void refreshDeploymentData() {
+        waitForCoDeployment(true);
+    }
+
     public void waitForCoDeployment() {
+        waitForCoDeployment(false);
+    }
+
+    public void waitForCoDeployment(boolean isRefreshOnly) {
         // operator pod/deployment name activemq-artemis-controller-manager vs amq-broker-controller-manager
         TestUtils.waitFor("deployment to be active", Constants.DURATION_5_SECONDS, Constants.DURATION_3_MINUTES,
                 () -> kubeClient.getDeployment(deploymentNamespace, getOperatorNewName()) != null ||
@@ -86,7 +96,9 @@ public abstract class ArtemisCloudClusterOperator {
         } else {
             this.operatorName = getOperatorNewName();
         }
-        kubeClient.getKubernetesClient().resource(deployment).waitUntilReady(3, TimeUnit.MINUTES);
+        if (!isRefreshOnly) {
+            kubeClient.getKubernetesClient().resource(deployment).waitUntilReady(3, TimeUnit.MINUTES);
+        }
     }
 
     public void waitForCoUndeployment() {
@@ -174,6 +186,28 @@ public abstract class ArtemisCloudClusterOperator {
                 .withName(operatorName);
         podResource.waitUntilCondition(readyCondition, maxTimeout, TimeUnit.MILLISECONDS);
         return podResource.isReady();
+    }
+
+    protected void patchKubernetesPullSecretServiceAccount() {
+        Map<String, String> labels = new HashMap<>();
+        labels.put("control-plane", "controller-manager");
+        labels.put("rht.subcomp", "broker-amq-operator");
+        TestUtils.waitFor("operator pod to shows up", Constants.DURATION_5_SECONDS, Constants.DURATION_1_MINUTE,
+                () -> kubeClient.getPodByLabels(deploymentNamespace, labels) != null
+        );
+        refreshDeploymentData();
+        String pullSecretFile = ResourceManager.getEnvironment().getKubePullSecret();
+        LOGGER.info("[{}][EKS] Deploy pull-secret from file {}", deploymentNamespace, pullSecretFile);
+        kubeClient.createSecretFromFile(deploymentNamespace, Constants.AMQ_BROKER_QE_PULL_SECRET, pullSecretFile);
+
+        LOGGER.info("[{}][EKS] Patch ServiceAccounts {}, {} to use pull-secret.", deploymentNamespace, "default", getOperatorName());
+        kubeClient.patchServiceAccountWithPullSecret(deploymentNamespace, "default", Constants.AMQ_BROKER_QE_PULL_SECRET);
+        kubeClient.patchServiceAccountWithPullSecret(deploymentNamespace, getOperatorName(), Constants.AMQ_BROKER_QE_PULL_SECRET);
+
+        // delete any deployed operator pods
+        Pod wrongPod = kubeClient.getFirstPodByPrefixName(deploymentNamespace, getOperatorName());
+        LOGGER.info("[{}][EKS] Deleting pod {} deployed before SA & Pull Secret updates", deploymentNamespace, wrongPod.getMetadata().getName());
+        kubeClient.deletePod(deploymentNamespace, wrongPod, true);
     }
 
 }

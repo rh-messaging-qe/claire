@@ -18,11 +18,13 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageChannel;
 import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifest;
+import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifestList;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionList;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionConfig;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionConfigBuilder;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +46,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         // use this as default released installation using OLM
         super(deploymentNamespace, isNamespaced, watchedNamespaces);
         this.brokerCatalogSourceName = "redhat-operators";
-        this.sourceNamespace = "openshift-marketplace";
+        this.sourceNamespace = kubeClient.isOpenshiftPlatform() ? "openshift-marketplace" : "olm";
         getPackageManifestChannel(isOlmLts);
     }
 
@@ -52,6 +54,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         super(deploymentNamespace, isNamespaced, watchedNamespaces);
         this.indexImageBundle = indexImageBundle;
         this.olmChannel = olmChannel;
+        this.sourceNamespace = kubeClient.isOpenshiftPlatform() ? "openshift-marketplace" : "olm";
     }
 
     public static String getAmqOperatorName() {
@@ -88,9 +91,11 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         String olmCSV;
         PackageChannel nonLtsChannel;
         PackageChannel ltsChannel;
+        PackageManifest amqBrokerPM = kubeClient.getKubernetesClient().resources(PackageManifest.class, PackageManifestList.class)
+            .inNamespace(sourceNamespace)
+            .withName(getAmqOperatorName())
+            .get();
 
-        PackageManifest amqBrokerPM = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub()
-                .packageManifests().inNamespace(sourceNamespace).withName(getAmqOperatorName()).get();
         if (!amqBrokerPM.getStatus().getCatalogSource().equals(brokerCatalogSourceName)) {
             LOGGER.error("[{}] Found unexpected CatalogSource for `amq-broker-rhel{8|9}` {}!", deploymentNamespace, amqBrokerPM.getStatus().getCatalogSource());
             throw new ClaireRuntimeException("Discovered unexpected CatalogSource " + amqBrokerPM.getStatus().getCatalogSource() + "!");
@@ -99,14 +104,14 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         List<String> channels = amqBrokerPM.getStatus().getChannels().stream().map(PackageChannel::getName).toList();
         List<String> orderedChannels = channels.stream().map(ModuleDescriptor.Version::parse).sorted().map(ModuleDescriptor.Version::toString).toList();
         List<String> reverseOrderedChannels = new ArrayList<>(orderedChannels);
-        Collections.reverse(reverseOrderedChannels);
+        Collections.reverse(reverseOrderedChannels); // [7.13.x, 7.12.x, 7.11.x]
 
         nonLtsChannel = amqBrokerPM.getStatus().getChannels().stream()
                 .filter(e -> e.getName().equals(reverseOrderedChannels.get(0)))
                 .findFirst()
                 .orElseThrow();
         ltsChannel = amqBrokerPM.getStatus().getChannels().stream()
-                .filter(e -> e.getName().equals(reverseOrderedChannels.get(1)))
+                .filter(e -> e.getName().equals(orderedChannels.get(0)))
                 .findFirst()
                 .orElseThrow();
 
@@ -127,11 +132,11 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
             kind: CatalogSource
             metadata:
               name: %s
-              namespace: openshift-marketplace
+              namespace: %s
             spec:
               sourceType: grpc
               image: %s
-            """, brokerCatalogSourceName, indexImageBundle);
+            """, brokerCatalogSourceName, sourceNamespace, indexImageBundle);
 
         LOGGER.info("[OLM] Creating CatalogSource");
         deployOlmResource(catalogSource);
@@ -153,14 +158,17 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
               installPlanApproval: Automatic
               name: %s
               source: %s
-              sourceNamespace: openshift-marketplace
-            """, subscriptionName, deploymentNamespace, olmChannel, getAmqOperatorName(olmChannel), brokerCatalogSourceName);
+              sourceNamespace: %s
+            """, subscriptionName, deploymentNamespace, olmChannel, getAmqOperatorName(olmChannel), brokerCatalogSourceName, sourceNamespace);
 
         LOGGER.info("[OLM] Creating Subscription");
         deployOlmResource(subscriptionString);
 
         TestUtils.waitFor("subscription to be active", Constants.DURATION_10_SECONDS, Constants.DURATION_5_MINUTES, () -> {
-            List<Subscription> subs = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).list().getItems();
+            List<Subscription> subs = kubeClient.getKubernetesClient().resources(Subscription.class, SubscriptionList.class)
+                .inNamespace(deploymentNamespace)
+                .list()
+                .getItems();
             return subs != null && !subs.isEmpty();
         });
 
@@ -188,6 +196,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         }
 
         try {
+            patchKubernetesPullSecretServiceAccount();
             LOGGER.warn("[{}] [OLM] Going to wait for 10 minutes for deployment of OLM Operator", deploymentNamespace);
             TestUtils.waitFor("broker-operator ClusterServiceVersion to be 'Succeeded'", Constants.DURATION_30_SECONDS, Constants.DURATION_10_MINUTES, () -> {
                     ClusterServiceVersion brokerCSV = kubeClient.getClusterServiceVersion(deploymentNamespace, amqBrokerOperatorName);
@@ -225,7 +234,8 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     public void updateSubscriptionEnvVar(String name, String value, boolean checkReadiness) {
-        Subscription subscription = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).withName(subscriptionName).get();
+        Subscription subscription = kubeClient.getKubernetesClient().resources(Subscription.class, SubscriptionList.class)
+                .inNamespace(deploymentNamespace).withName(subscriptionName).get();
         SubscriptionConfig subscriptionConfig = subscription.getSpec().getConfig();
         if (subscriptionConfig == null) {
             // Create new SubscriptionConfig
@@ -254,7 +264,7 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         }
         Pod operatorPod = kubeClient.getFirstPodByPrefixName(getDeploymentNamespace(), getOperatorName());
         subscription.getSpec().setConfig(subscriptionConfig);
-        ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().resource(subscription).createOrReplace();
+        kubeClient.getKubernetesClient().resources(Subscription.class, SubscriptionList.class).resource(subscription).createOrReplace();
         kubeClient.waitForPodReload(getDeploymentNamespace(), operatorPod, getOperatorName(), checkReadiness);
     }
 
@@ -284,7 +294,10 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     public void deleteClusterServiceVersion() {
-        List<ClusterServiceVersion> clusterServiceVersions = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().clusterServiceVersions().inNamespace(deploymentNamespace).list().getItems();
+        List<ClusterServiceVersion> clusterServiceVersions = kubeClient.getKubernetesClient().resources(ClusterServiceVersion.class, ClusterServiceVersionList.class)
+                .inNamespace(deploymentNamespace)
+                .list()
+                .getItems();
         for (ClusterServiceVersion csv : clusterServiceVersions) {
             LOGGER.info("[{}] [OLM] Deleting ClusterServiceVersion {}", deploymentNamespace, csv.getMetadata().getName());
             kubeClient.getKubernetesClient().resource(csv).inNamespace(deploymentNamespace).delete();
@@ -292,7 +305,8 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
     }
 
     public void deleteSubscription(String name) {
-        List<Subscription> subs = ((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().subscriptions().inNamespace(deploymentNamespace).list().getItems();
+        List<Subscription> subs = kubeClient.getKubernetesClient().resources(Subscription.class, SubscriptionList.class)
+                .inNamespace(deploymentNamespace).list().getItems();
         for (Subscription subscription: subs) {
             if (subscription.getMetadata().getName().equals(name)) {
                 kubeClient.getKubernetesClient().resource(subscription).inNamespace(deploymentNamespace).delete();

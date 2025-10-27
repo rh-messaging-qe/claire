@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -47,8 +48,11 @@ import io.fabric8.openshift.api.model.RouteTargetReferenceBuilder;
 import io.fabric8.openshift.api.model.TLSConfigBuilder;
 import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageChannel;
 import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifest;
+import io.fabric8.openshift.api.model.operatorhub.packages.v1.PackageManifestList;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
+import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupList;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,7 +155,7 @@ public class KubeClient {
     }
 
     public boolean isKubernetesPlatform() {
-        return this.platform == KubernetesPlatform.KUBERNETES;
+        return this.platform == KubernetesPlatform.KUBERNETES || this.platform == KubernetesPlatform.AWS_EKS;
     }
 
     public boolean isOpenshiftPlatform() {
@@ -295,8 +299,13 @@ public class KubeClient {
         return client.pods().inNamespace(namespaceName).withName(name).get();
     }
 
-    public Pod getPod(String name) {
-        return getPod(namespace, name);
+    public List<Pod> getPodByLabels(String namespace, Map<String, String> labels) {
+        PodList pods = getKubernetesClient()
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(labels)
+                .list();
+        return pods.getItems();
     }
 
     public void deletePod(String namespace, Pod pod) {
@@ -538,6 +547,9 @@ public class KubeClient {
                 ).collect(Collectors.toList());
     }
 
+    public ServiceAccount getServiceAccount(String namespace, String serviceAccountName) {
+        return client.serviceAccounts().inNamespace(namespace).withName(serviceAccountName).get();
+    }
 
     public ServiceAccount patchServiceAccountWithPullSecret(String namespace, String serviceAccountName, String secretName) {
         ServiceAccount sa = client.serviceAccounts()
@@ -608,7 +620,11 @@ public class KubeClient {
     }
 
     public List<OperatorGroup> getOperatorGroups(String namespaceName) {
-        return ((OpenShiftClient) client).operatorHub().operatorGroups().inNamespace(namespaceName).list().getItems();
+        List<OperatorGroup> operatorGroups = client.resources(OperatorGroup.class, OperatorGroupList.class)
+                .inNamespace(namespaceName)
+                .list()
+                .getItems();
+        return operatorGroups;
     }
 
     public HasMetadata createOperatorGroup(String namespaceName, String name) {
@@ -654,8 +670,8 @@ public class KubeClient {
         }
         try {
             LOGGER.info("Getting package manifest {} from namespace {}", packageName, namespace);
-            return ((OpenShiftClient) client).operatorHub().packageManifests().inNamespace(namespace)
-                    .list().getItems().stream().filter(e -> e.getMetadata().getName().equals(packageName)).toList();
+            return getKubernetesClient().resources(PackageManifest.class, PackageManifestList.class)
+                    .inNamespace(namespace).list().getItems().stream().filter(e -> e.getMetadata().getName().equals(packageName)).toList();
         } catch (NoSuchElementException e) {
             LOGGER.error("Package manifest {} not found in namespace {}", packageName, namespace);
             throw e;
@@ -685,7 +701,10 @@ public class KubeClient {
     }
 
     public List<ClusterServiceVersion> getClusterServiceVersions(String namespaceName) {
-        return ((OpenShiftClient) client).operatorHub().clusterServiceVersions().inNamespace(namespaceName).list().getItems();
+        return getKubernetesClient().resources(ClusterServiceVersion.class, ClusterServiceVersionList.class)
+                .inNamespace(namespaceName)
+                .list()
+                .getItems();
     }
     public ClusterServiceVersion getClusterServiceVersion(String namespaceName, String operatorNamePrefix) {
         List<ClusterServiceVersion> csvList = new ArrayList<>();

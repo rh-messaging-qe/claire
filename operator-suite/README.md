@@ -42,7 +42,7 @@ If you would want to try your own OLM operator, you would need to specify only f
 | BROKER_IMAGE              | Broker image url                                                    | not set                   | \<image registry url\>                                                    |
 | BROKER_INIT_IMAGE         | Broker init image url                                               | not set                   | \<image registry url\>                                                    |
 | BUNDLE_IMAGE              | Bundle image url                                                    | not set                   | \<image registry url\>                                                    |
-| OLM                       | Whether to install latest available Operator                        | false                     | `true`, `false`                                                           |
+| OLM_RELEASED              | Whether to install latest available Operator                        | false                     | `true`, `false`                                                           |
 | OLM_LTS                   | Whether to install lts or latest available operator (tied to `OLM`) | false                     | `true`, `false`                                                           |
 | OLM_IIB                   | OLM Index Image Bundle to use                                       | not set                   | \<iib image registry url\>                                                |
 | OLM_CHANNEL               | OLM channel to use with Subscription                                | not set                   | \<channel\>                                                               |

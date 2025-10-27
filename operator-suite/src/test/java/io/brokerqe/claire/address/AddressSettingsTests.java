@@ -203,6 +203,7 @@ public class AddressSettingsTests extends AbstractSystemTests {
                 .endDeploymentPlan()
                 .editOrNewConsole()
                     .withExpose(true)
+//                    .withIngressHost("console.test-eks2.clusters.amq-broker.xyz")
                 .endConsole()
                 .editOrNewAddressSettings()
                     .addToAddressSetting(settings)

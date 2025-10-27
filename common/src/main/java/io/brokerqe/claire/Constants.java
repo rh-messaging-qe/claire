@@ -38,7 +38,7 @@ public interface Constants {
     String EV_TEST_LOG_LEVEL = "TEST_LOG_LEVEL";
     String EV_OLM_IIB = "OLM_IIB";
     String EV_OLM_CHANNEL = "OLM_CHANNEL";
-    String EV_OLM_RELEASED = "OLM";
+    String EV_OLM_RELEASED = "OLM_RELEASED";
     String EV_OLM_LTS = "OLM_LTS";
     String EV_KUBE_PULL_SECRET = "KUBE_PULL_SECRET";
     String EV_OPERATOR_IMAGE = "OPERATOR_IMAGE";

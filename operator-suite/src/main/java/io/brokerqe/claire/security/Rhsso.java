@@ -11,7 +11,8 @@ import io.brokerqe.claire.TestUtils;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +104,8 @@ public class Rhsso extends Keycloak {
         keycloakResources.add(operatorRhsso);
 
         LOGGER.info("[{}] Deployed Subscription for {} with ClusterServiceVersion {}", namespace, rhbkOperatorName, keycloakVersion);
-        keycloakResources.add(((OpenShiftClient) kubeClient.getKubernetesClient()).operatorHub().clusterServiceVersions().inNamespace(namespace).withName(keycloakVersion).get());
+        keycloakResources.add(kubeClient.getKubernetesClient().resources(ClusterServiceVersion.class, ClusterServiceVersionList.class)
+                .inNamespace(namespace).withName(keycloakVersion).get());
     }
 
 }
