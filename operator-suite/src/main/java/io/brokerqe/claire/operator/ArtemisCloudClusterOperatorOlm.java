@@ -6,7 +6,6 @@ package io.brokerqe.claire.operator;
 
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
-import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
