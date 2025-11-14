@@ -6,6 +6,7 @@ package io.brokerqe.claire.operator;
 
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
@@ -196,7 +197,9 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
         }
 
         try {
-            patchKubernetesPullSecretServiceAccount();
+            if (kubeClient.isAwseksPlatform()) {
+                patchKubernetesPullSecretServiceAccount();
+            }
             LOGGER.warn("[{}] [OLM] Going to wait for 10 minutes for deployment of OLM Operator", deploymentNamespace);
             TestUtils.waitFor("broker-operator ClusterServiceVersion to be 'Succeeded'", Constants.DURATION_30_SECONDS, Constants.DURATION_10_MINUTES, () -> {
                     ClusterServiceVersion brokerCSV = kubeClient.getClusterServiceVersion(deploymentNamespace, amqBrokerOperatorName);
