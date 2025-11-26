@@ -1116,9 +1116,9 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .endMetadata()
                 .editOrNewSpec()
                 .addNewResourceTemplate()
-                    .withNewResourcetemplatesSelector()
+                    .withNewSelector()
                         .withKind("Service")
-                    .endResourcetemplatesSelector()
+                    .endSelector()
                     .addToAnnotations(annotationKey, annotationValue)
                 .endResourceTemplate()
                     .editOrNewDeploymentPlan()
@@ -1145,9 +1145,9 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .endMetadata()
                 .editOrNewSpec()
                     .addNewResourceTemplate()
-                        .withNewResourcetemplatesSelector()
+                        .withNewSelector()
                             .withKind("Service")
-                        .endResourcetemplatesSelector()
+                        .endSelector()
                         .withNewPatch()
                             .addToAdditionalProperties(Map.of(
                                 "kind", "Service",

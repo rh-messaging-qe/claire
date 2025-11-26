@@ -206,7 +206,7 @@ public abstract class TLSAuthorizationTests extends AbstractSystemTests {
                             .withMatch(tlsAddress.getAddressName())
                             .withPermissions(secPerms)
                             .build())
-                    .endV1beta1SecuritySettings()
+                    .endSecuritySettings()
                 .endSpec()
                 .build();
 

@@ -133,9 +133,9 @@ public class JdbcSingleDbTests extends AbstractSystemTests {
                         "HAPolicyConfiguration=SHARED_STORE_PRIMARY"
                 ))
                 .addNewResourceTemplate()
-                    .withNewResourcetemplatesSelector()
+                    .withNewSelector()
                     .withKind("StatefulSet")
-                    .endResourcetemplatesSelector()
+                    .endSelector()
                     .editOrNewPatch()
                         .withAdditionalProperties(Map.of(
                                 "kind", "StatefulSet",

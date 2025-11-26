@@ -10,6 +10,11 @@ import io.amq.broker.v1beta1.ActiveMQArtemisAddressBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisBuilder;
 import io.amq.broker.v1beta1.ActiveMQArtemisScaledown;
 import io.amq.broker.v1beta1.ActiveMQArtemisSecurity;
+import io.amq.broker.v1beta1.activemqartemisspec.Acceptors;
+import io.amq.broker.v1beta1.activemqartemisspec.ResourceTemplates;
+import io.amq.broker.v1beta1.activemqartemisspec.ResourceTemplatesBuilder;
+import io.amq.broker.v1beta1.activemqartemisspec.deploymentplan.PodSecurityContext;
+import io.amq.broker.v1beta1.activemqartemisspec.deploymentplan.PodSecurityContextBuilder;
 import io.amq.broker.v1beta1.activemqartemisstatus.Conditions;
 import io.brokerqe.claire.clients.BundledClientDeployment;
 import io.brokerqe.claire.clients.CliCppDeployment;
@@ -316,12 +321,91 @@ public class ResourceManager {
     }
 
     public static ActiveMQArtemis createArtemis(String namespace, ActiveMQArtemis artemisBroker, boolean waitForDeployment, long maxTimeout) {
+        if (kubeClient.isAwseksPlatform()) {
+            artemisBroker = setupEKSDeployment(artemisBroker, namespace);
+        }
+
         artemisBroker = ResourceManager.getArtemisClient().inNamespace(namespace).resource(artemisBroker).createOrReplace();
         LOGGER.info("Created ActiveMQArtemis {} in namespace {}", artemisBroker, namespace);
         if (waitForDeployment) {
             waitForBrokerDeployment(namespace, artemisBroker, false, null, maxTimeout);
         }
         ResourceManager.addArtemisBroker(artemisBroker);
+        return artemisBroker;
+    }
+
+    protected static ActiveMQArtemis setupEKSDeployment(ActiveMQArtemis artemisBroker, String namespace) {
+        LOGGER.info("[{}][EKS] Updating deployment to meet EKS needs", namespace);
+        LOGGER.debug("[EKS] Adding explicit fsGroup & runAsUser");
+        PodSecurityContext podSecurityContext = new PodSecurityContextBuilder().withFsGroup(185L).withRunAsUser(185L).build();
+        artemisBroker.getSpec().getDeploymentPlan().setPodSecurityContext(podSecurityContext);
+
+        // create load balancer if exposed console URI
+        if (artemisBroker.getSpec().getConsole() != null && artemisBroker.getSpec().getConsole().getExpose() != null && artemisBroker.getSpec().getConsole().getExpose()) {
+            LOGGER.debug("[EKS] Creating ResourceTemplate for exposing web-console URI via LoadBalancer");
+            String eksClusterName = getKubeClient().getKubernetesClient().nodes()
+                    .list()
+                    .getItems()
+                    .stream()
+                    .flatMap(node -> node.getMetadata().getLabels().entrySet().stream())
+                    .filter(e -> e.getKey().contains("cluster-name"))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElse(null);
+
+            String brokerName = artemisBroker.getMetadata().getName();
+            String annotationExternalDnsKey = "external-dns.alpha.kubernetes.io/hostname";
+            String fqrn = brokerName + "." + namespace + "." + eksClusterName + ".clusters.amq-broker.xyz";
+            ResourceTemplates serviceResourceTemplates = new ResourceTemplatesBuilder()
+                    .withNewSelector()
+                    .withKind("Service")
+                    .withName(brokerName + "-wconsj-0-svc")
+                    .endSelector()
+                    .withNewPatch()
+                    .addToAdditionalProperties(Map.of(
+                            "kind", "Service",
+                            // "spec", Map.of("type", "LoadBalancer") // used for Service exposure with port
+                            "spec", Map.of("type", "ClusterIP") // used for Ingress (no port)
+                    ))
+                    .endPatch()
+                    .addToAnnotations(Map.of(
+                            annotationExternalDnsKey, fqrn
+                            // annotations for Service need to use port in final url
+                            // "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled", "true",
+                            // "service.beta.kubernetes.io/aws-load-balancer-internal", "false",
+                            // "service.beta.kubernetes.io/aws-load-balancer-type", "nlb"
+                    ))
+                    .build();
+
+            ResourceTemplates ingressResourceTemplates = new ResourceTemplatesBuilder()
+                    .withNewSelector()
+                    .withKind("Ingress")
+                    .withName(brokerName + "-wconsj-0-svc-ing")
+                    .endSelector()
+                    .withNewPatch()
+                    .addToAdditionalProperties(Map.of(
+                            "kind", "Ingress"
+                    ))
+                    .endPatch()
+                    .addToAnnotations(Map.of(
+                            annotationExternalDnsKey, fqrn,
+                            "alb.ingress.kubernetes.io/scheme", "internet-facing",
+                            "alb.ingress.kubernetes.io/target-type", "ip",
+                            "kubernetes.io/ingress.class",  "alb"
+                    ))
+                    .build();
+            artemisBroker.getSpec().setResourceTemplates(List.of(serviceResourceTemplates, ingressResourceTemplates));
+            artemisBroker.getSpec().getConsole().setIngressHost(fqrn);
+        }
+
+        if (artemisBroker.getSpec().getAcceptors() != null) {
+            for (Acceptors acceptors : artemisBroker.getSpec().getAcceptors()) {
+                if (acceptors.getExpose()) {
+                    throw new ClaireNotImplementedException("TODO mtoth: need to merge this asap due to braking changes");
+                }
+            }
+            LOGGER.debug("[EKS] Creating ResourceTemplate for exposing acceptor via LoadBalancer");
+        }
         return artemisBroker;
     }
 

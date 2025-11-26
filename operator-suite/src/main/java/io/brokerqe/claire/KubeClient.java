@@ -780,6 +780,7 @@ public class KubeClient {
     }
 
     public Route getRouteByName(String namespaceName, String routeName) {
+        // TODO! What if kubernetes?
         Route route = null;
         LOGGER.debug("[{}] Searching for route with {}", namespaceName, routeName);
         try {

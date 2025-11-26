@@ -101,9 +101,9 @@ public class BrokerCustomLibraryTests extends AbstractSystemTests {
                         "storeConfiguration.jdbcConnectionUrl=" + postgres.getJdbcUrl()
                 ))
                 .addNewResourceTemplate()
-                    .withNewResourcetemplatesSelector()
+                    .withNewSelector()
                         .withKind("StatefulSet")
-                    .endResourcetemplatesSelector()
+                    .endSelector()
                     .editOrNewPatch()
                         .withAdditionalProperties(Map.of(
                                 "kind", "StatefulSet",

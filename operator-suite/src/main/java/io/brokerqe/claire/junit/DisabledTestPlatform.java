@@ -58,6 +58,15 @@ public @interface DisabledTestPlatform {
             Collection<KubeClient> kubeClients = ResourceManager.getEnvironment().getKubeClients().values();
 
             for (KubeClient kubeClient : kubeClients) {
+                if (kubeClient.isAwseksPlatform()) {
+                    if (disabledPlatformNames.contains(KubernetesPlatform.AWS_EKS.toString())) {
+                        LOGGER.trace("isAwseksPlatform: {}, DisabledTestPlatforms: {}", kubeClient.isKubernetesPlatform(), disabledPlatformNames);
+                        LOGGER.info("[TEST][{}] Skipped: Test/class can't be executed on AWS_EKS based on DisabledTestPlatform criteria.", testName);
+                        return ConditionEvaluationResult.disabled("[TEST] Skipped: Unsupported on platform: " + kubeClient.getKubernetesPlatform());
+                    } else {
+                        return ConditionEvaluationResult.enabled("[TEST] Enabled: Supported on platform: " + kubeClient.getKubernetesPlatform());
+                    }
+                }
                 if (kubeClient.isKubernetesPlatform() && disabledPlatformNames.contains(KubernetesPlatform.KUBERNETES.toString())) {
                     LOGGER.trace("isKubernetesPlatform: {}, DisabledTestPlatforms: {}", kubeClient.isKubernetesPlatform(), disabledPlatformNames);
                     LOGGER.info("[TEST][{}] Skipped: Test/class can't be executed on kubernetes based on DisabledTestPlatform criteria.", testName);

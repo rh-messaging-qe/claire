@@ -381,7 +381,8 @@ public class SmokeTests extends AbstractSystemTests {
         HasMetadata webserviceUrl = getClient().getExternalAccessServicePrefixName(testNamespace,
                 brokerName + "-" + ArtemisConstants.WEBCONSOLE_URI_PREFIX).get(0);
         String serviceUrl = "http://" + getClient().getExternalAccessServiceUrl(testNamespace, webserviceUrl.getMetadata().getName());
-        waitConsoleReady(serviceUrl, Constants.DURATION_1_SECOND, Constants.DURATION_10_SECONDS);
+        // DNS propagation in EKS/Kubernetes is too slow. But 5 minutes should be enough
+        waitConsoleReady(serviceUrl, Constants.DURATION_1_SECOND, Constants.DURATION_10_MINUTES);
 
         if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_40.getVersionNumber()) {
             String url = serviceUrl + "/redhat-branding/plugin/amq-broker-version";

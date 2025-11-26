@@ -182,6 +182,7 @@ public class JMXHelper {
     }
     public AddressData getAddressQueue(String deployName, String addressName, String queueName, String routingType, int pod)  {
         try {
+            // get route || ingress
             Route route = getRoute(deployName, pod);
             String host = route.getSpec().getHost();
             AddressData ar = new AddressData();
