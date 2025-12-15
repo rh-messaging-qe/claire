@@ -40,11 +40,13 @@ public class DefaultNamespaceTests extends AbstractSystemTests {
 
     @BeforeAll
     void setupClusterOperator() {
+        getClient().deleteOLMResources(testNamespace);
         operator = ResourceManager.deployArtemisClusterOperator(testNamespace);
     }
 
     @AfterAll
     void teardownClusterOperator() {
+        getClient().deleteOLMResources(testNamespace);
         ResourceManager.undeployArtemisClusterOperator(operator);
     }
 

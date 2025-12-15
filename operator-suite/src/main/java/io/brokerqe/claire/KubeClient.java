@@ -53,6 +53,8 @@ import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupList;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionList;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -722,6 +724,52 @@ public class KubeClient {
             LOGGER.debug("[{}] CSVs found: {}", namespaceName, String.join(" ", csvNames));
             return csvList.get(0);
         }
+    }
+
+    public void deleteOLMResources(String namespace) {
+        deleteAllClusterServiceVersions(namespace);
+        deleteAllSubscriptions(namespace);
+        deleteAllOperatorGroups(namespace);
+    }
+
+    public void deleteAllClusterServiceVersions(String namespace) {
+        List<ClusterServiceVersion> csvs = getClusterServiceVersions(namespace);
+        if (!csvs.isEmpty()) {
+            LOGGER.warn("[{}] Found unexpected CSVs, deleting them!", namespace);
+            csvs.forEach(csv -> {
+                LOGGER.warn("[{}] Deleting CSV {}", namespace, csv.getMetadata().getName());
+                getKubernetesClient().resource(csv).delete();
+            });
+        }
+    }
+
+    public void deleteAllOperatorGroups(String namespace) {
+        List<OperatorGroup> operatorGroups = getOperatorGroups(namespace);
+        if (!operatorGroups.isEmpty()) {
+            LOGGER.warn("[{}] Found unexpected OperatorGroups, deleting them!", namespace);
+            operatorGroups.forEach(operatorGroup -> {
+                LOGGER.warn("[{}] Deleting OperatorGroup {}", namespace, operatorGroup.getMetadata().getName());
+                getKubernetesClient().resource(operatorGroup).delete();
+            });
+        }
+    }
+
+    public void deleteAllSubscriptions(String namespace) {
+        List<Subscription> subscriptions = getSubscriptions(namespace);
+        if (!subscriptions.isEmpty()) {
+            LOGGER.warn("[{}] Found unexpected Subscriptions, deleting them!", namespace);
+            subscriptions.forEach(subscription -> {
+                LOGGER.warn("[{}] Deleting Subscription {}", namespace, subscription.getMetadata().getName());
+                getKubernetesClient().resource(subscription).delete();
+            });
+        }
+    }
+
+    public List<Subscription> getSubscriptions(String namespace) {
+        return getKubernetesClient().resources(Subscription.class, SubscriptionList.class)
+            .inNamespace(namespace)
+            .list()
+            .getItems();
     }
 
     public String getPlatformIngressDomainUrl(String namespace) {
