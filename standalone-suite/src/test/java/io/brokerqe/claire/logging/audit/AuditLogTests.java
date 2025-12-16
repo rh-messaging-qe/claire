@@ -99,8 +99,8 @@ public class AuditLogTests extends AbstractSystemTests {
         bobFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, queue);
         bobFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_FAIL_PRODUCE_PATTERN, ArtemisConstants.BOB_NAME, ArtemisConstants.ROLE_RECEIVERS, ArtemisConstants.BOB_NAME, queue, address);
         adminFormattedAuth = String.format(ArtemisConstants.LOG_AUDIT_AUTHENTICATION_SUCC_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN);
-        adminFormattedAddressCore = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN_CORE, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
-        adminFormattedAddressAmqp = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN_AMQP, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
+        adminFormattedAddressCore = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address);
+        adminFormattedAddressAmqp = String.format(ArtemisConstants.LOG_AUDIT_CREATE_ADDRESS_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address);
         adminFormattedQueue = String.format(ArtemisConstants.LOG_AUDIT_CREATE_QUEUE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue, address);
         adminFormattedSent = String.format(ArtemisConstants.LOG_AUDIT_SENT_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, address, queue);
         adminFormattedRecv = String.format(ArtemisConstants.LOG_AUDIT_RECEIVED_MESSAGE_PATTERN, ArtemisConstants.ADMIN_NAME, ArtemisConstants.ROLE_ADMIN, queue);
