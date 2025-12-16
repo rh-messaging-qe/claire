@@ -93,10 +93,16 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
 
         Locator navToggle = page.locator("#nav-toggle");
         Locator pageSidebar = page.locator("#page-sidebar");
+        Locator guidedTourModal = page.locator("header[data-test='close-guided-tour']");
 
         if (!pageSidebar.isVisible()) {
             LOGGER.debug("Click nav-menu as it is not visible");
             navToggle.click(clicker);
+        }
+
+        if (guidedTourModal != null && guidedTourModal.isVisible()) {
+            LOGGER.debug("Click Skip Tour if needed");
+            page.locator("button[data-test='tour-step-footer-secondary']").click(clicker);
         }
 
         Locator workloadsMenuButton = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Workloads"));
