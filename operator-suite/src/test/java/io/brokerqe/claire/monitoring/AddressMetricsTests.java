@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-@DisabledTestPlatform(platforms = { KubernetesPlatform.MICROSHIFT })
+@DisabledTestPlatform(platforms = { KubernetesPlatform.MICROSHIFT, KubernetesPlatform.AWS_EKS })
 public class AddressMetricsTests extends PrometheusTests {
 
     static final Logger LOGGER = LoggerFactory.getLogger(AddressMetricsTests.class);

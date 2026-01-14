@@ -38,7 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-@DisabledTestPlatform(platforms = { KubernetesPlatform.MICROSHIFT })
+@DisabledTestPlatform(platforms = { KubernetesPlatform.MICROSHIFT, KubernetesPlatform.AWS_EKS })
 public class PrometheusTests extends AbstractSystemTests {
     static final Logger LOGGER = LoggerFactory.getLogger(PrometheusTests.class);
     final static String PROMETHEUS_POD_NAME = "prometheus-user-workload-0";

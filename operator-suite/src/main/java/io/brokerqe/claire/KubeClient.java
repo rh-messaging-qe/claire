@@ -794,13 +794,17 @@ public class KubeClient {
             for (Ingress ingress : ingresses) {
                 externalUrls.add(ingress.getSpec().getRules().get(0).getHost());
             }
+            List<Service> loadBalancerServices = getLoadBalancerIngressByPrefixName(namespaceName, externalAccessPrefixName);
+            for (Service loadBalancer : loadBalancerServices) {
+                externalUrls.add(loadBalancer.getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+            }
         } else {
             List<Route> routes = getRouteByPrefixName(namespaceName, externalAccessPrefixName);
             for (Route route : routes) {
                 externalUrls.add(route.getSpec().getHost());
             }
         }
-        LOGGER.debug("[{}] Found externalServiceUrl (ingress/route) {}", namespaceName, externalUrls);
+        LOGGER.debug("[{}] Found externalServiceUrl (ingress/route/loadbalancer) {}", namespaceName, externalUrls);
         return externalUrls;
     }
 
@@ -825,6 +829,30 @@ public class KubeClient {
             LOGGER.debug("[{}] Calling for Ingress resource on different platform {}", namespace, e.getMessage());
         }
         return ingresses;
+    }
+
+    public List<Service> getLoadBalancerIngressByPrefixName(String namespaceName, String lbingressPrefixName) {
+        List<Service> lbIngresses = new ArrayList<>();
+        LOGGER.debug("[{}] Searching for ingresses with {}*", namespaceName, lbingressPrefixName);
+        try {
+            List<Service> services = getServicesInNamespace(namespaceName);
+            for (Service service : services) {
+                if (service.getSpec().getType().equals("LoadBalancer")) {
+                    // Get LoadBalancerIngress
+                    if (service.getMetadata().getName().startsWith(lbingressPrefixName)) {
+                        if (!service.getStatus().getLoadBalancer().getIngress().isEmpty()) {
+                            lbIngresses.add(service);
+                        } else {
+                            LOGGER.warn("[{}] LoadBalancer {} has no exposed hostname!", namespaceName, lbingressPrefixName);
+                        }
+                    }
+                }
+            }
+        } catch (KubernetesClientException e) {
+            LOGGER.debug("[{}] Calling for Ingress resource on different platform {}", namespace, e.getMessage());
+        }
+        return lbIngresses;
+
     }
 
     public Route getRouteByName(String namespaceName, String routeName) {

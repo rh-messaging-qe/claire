@@ -337,7 +337,22 @@ public class ResourceManager {
     protected static ActiveMQArtemis setupEKSDeployment(ActiveMQArtemis artemisBroker, String namespace) {
         LOGGER.info("[{}][EKS] Updating deployment to meet EKS needs", namespace);
         LOGGER.debug("[EKS] Adding explicit fsGroup & runAsUser");
+
+        List<ResourceTemplates> resourceTemplates = new ArrayList<>();
+        if (artemisBroker.getSpec().getResourceTemplates() != null) {
+            resourceTemplates = artemisBroker.getSpec().getResourceTemplates();
+        }
+
         PodSecurityContext podSecurityContext = new PodSecurityContextBuilder().withFsGroup(185L).withRunAsUser(185L).build();
+        if (artemisBroker.getSpec().getDeploymentPlan() == null) {
+            artemisBroker = new ActiveMQArtemisBuilder(artemisBroker)
+                .editOrNewSpec()
+                    .editOrNewDeploymentPlan()
+                        .withSize(1)
+                        .withPodSecurityContext(podSecurityContext)
+                    .endDeploymentPlan()
+                    .endSpec().build();
+        }
         artemisBroker.getSpec().getDeploymentPlan().setPodSecurityContext(podSecurityContext);
 
         // create load balancer if exposed console URI
@@ -394,18 +409,56 @@ public class ResourceManager {
                             "kubernetes.io/ingress.class",  "alb"
                     ))
                     .build();
-            artemisBroker.getSpec().setResourceTemplates(List.of(serviceResourceTemplates, ingressResourceTemplates));
+//            artemisBroker.getSpec().setResourceTemplates(List.of(serviceResourceTemplates, ingressResourceTemplates));
+            resourceTemplates.add(serviceResourceTemplates);
+            resourceTemplates.add(ingressResourceTemplates);
             artemisBroker.getSpec().getConsole().setIngressHost(fqrn);
         }
 
         if (artemisBroker.getSpec().getAcceptors() != null) {
+            String brokerName = artemisBroker.getMetadata().getName();
+            List<Acceptors> noExposeAcceptors = new ArrayList<>();
+
             for (Acceptors acceptors : artemisBroker.getSpec().getAcceptors()) {
                 if (acceptors.getExpose()) {
-                    throw new ClaireNotImplementedException("TODO mtoth: need to merge this asap due to braking changes");
+                    for (int podCount = 0; podCount < artemisBroker.getSpec().getDeploymentPlan().getSize(); podCount++) {
+                        ResourceTemplates acceptorResourceTemplates = new ResourceTemplatesBuilder()
+                                .withNewSelector()
+                                .withKind("Service")
+                                .withName(brokerName + "-" + acceptors.getName() + "-" + podCount + "-svc")
+                                .endSelector()
+                                .withNewPatch()
+                                .addToAdditionalProperties(Map.of(
+                                        "kind", "Service",
+                                        "spec", Map.of(
+                                                "type", "LoadBalancer",
+                                                "ports", List.of(
+                                                        Map.of(
+                                                                "name", acceptors.getName(),
+                                                                "port", acceptors.getPort(),
+                                                                "targetPort", acceptors.getPort()
+                                                        )
+                                                )
+                                        )
+                                ))
+                                .endPatch()
+                                .addToAnnotations(Map.of(
+                                        "service.beta.kubernetes.io/aws-load-balancer-type", "nlb",
+                                        "service.beta.kubernetes.io/aws-load-balancer-scheme", "internet-facing",
+                                        "service.beta.kubernetes.io/aws-load-balancer-internal", "false"
+
+                                ))
+                                .build();
+                        resourceTemplates.add(acceptorResourceTemplates);
+                    }
                 }
+                acceptors.setExpose(false);
+                noExposeAcceptors.add(acceptors);
             }
+            artemisBroker.getSpec().setAcceptors(noExposeAcceptors);
             LOGGER.debug("[EKS] Creating ResourceTemplate for exposing acceptor via LoadBalancer");
         }
+        artemisBroker.getSpec().setResourceTemplates(resourceTemplates);
         return artemisBroker;
     }
 

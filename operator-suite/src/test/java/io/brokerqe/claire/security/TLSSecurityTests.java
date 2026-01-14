@@ -50,7 +50,6 @@ public class TLSSecurityTests extends AbstractSystemTests {
                  issuerRef:
                    name: selfsigned-issuer
                    kind: ClusterIssuer
-                                
                 """;
     private static final String KEYSTORE_PW_TEMPLATE = """
                 kind: Secret
@@ -116,7 +115,7 @@ public class TLSSecurityTests extends AbstractSystemTests {
                    name: root-ca-issuer
                    kind: ClusterIssuer
                 """;
-    private static final   String SELF_SIGNED_ISSUER = """
+    private static final String SELF_SIGNED_ISSUER = """
                                      apiVersion: cert-manager.io/v1
                                      kind: ClusterIssuer
                                      metadata:

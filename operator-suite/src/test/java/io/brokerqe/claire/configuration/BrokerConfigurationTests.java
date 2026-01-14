@@ -16,6 +16,7 @@ import io.brokerqe.claire.AbstractSystemTests;
 import io.brokerqe.claire.ArtemisConstants;
 import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
+import io.brokerqe.claire.KubernetesPlatform;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.clients.ClientType;
@@ -25,6 +26,7 @@ import io.brokerqe.claire.helpers.JMXHelper;
 import io.brokerqe.claire.helpers.AddressData;
 import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddressBuilder;
+import io.brokerqe.claire.junit.DisabledTestPlatform;
 import io.brokerqe.claire.junit.TestValidSince;
 import io.brokerqe.claire.operator.ArtemisFileProvider;
 
@@ -41,6 +43,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.openshift.api.model.Route;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
@@ -60,6 +63,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -375,18 +379,39 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     // Expects list of unique per-route postfixes.
     private void verifyRoutes(String brokerName, List<String> expectedPostfixes, Integer expectedCount) {
-        List<Route> routes = getClient().getRouteByPrefixName(testNamespace, brokerName);
-        assertThat("Amount of Routes is different from expected", routes.size(), equalTo(expectedCount));
-        Integer countMatched = 0;
-        for (Route route: routes) {
-            String host = route.getSpec().getHost();
-            for (String postfix: expectedPostfixes) {
+        int routesOrIngressSize = 0;
+        int countMatched = 0;
+        if (getClient().isKubernetesPlatform()) {
+            List<Service> services = getClient().getServicesInNamespace(testNamespace);
+            for (Service service : services) {
+                if (service.getMetadata().getName().contains("acceptor")) {
+                    // Get LoadBalancerIngress
+                    if (!service.getStatus().getLoadBalancer().getIngress().isEmpty()) {
+                        countMatched++;
+                        routesOrIngressSize++;
+                    }
+                }
+            }
+        } else {
+            List<Route> routes = getClient().getRouteByPrefixName(testNamespace, brokerName);
+            routesOrIngressSize = routes.size();
+            countMatched = countMatches(routes, expectedPostfixes, route -> route.getSpec().getHost());
+        }
+        assertThat("Amount of Routes is different from expected", routesOrIngressSize, equalTo(expectedCount));
+        assertThat("Amount of matched hosts isn't equal to expected", countMatched, equalTo(expectedCount));
+    }
+
+    private <T> int countMatches(List<T> items, List<String> postfixes, Function<T, String> hostExtractor) {
+        int matches = 0;
+        for (T item : items) {
+            String host = hostExtractor.apply(item);
+            for (String postfix : postfixes) {
                 if (host.contains(postfix)) {
-                    countMatched++;
+                    matches++;
                 }
             }
         }
-        assertThat("Amount of matched hosts isn't equal to expected", countMatched, equalTo(expectedCount));
+        return matches;
     }
 
     private void verifySingleRoute(String brokerName, String expectedPostfix) {
@@ -417,8 +442,15 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
                 .endSpec().build();
         broker = ResourceManager.createArtemis(testNamespace, broker, true);
 
-        List<Route> routes = getClient().getRouteByPrefixName(testNamespace, testBrokerName);
-        assertThat("Route was created despite exposure = false", routes.size(), equalTo(0));
+        int routeOrIngressSize = 0;
+        if (getClient().isKubernetesPlatform()) {
+            List<Ingress> ingresses = getClient().getIngressByPrefixName(testNamespace, testBrokerName);
+            routeOrIngressSize = ingresses.size();
+        } else {
+            List<Route> routes = getClient().getRouteByPrefixName(testNamespace, testBrokerName);
+            routeOrIngressSize = routes.size();
+        }
+        assertThat("Route was created despite exposure = false", routeOrIngressSize, equalTo(0));
         ResourceManager.deleteArtemis(testNamespace, broker);
     }
     
@@ -490,6 +522,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.AWS_EKS})
     void routeDeletionTest() {
         acceptor = createAcceptor(AMQ_ACCEPTOR_NAME,
                 "amqp",
@@ -526,6 +559,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
 
     @Test
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.AWS_EKS})
     void routeModificationTest() {
         acceptor = createAcceptor(AMQ_ACCEPTOR_NAME,
                 "amqp",
@@ -559,6 +593,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
     
     @Test
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.AWS_EKS})
     void routeCreationAfterBrokerTest() {
         acceptor = createAcceptor(AMQ_ACCEPTOR_NAME,
                 "amqp",
@@ -590,6 +625,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     @TestValidSince(ArtemisVersion.VERSION_2_28)
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.AWS_EKS})
     void invalidRouteNameTest() {
         acceptor = createAcceptor(AMQ_ACCEPTOR_NAME,
                 "amqp",
@@ -886,6 +922,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
     }
     
     @Test
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.AWS_EKS})
     void filterApplicationTest() {
         Acceptors amqpAcceptors = createAcceptor(AMQ_ACCEPTOR_NAME, "amqp", 5672, true, false, null, true);
         amqpAcceptors.setBindToAllInterfaces(true);
@@ -1136,6 +1173,7 @@ public class BrokerConfigurationTests extends AbstractSystemTests {
 
     @Test
     @TestValidSince(ArtemisVersion.VERSION_2_33)
+    @DisabledTestPlatform(platforms = { KubernetesPlatform.AWS_EKS})
     void testResourceTemplateWithPatch() {
         String amqpAcceptorName = "amqp-acceptor";
         ActiveMQArtemis broker = new ActiveMQArtemisBuilder()

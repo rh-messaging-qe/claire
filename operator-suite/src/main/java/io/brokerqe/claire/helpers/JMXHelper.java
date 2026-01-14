@@ -15,6 +15,7 @@ import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
 import io.brokerqe.claire.TestUtils;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.openshift.api.model.Route;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -88,13 +89,20 @@ public class JMXHelper {
         return client.getRouteByName(client.getNamespace(), expectedRouteName);
     }
 
+    private Ingress getIngress(String deployName, int pod) {
+        String expectedIngressName = deployName + String.format("-wconsj-%d-svc-ing", pod);
+        return client.getIngressByName(client.getNamespace(), expectedIngressName);
+    }
+
     private String getBasicAuth() {
         String userpass = user + ":" + pass;
         return "Basic " + new String(Base64.getEncoder().encode(userpass.getBytes()));
     }
 
     private String performJmxCall(String host, String jmxPath) throws IOException {
-        HttpURLConnection con = (HttpURLConnection) TestUtils.makeHttpRequest("http://" + host + jmxPath, Constants.GET);
+        String uri = "http://" + host + jmxPath;
+        LOGGER.debug("Making JMX Call: {}", uri);
+        HttpURLConnection con = (HttpURLConnection) TestUtils.makeHttpRequest(uri, Constants.GET);
         con.setRequestProperty("Authorization", getBasicAuth());
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
@@ -156,11 +164,20 @@ public class JMXHelper {
         return mapper.readValue(array.toString(), new TypeReference<List<String>>() { });
     }
 
+    public String getRouteOrIngressHost(String deploymentName, int podCount) {
+        if (client.isKubernetesPlatform()) {
+            Ingress ingress = getIngress(deploymentName, podCount);
+            return ingress.getSpec().getRules().get(0).getHost();
+        } else {
+            Route route = getRoute(deploymentName, podCount);
+            return route.getSpec().getHost();
+        }
+    }
+
     public List<AddressData> getAllAddressesQueues(String deployName, String routingType, int pod) {
         List<AddressData> result = new ArrayList<>();
         try {
-            Route route = getRoute(deployName, pod);
-            String host = route.getSpec().getHost();
+            String host = getRouteOrIngressHost(deployName, pod);
             List<String> addresses = getAllAddresses(host);
             for (String address: addresses) {
                 for (String queue: getQueueNames(host, address)) {
@@ -183,8 +200,7 @@ public class JMXHelper {
     public AddressData getAddressQueue(String deployName, String addressName, String queueName, String routingType, int pod)  {
         try {
             // get route || ingress
-            Route route = getRoute(deployName, pod);
-            String host = route.getSpec().getHost();
+            String host = getRouteOrIngressHost(deployName, pod);
             AddressData ar = new AddressData();
             ar.setAddress(addressName);
             ar.setQueueName(queueName);

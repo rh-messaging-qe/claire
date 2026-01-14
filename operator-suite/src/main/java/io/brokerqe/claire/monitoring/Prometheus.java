@@ -57,7 +57,7 @@ public class Prometheus {
         TestUtils.waitFor("removal of Openshift user-workload statefulsets & pods", Constants.DURATION_5_SECONDS, Constants.DURATION_2_MINUTES, () -> {
             StatefulSet prometheusSs = ResourceManager.getKubeClient().getStatefulSet(Constants.MONITORING_NAMESPACE_USER, Constants.PROMETHEUS_USER_SS);
             StatefulSet thanosSs = ResourceManager.getKubeClient().getStatefulSet(Constants.MONITORING_NAMESPACE_USER, Constants.THANOS_USER_SS);
-            return prometheusSs == null && thanosSs == null && ResourceManager.getKubeClient().listPods(Constants.MONITORING_NAMESPACE_USER).size() == 0;
+            return prometheusSs == null && thanosSs == null && ResourceManager.getKubeClient().listPods(Constants.MONITORING_NAMESPACE_USER).isEmpty();
         });
     }
 
