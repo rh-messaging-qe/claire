@@ -970,11 +970,6 @@ public class KubeClient {
             return getKubernetesClient().pods().inNamespace(pod.getMetadata().getNamespace()).resource(pod).sinceSeconds(sinceSeconds).getLog();
         }
     }
-
-    public void createConfigMap(String namespaceName, ConfigMap configMap) {
-        configMap = client.configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
-        DataStorer.dumpResourceToFile(configMap);
-    }
     
     public StatefulSet getDefaultArtemisStatefulSet(String brokerName) {
         return getStatefulSet(brokerName + "-ss");
@@ -1103,6 +1098,11 @@ public class KubeClient {
     // ===============================
     // ---------> CONFIGMAP <---------
     // ===============================
+    public void createConfigMap(String namespaceName, ConfigMap configMap) {
+        configMap = client.configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+        DataStorer.dumpResourceToFile(configMap);
+    }
+
     public ConfigMap createConfigMap(String namespaceName, String configmapName, Map<String, String> data) {
         return createConfigMap(namespaceName, configmapName, data, true);
     }
@@ -1140,6 +1140,26 @@ public class KubeClient {
         }
         configMap = getKubernetesClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
         DataStorer.dumpResourceToFile(configMap);
+        return configMap;
+    }
+
+    public ConfigMap createConfigmapFromFile(String namespaceName, String configmapName, String keyName, String contentFilePath) {
+        return createConfigmapFromFile(namespaceName, configmapName, keyName, contentFilePath, true);
+    }
+
+    public ConfigMap createConfigmapFromFile(String namespaceName, String configmapName, String keyName, String contentFilePath, boolean waitForCreation) {
+        LOGGER.debug("[{}] Creating ConfigMap {}", namespaceName, configmapName);
+        String fileContent = TestUtils.readFileContent(Paths.get(contentFilePath).toFile());
+        ConfigMap configMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(configmapName)
+                .endMetadata()
+                .withData(Map.of(keyName, fileContent))
+                .build();
+        client.configMaps().inNamespace(namespaceName).create(configMap);
+        if (waitForCreation) {
+            waitForConfigmapCreation(namespaceName, configmapName);
+        }
         return configMap;
     }
 

@@ -117,6 +117,7 @@ public interface Constants {
     String DUMP_DEFAULT_TYPE = "yaml";
     String CERTS_GENERATION_DIR = "certificates";
     String PROJECT_SETTINGS_PATH = PROJECT_USER_DIR + "/artemis/project-settings.properties";
+    String HAWTIO_OIDC_TEMPLATE = Constants.PROJECT_TEST_DIR + "/resources/hawtio-oidc-template.properties";
     String OPERATOR_CRDS_DIR_PATH = PROJECT_USER_DIR + "/artemis/crds/";
     String OPERATOR_INSTALL_DIR_PATH = PROJECT_USER_DIR + "/artemis/install/";
     String EXAMPLES_DIR_PATH = PROJECT_USER_DIR + "/artemis/examples/";
