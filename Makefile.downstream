@@ -12,7 +12,7 @@ MVN_TEST_CMD                                      = ${MVN_DEFAULT_CMD} failsafe:
 MVN_ADDITIONAL_PARAMS                            ?= 
 WGET_CMD                                          = wget -nv -c
 
-ARTEMIS_VERSION                                  ?= 7.12.4
+ARTEMIS_VERSION                                  ?= 7.13.3
 RELEASE_TYPE                                     ?= candidate
 
 OPERATOR_ROOT_DIR                                 = ${ROOT_DIR}/operator-suite
