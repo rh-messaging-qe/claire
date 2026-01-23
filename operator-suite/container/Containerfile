@@ -37,15 +37,18 @@ ENV LANG=en_US.utf8
 # Install required packages
 RUN microdnf --assumeyes --nodocs upgrade && \
     microdnf --assumeyes --nodocs install git glibc-langpack-en gzip jq make unzip wget && \
-    microdnf clean all && \
-    curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${buildArch} -o /usr/bin/yq && \
-    chmod +x /usr/bin/yq && \
-    mkdir /opt/ocp-client && \
+    microdnf clean all
+
+RUN curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${buildArch} -o /usr/bin/yq && \
+    chmod +x /usr/bin/yq
+
+RUN mkdir /opt/ocp-client && \
     curl -sSL https://mirror.openshift.com/pub/openshift-v4/${buildArch}/clients/ocp/latest/openshift-client-linux.tar.gz | \
     tar -zx -C /opt/ocp-client && \
     ln -s /opt/ocp-client/oc /usr/local/bin/oc && \
-    ln -s /opt/ocp-client/kubectl /usr/local/bin/kubectl && \
-    curl -sSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz | \
+    ln -s /opt/ocp-client/kubectl /usr/local/bin/kubectl
+
+RUN curl -sSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz | \
     tar -zx -C /opt && ln -s /opt/apache-maven-3.9.9/bin/mvn /usr/local/bin/mvn
 
 # Create claire user
