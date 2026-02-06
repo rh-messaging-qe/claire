@@ -25,8 +25,8 @@ public class RapidastContainer extends AbstractGenericContainer {
         super(name, Constants.IMAGE_RAPIDAST);
         container.withFileSystemBind(RAPIDAST_DIR, RAPIDAST_DIR, BindMode.READ_WRITE);
         container.withFileSystemBind(RESULTS_DIR, "/opt/rapidast/results", BindMode.READ_WRITE);
+        container.withFileSystemBind(RAPIDAST_CONFIG, "/opt/rapidast/config/config.yaml", BindMode.READ_WRITE);
         container.withCreateContainerCmdModifier(cmd -> cmd.withUser("root"));
-        container.withCommand("rapidast.py --config " + RAPIDAST_CONFIG);
         container.withStartupCheckStrategy(
                 new OneShotStartupCheckStrategy().withTimeout(Duration.ofSeconds(timeout))
         );
@@ -43,7 +43,7 @@ public class RapidastContainer extends AbstractGenericContainer {
         return String.format(
                 """
                     config:
-                      configVersion: 4
+                      configVersion: 6
                     application:
                       shortName: %s
                       url: %s
