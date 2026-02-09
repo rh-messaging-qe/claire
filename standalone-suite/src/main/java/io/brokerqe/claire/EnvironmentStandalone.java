@@ -158,8 +158,10 @@ public class EnvironmentStandalone extends Environment {
         Path installBinDir = TestUtils.getProjectRelativeFilePath(ArtemisConstants.INSTALL_DIR
                 + Constants.FILE_SEPARATOR + ArtemisConstants.BIN_DIR);
         try {
+            // Extract the last field, that is version number, from 'artemis version' command output
             String[] versionCmd = {"/bin/sh", "-lc", installBinDir.toAbsolutePath() + Constants.FILE_SEPARATOR
-                    + "artemis version | grep \"Apache ActiveMQ Artemis \" | cut -d \" \" -f4"};
+                    + "artemis version | grep -e \"Apache Artemis \" -e \"Apache ActiveMQ Artemis \""
+                    + "| rev | cut -d \" \" -f1 | rev"};
             Process versionProcess = Runtime.getRuntime().exec(versionCmd);
             versionProcess.waitFor(Constants.DURATION_5_SECONDS, TimeUnit.MILLISECONDS);
             if (versionProcess.exitValue() != 0) {

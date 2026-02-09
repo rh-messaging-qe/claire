@@ -7,7 +7,7 @@ MVN_DEFAULT_CMD                                   = mvn -T 1.5C --no-transfer-pr
 MVN_TEST_CMD                                      = ${MVN_DEFAULT_CMD} -Dfailsafe.rerunFailingTestsCount=3 failsafe:integration-test
 WGET_CMD                                          = wget -nv -c
 
-ARTEMIS_VERSION                                  ?= 2.40.0
+ARTEMIS_VERSION                                  ?= 2.50.0
 OPERATOR_VERSION                                 ?= main
 
 OPERATOR_ROOT_DIR                                 = ${ROOT_DIR}/operator-suite
@@ -32,10 +32,10 @@ NAMESPACE                                        ?= rhmessagingqe
 IMAGE_NAME                                        ="${REGISTRY}/${NAMESPACE}/claire:${VERSION}"
 
 ifndef ARTEMIS_INSTALL_ZIP
-    $(eval ARTEMIS_INSTALL_ZIP := https://dlcdn.apache.org/activemq/activemq-artemis/${ARTEMIS_VERSION}/apache-artemis-${ARTEMIS_VERSION}-bin.zip)
+    $(eval ARTEMIS_INSTALL_ZIP := https://dlcdn.apache.org/artemis/artemis/${ARTEMIS_VERSION}/apache-artemis-${ARTEMIS_VERSION}-bin.zip)
 endif
 ifndef ARTEMIS_INSTALL_ZIP_SECONDARY
-    $(eval ARTEMIS_INSTALL_ZIP_SECONDARY := https://archive.apache.org/dist/activemq/activemq-artemis/${ARTEMIS_VERSION}/apache-artemis-${ARTEMIS_VERSION}-bin.zip)
+    $(eval ARTEMIS_INSTALL_ZIP_SECONDARY := https://archive.apache.org/dist/artemis/artemis/${ARTEMIS_VERSION}/apache-artemis-${ARTEMIS_VERSION}-bin.zip)
 endif
 ifdef TESTS
     $(eval MVN_TESTS_PARAM := -Dit.test="${TESTS}")
