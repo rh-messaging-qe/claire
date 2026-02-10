@@ -72,6 +72,7 @@ public class BaseWebUITests extends AbstractSystemTests {
         WebconsoleCommon.setPlaywright(playwright);
         WebconsoleCommon.setClicker(clicker);
         WebconsoleCommon.setFiller(filler);
+        WebconsoleCommon.setArtemisVersion(ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber());
         createContextAndPage();
     }
 

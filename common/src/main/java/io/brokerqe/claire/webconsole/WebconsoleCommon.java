@@ -10,6 +10,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.options.AriaRole;
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
@@ -39,6 +40,7 @@ public class WebconsoleCommon {
     static Playwright playwright;
     static Locator.ClickOptions clicker;
     static Locator.FillOptions filler;
+    static int artemisVersion;
 
     public static void setPlaywright(Playwright pw) {
         playwright = pw;
@@ -54,6 +56,14 @@ public class WebconsoleCommon {
 
     public static void setFiller(Locator.FillOptions filler1) {
         filler = filler1;
+    }
+
+    public static void setArtemisVersion(int artemisVersion1) {
+        artemisVersion = artemisVersion1;
+    }
+
+    public static int getArtemisVersion() {
+        return artemisVersion;
     }
 
     public static void navigateHome(Page page) {
@@ -223,8 +233,14 @@ public class WebconsoleCommon {
 
     public static void clickBrokerJMXOperations(Page artemisPage, String brokerName) {
         setMenu(artemisPage, ArtemisMenu.ArtemisJMX);
-        Locator dropdownExpandButton = artemisPage.locator("[id=\"org\\.apache\\.activemq\\.artemis-folder-" + brokerName + "\"]")
-                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(brokerName));
+        Locator dropdownExpandButton;
+        if (artemisVersion >= ArtemisVersion.VERSION_2_50.getVersionNumber()) {
+            dropdownExpandButton = artemisPage.locator("[id=\"org\\.apache\\.activemq\\.artemis-folder\"]")
+                    .getByText("Broker " + brokerName);
+        } else {
+            dropdownExpandButton = artemisPage.locator("[id=\"org\\.apache\\.activemq\\.artemis-folder-" + brokerName + "\"]")
+                    .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(brokerName));
+        }
         // broker operations
         try {
             dropdownExpandButton.click(clicker);
