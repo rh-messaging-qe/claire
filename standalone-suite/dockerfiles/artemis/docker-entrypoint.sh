@@ -24,7 +24,7 @@ function start {
 }
 
 function start_display {
-    RHEL_VERSION=$(rpm -E %{rhel})
+    RHEL_VERSION=$(rpm -E '%{rhel}')
     echo ""
     echo "About to start xvfb/xvnc DISPLAY on ${RHEL_VERSION}"
     echo ""
