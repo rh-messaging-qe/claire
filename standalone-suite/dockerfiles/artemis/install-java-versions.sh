@@ -47,7 +47,7 @@ echo ""
 echo "##########################################"
 echo -e "[${BASE_IMAGE}]\ninstalling openjdk java 21"
 echo "##########################################"
-if [[ "${BASE_IMAGE}" =~ .*"ubi7":.* ]]; then
+if [[ "${BASE_IMAGE}" =~ .*ubi7:.* ]]; then
   mkdir -p /opt/openjdk-java-21
   tar -Jxf /tmp/openjdk-java-21.tar.xz -C /opt/openjdk-java-21 --strip-components=1
 else
@@ -63,6 +63,27 @@ echo "##########################################"
 mkdir -p /opt/oracle-java-21
 tar -zxf /tmp/oracle-java-21.tar.gz -C /opt/oracle-java-21 --strip-components=1
 echo "oracle java 21 installed"
+
+echo ""
+echo "##########################################"
+echo -e "[${BASE_IMAGE}]\ninstalling openjdk java 25"
+echo "##########################################"
+if [[ "${BASE_IMAGE}" =~ .*ubi[78]:.* ]]; then
+  mkdir -p /opt/openjdk-java-25
+  tar -Jxf /tmp/openjdk-java-25.tar.xz -C /opt/openjdk-java-25 --strip-components=1
+else
+  dnf --assumeyes install java-25-openjdk
+  ln -s /usr/lib/jvm/jre-25-openjdk /opt/openjdk-java-25
+fi
+echo "openjdk java 25 installed"
+
+echo ""
+echo "##########################################"
+echo -e "[${BASE_IMAGE}]\ninstalling oracle java 25"
+echo "##########################################"
+mkdir -p /opt/oracle-java-25
+tar -zxf /tmp/oracle-java-25.tar.gz -C /opt/oracle-java-25 --strip-components=1
+echo "oracle java 25 installed"
 
 yum --assumeyes clean all
 echo ""

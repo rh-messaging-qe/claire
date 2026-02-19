@@ -38,8 +38,8 @@
         <maven.checkstyle.version>3.4.0</maven.checkstyle.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <maven.surefire.version>3.2.5</maven.surefire.version>
-        <maven.failsafe.version>3.2.5</maven.failsafe.version>
+        <maven.surefire.version>3.5.4</maven.surefire.version>
+        <maven.failsafe.version>3.5.4</maven.failsafe.version>
         <okhttp.version>4.10.0</okhttp.version>
         <org-json.version>20240303</org-json.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

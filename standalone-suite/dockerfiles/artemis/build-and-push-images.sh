@@ -19,34 +19,44 @@ CLAIRE_STANDALONE_IMAGE_BASE_NAME="claire-standalone-artemis"
 
 echo ""
 echo "#######################################################################"
-echo "Downloading additional Java JDK: openjdk-java-11"
+echo "[Download JDK] openjdk-java-11"
 wget -nv -c -O openjdk-java-11.tar.xz \
-    https://download.eng.bos.redhat.com/released/OpenJDK/11.0.25/java-11-openjdk-11.0.25.0.9-1.portable.jdk.el.x86_64.tar.xz
+    https://download.engineering.redhat.com/released/OpenJDK/11.0.25/java-11-openjdk-11.0.25.0.9-1.portable.jdk.el.x86_64.tar.xz
 tar -Jtf openjdk-java-11.tar.xz > /dev/null
 
-echo "Downloading additional Java JDK: openjdk-java-17"
+echo "[Download JDK] openjdk-java-17"
 wget -nv -c -O openjdk-java-17.tar.xz \
-    https://download.eng.bos.redhat.com/released/OpenJDK/17.0.12/java-17-openjdk-17.0.12.0.7-1.portable.jdk.el.x86_64.tar.xz
+    https://download.engineering.redhat.com/released/OpenJDK/17.0.18/java-17-openjdk-17.0.18.0.8-1.portable.jdk.el.x86_64.tar.xz
 tar -Jtf openjdk-java-17.tar.xz > /dev/null
 
-echo "Downloading additional Java JDK: openjdk-java-21"
+echo "[Download JDK] openjdk-java-21"
 wget -nv -c -O openjdk-java-21.tar.xz \
-    https://download.eng.bos.redhat.com/released/OpenJDK/21.0.4/java-21-openjdk-21.0.4.0.7-1.portable.jdk.x86_64.tar.xz
+    https://download.engineering.redhat.com/released/OpenJDK/21.0.10/java-21-openjdk-21.0.10.0.7-1.portable.jdk.x86_64.tar.xz
 tar -Jtf openjdk-java-21.tar.xz > /dev/null
 
-echo "Downloading additional Java JDK: oracle-java-11"
+echo "[Download JDK] openjdk-java-25"
+wget -nv -c -O openjdk-java-25.tar.xz \
+    https://download.engineering.redhat.com/released/OpenJDK/25.0.2/java-25-openjdk-25.0.2.0.10-2.portable.jdk.x86_64.tar.xz
+tar -Jtf openjdk-java-25.tar.xz > /dev/null
+
+echo "[Download JDK] oracle-java-11"
 wget -nv -c -O oracle-java-11.tar.gz \
   https://repository.engineering.redhat.com/nexus/repository/rhm-qe-amq-clients-raw/jdk/jdk-11.0.15.1_linux-x64_bin.tar.gz
+#   https://file.emea.redhat.com/~mtoth/oracle/jdk-11.0.29_linux-x64_bin.tar.gz
 tar -ztf oracle-java-11.tar.gz > /dev/null
 
-echo "Downloading additional Java JDK: oracle-java-17 (17.0.12)"
+echo "[Download JDK] oracle-java-17 (17.0.12)"
 # pinned to 17.0.12 - we can't use newer
 wget -nv -c -O oracle-java-17.tar.gz https://download.oracle.com/java/17/archive/jdk-17.0.12_linux-x64_bin.tar.gz
 tar -ztf oracle-java-17.tar.gz > /dev/null
 
-echo "Downloading additional Java JDK: oracle-java-21"
+echo "[Download JDK] oracle-java-21"
 wget -nv -c -O oracle-java-21.tar.gz https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz
 tar -ztf oracle-java-21.tar.gz > /dev/null
+
+echo "[Download JDK] oracle-java-25"
+wget -nv -c -O oracle-java-25.tar.gz https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz
+tar -ztf oracle-java-25.tar.gz > /dev/null
 
 echo "Download of all JDKs finished"
 echo "Base images: ${BASE_IMAGES[@]}"
