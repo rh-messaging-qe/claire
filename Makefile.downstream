@@ -52,7 +52,7 @@ checkstyle: get_settings_xml_file
 	${MVN_DEFAULT_CMD} checkstyle:check
 
 get_settings_xml_file:
-	${WGET_CMD} --no-check-certificate "https://gitlab.cee.redhat.com/amq-broker/amq-broker-ci/-/raw/main/resources/claire/claire-settings.xml" -O "${ROOT_DIR}/settings.xml"
+	${WGET_CMD} --no-check-certificate "https://gitlab.cee.redhat.com/amq/amq-ci/-/raw/main/resources/claire/claire-settings.xml" -O "${ROOT_DIR}/settings.xml"
 
 get_metadata_files:
 	${WGET_CMD} --no-check-certificate "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/version_map.yaml" -O "${ROOT_DIR}/version_map.yaml"
