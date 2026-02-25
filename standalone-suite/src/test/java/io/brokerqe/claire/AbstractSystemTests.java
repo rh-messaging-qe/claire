@@ -401,6 +401,10 @@ public class AbstractSystemTests implements TestSeparator {
 
         LOGGER.info("[UPGRADE][{}] Checking for correct versions in logs {}, {}", artemis.getName(), version, artemisVersion);
         MatcherAssert.assertThat(artemis.getLogs(), anyOf(containsString(brokerVersionOldString), containsString(brokerVersionNewString)));
-        MatcherAssert.assertThat(artemis.getLogs(), containsString(ArtemisConstants.getArtemisStartingServerVersionString(artemisVersion)));
+        MatcherAssert.assertThat(artemis.getLogs(), anyOf(
+                containsString(ArtemisConstants.getArtemisStartingServerVersionString(artemisVersion)),
+                containsString(ArtemisConstants.getArtemisStartingServerVersionStringNew(artemisVersion))
+                )
+        );
     }
 }

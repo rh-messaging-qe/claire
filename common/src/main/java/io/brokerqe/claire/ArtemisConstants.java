@@ -1,5 +1,5 @@
 /*
- * Copyright Strimzi and Broker QE authors.
+ * Copyright Broker QE authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.brokerqe.claire;
@@ -182,6 +182,10 @@ public interface ArtemisConstants {
 
     static String getArtemisStartingServerVersionString(String version) {
         return String.format("Starting ActiveMQ Artemis Server version %s", version);
+    }
+
+    static String getArtemisStartingServerVersionStringNew(String version) {
+        return String.format("Starting Apache Artemis Server version %s", version);
     }
 
     String IS_LIVE_LOG_MSG = " INFO  [org.apache.activemq.artemis.core.server] AMQ221007: Server is now";
