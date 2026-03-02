@@ -366,7 +366,7 @@ public abstract class AbstractSystemTests implements TestSeparator {
 
     public void waitConsoleReady(String url, long pool, long timeout) {
         LOGGER.debug("[Console] Checking url {}", url);
-        Pattern consolePattern = Pattern.compile(".*(ActiveMQ Artemis Console|hawtio-login).*", Pattern.DOTALL);
+        Pattern consolePattern = Pattern.compile(".*(ActiveMQ Artemis Console|Apache Artemis Console|hawtio-login).*", Pattern.DOTALL);
         TestUtils.waitFor("wait for console be ready", pool, timeout,
                 () -> isHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, consolePattern));
     }
