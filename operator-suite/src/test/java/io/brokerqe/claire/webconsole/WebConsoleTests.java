@@ -91,11 +91,16 @@ public class WebConsoleTests extends AbstractSystemTests {
                 url = "http://" + serviceUrl + "/console/auth/login";
                 LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
                 checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login");
-            } else {
+            } else if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_50.getVersionNumber()) {
                 // 2.40+
                 url = "http://" + serviceUrl + "/console/login";
                 LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
                 checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "ActiveMQ Artemis Console");
+            } else {
+                // 2.50+
+                url = "http://" + serviceUrl + "/console/login";
+                LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
+                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "Apache Artemis Console");
             }
 
 
