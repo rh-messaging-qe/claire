@@ -41,6 +41,9 @@ public abstract class HAUpgradeTests extends UpgradeTests {
         String artemisVersion = argumentsAccessor.getString(1);
         String artemisZipUrl = argumentsAccessor.getString(2);
 
+        if (artemisVersion == null) {
+            getLogger().warn("[UPGRADE] artemisVersion is null, check version_map.yaml");
+        }
         int haPairs = getHaPairs();
         String installDir = ArtemisDeployment.downloadPrepareArtemisInstallDir(testInfo, artemisZipUrl, version, getTestConfigDir());
         String defaultVersionInstance = "artemis-default-instance-" + version;
