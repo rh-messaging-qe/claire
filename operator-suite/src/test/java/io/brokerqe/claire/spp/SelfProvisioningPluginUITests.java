@@ -100,7 +100,7 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
             navToggle.click(clicker);
         }
 
-        if ((guidedTourModal != null && guidedTourModal.isVisible()) || page.getByText("Skip tour").isVisible()) {
+        if (guidedTourModal != null && guidedTourModal.isVisible() || page.getByText("Skip tour").isVisible()) {
             LOGGER.debug("Click Skip Tour if needed");
             page.locator("button[data-test='tour-step-footer-secondary']").click(clicker);
         }
