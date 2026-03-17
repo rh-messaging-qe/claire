@@ -38,6 +38,7 @@ public abstract class Environment {
 
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
     protected String databaseFile;
+    protected String rapiDastSaFile;
     protected String testUpgradePlan;
     protected String testUpgradePackageManifest;
     private Database database;
@@ -63,6 +64,10 @@ public abstract class Environment {
 
     public String getJdbcDatabaseFile() {
         return databaseFile;
+    }
+
+    public String getRapiDastSaFile() {
+        return rapiDastSaFile;
     }
 
     public String getTestUpgradePlanContent() {

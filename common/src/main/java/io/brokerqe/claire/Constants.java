@@ -58,6 +58,8 @@ public interface Constants {
     String EV_COLLECT_TEST_DATA = "COLLECT_TEST_DATA";
     String EV_JDBC_DATA = "JDBC_DATA";
     String PROP_JDBC_DATA = "jdbc.data";
+    String EV_RAPIDAST_SA_FILE = "RAPIDAST_SA_FILE";
+    String PROP_RAPIDAST_SA_FILE = "rapidast.sa.file";
     String EV_CUSTOM_EXTRA_DELAY = "CUSTOM_EXTRA_DELAY";
     String EV_KEYCLOAK_OPERATOR_NAME = "KEYCLOAK_OPERATOR_NAME";
     String EV_KEYCLOAK_VERSION = "KEYCLOAK_VERSION";

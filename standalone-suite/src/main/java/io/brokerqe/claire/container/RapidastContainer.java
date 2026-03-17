@@ -21,11 +21,12 @@ public class RapidastContainer extends AbstractGenericContainer {
     public static final String RESULTS_DIR = "/tmp/rapidast/results";
     public static final String RAPIDAST_CONFIG = "/tmp/rapidast/config.yaml";
 
-    public RapidastContainer(String name, String consoleURL, String scanName, int timeout) {
+    public RapidastContainer(String name, String consoleURL, String scanName, String rapidastSaFile, int timeout) {
         super(name, Constants.IMAGE_RAPIDAST);
         container.withFileSystemBind(RAPIDAST_DIR, RAPIDAST_DIR, BindMode.READ_WRITE);
         container.withFileSystemBind(RESULTS_DIR, "/opt/rapidast/results", BindMode.READ_WRITE);
         container.withFileSystemBind(RAPIDAST_CONFIG, "/opt/rapidast/config/config.yaml", BindMode.READ_WRITE);
+        container.withFileSystemBind(rapidastSaFile, "/opt/rapidast/rapidast-sa_key.json", BindMode.READ_WRITE);
         container.withCreateContainerCmdModifier(cmd -> cmd.withUser("root"));
         container.withStartupCheckStrategy(
                 new OneShotStartupCheckStrategy().withTimeout(Duration.ofSeconds(timeout))
@@ -44,6 +45,10 @@ public class RapidastContainer extends AbstractGenericContainer {
                 """
                     config:
                       configVersion: 6
+                      googleCloudStorage:
+                        keyFile: "/opt/rapidast/rapidast-sa_key.json"
+                        bucketName: "secaut-bucket"
+                        directory: "amq-broker"
                     application:
                       shortName: %s
                       url: %s
@@ -53,9 +58,11 @@ public class RapidastContainer extends AbstractGenericContainer {
                         parameters:
                           username: "admin"
                           password: "admin"
+                      container:
+                        type: "none"
                     scanners:
                       zap:
-                        spiderAjax:
+                        spider:
                           maxDuration: 10 # in minutes, default: 0 unlimited
                           browserId: firefox-headless
                         passiveScan:

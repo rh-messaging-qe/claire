@@ -31,7 +31,7 @@ public class RapidastDefaultConsoleTests extends AbstractSystemTests {
 
 
     protected String getScanName() {
-        return "default-spider";
+        return getEnvironment().getArtemisVersion() + "-default-spider";
     }
 
     @BeforeAll
@@ -55,7 +55,7 @@ public class RapidastDefaultConsoleTests extends AbstractSystemTests {
 
         String rapidastName = "rapidast-" + artemisFullName;
         LOGGER.info("Creating rapidast container: " + rapidastName);
-        RapidastContainer rapidast = new RapidastContainer(rapidastName, consoleURL, getScanName(), 1000);
+        RapidastContainer rapidast = new RapidastContainer(rapidastName, consoleURL, getScanName(), getEnvironment().getRapiDastSaFile(), 1000);
 
         LOGGER.info("Starting rapidast container: " + rapidastName);
         rapidast.start();

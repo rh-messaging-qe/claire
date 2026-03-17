@@ -25,7 +25,7 @@ public class RapidastSecuredConsoleTests extends RapidastDefaultConsoleTests {
 
 
     protected String getScanName() {
-        return "secured-spider";
+        return getEnvironment().getArtemisVersion() + "-secured-spider";
     }
 
     @BeforeAll
