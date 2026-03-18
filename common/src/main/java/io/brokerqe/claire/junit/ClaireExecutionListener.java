@@ -9,6 +9,8 @@ import ch.qos.logback.classic.LoggerContext;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
@@ -23,12 +25,18 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class ClaireExecutionListener implements TestExecutionListener {
+public abstract class ClaireExecutionListener implements TestExecutionListener, TestWatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClaireExecutionListener.class);
     protected static boolean setupPerformed = false;
+    private static boolean abortTestExecution = false;
     private static int totalTestCount;
     private static int currentTestCounter = 1;
+    private static int failedTestCounter = 0;
+
+    public static boolean isAbortTestExecution() {
+        return abortTestExecution;
+    }
 
     public static int getTotalTestCount() {
         return totalTestCount;
@@ -42,16 +50,27 @@ public abstract class ClaireExecutionListener implements TestExecutionListener {
         ClaireExecutionListener.currentTestCounter++;
     }
 
+    public static void abortExecWhenAllTestsFailing() {
+        int testCounter = currentTestCounter - 1;
+        if (testCounter > Environment.get().getMinFailedTestsAbort() - 1 && failedTestCounter >= testCounter) {
+            LOGGER.warn("Aborting execution of tests because of too many tests.");
+            LOGGER.error("Tests executed {} and failed {}", testCounter, failedTestCounter);
+            Environment.setAbortTestExecution(true);
+        } else {
+            LOGGER.debug("Tests executed {} and failed {}. Continuing so far", testCounter, failedTestCounter);
+        }
+    }
+
+    @Override
+    public void testFailed(ExtensionContext context, Throwable cause) {
+        failedTestCounter++;
+        abortExecWhenAllTestsFailing();
+    }
 
     public void testPlanExecutionStarted(TestPlan testPlan) {
         createTestPlan(testPlan);
         setupEnvironment();
     }
-
-//    public void testPlanExecutionFinished(TestPlan testPlan) {
-//        LOGGER.debug("Teardown environment started");
-//        LOGGER.debug("Teardown environment finished");
-//    }
 
     abstract protected void setupEnvironment();
 

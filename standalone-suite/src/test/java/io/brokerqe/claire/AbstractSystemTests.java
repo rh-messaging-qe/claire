@@ -16,6 +16,8 @@ import io.brokerqe.claire.clients.bundled.BundledCoreMessagingClient;
 import io.brokerqe.claire.clients.container.AmqpQpidClient;
 import io.brokerqe.claire.container.ArtemisContainer;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.junit.AbortCondition;
+import io.brokerqe.claire.junit.StandaloneExecutionListener;
 import io.brokerqe.claire.junit.TestSeparator;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -47,7 +49,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(StandaloneTestDataCollector.class)
+@ExtendWith({StandaloneTestDataCollector.class, StandaloneExecutionListener.class, AbortCondition.class})
 public class AbstractSystemTests implements TestSeparator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSystemTests.class);

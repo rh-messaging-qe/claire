@@ -7,6 +7,7 @@ package io.brokerqe.claire.junit;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.Environment;
 import io.brokerqe.claire.TestUtils;
+import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.security.CertificateManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -44,6 +45,9 @@ public interface TestSeparator {
         LOGGER.info((char) 27 + "[33m" + String.format("Finished: %s.%s", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()) + (char) 27 + "[0m");
         LOGGER.info((char) 27 + "[34m" + String.join("", Collections.nCopies(76, SEPARATOR_CHAR)) + (char) 27 + "[0m");
         ClaireExecutionListener.incrementCurrentTestCounter();
+        if (ClaireExecutionListener.isAbortTestExecution()) {
+            throw new ClaireRuntimeException("All tests failing, aborting...");
+        }
     }
 
     @AfterAll

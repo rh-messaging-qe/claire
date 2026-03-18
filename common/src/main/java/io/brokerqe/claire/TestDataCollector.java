@@ -7,7 +7,6 @@ package io.brokerqe.claire;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
-import org.junit.jupiter.api.extension.TestWatcher;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 
 
-public abstract class TestDataCollector implements TestWatcher, TestExecutionExceptionHandler, LifecycleMethodExecutionExceptionHandler {
+public abstract class TestDataCollector implements TestExecutionExceptionHandler, LifecycleMethodExecutionExceptionHandler {
 
     static final Logger LOGGER = LoggerFactory.getLogger(TestDataCollector.class);
     static String archiveDir;

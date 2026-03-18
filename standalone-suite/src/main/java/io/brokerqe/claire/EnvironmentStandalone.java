@@ -67,6 +67,7 @@ public class EnvironmentStandalone extends Environment {
         osInfo = getOSInfo();
         // Default value is in logback settings file
         logLevel = getConfigurationValue(Constants.EV_TEST_LOG_LEVEL, Constants.PROP_LOG_LEVEL, ArtemisConstants.DEFAULT_LOG_LEVEL);
+        minFailedTestsAbort = Integer.parseInt(System.getenv().getOrDefault(Constants.EV_TEST_FAIL_ABORT_COUNT, "4"));
 
         logsDirLocation = getConfigurationValue(Constants.EV_LOGS_LOCATION, Constants.PROP_LOG_DIR, Constants.LOGS_DEFAULT_DIR)
                 + Constants.FILE_SEPARATOR + initialTimestamp;
@@ -151,7 +152,8 @@ public class EnvironmentStandalone extends Environment {
                 Constants.PROP_JDBC_DATA + ": " + databaseFile + Constants.LINE_SEPARATOR +
                 Constants.PROP_RAPIDAST_SA_FILE + ": " + rapiDastSaFile + Constants.LINE_SEPARATOR +
                 Constants.EV_UPGRADE_PLAN + ": " + testUpgradePlan + Constants.LINE_SEPARATOR +
-                Constants.PROP_USE_EXISTING_CONFIG + ": " + providedArtemisConfig;
+                Constants.PROP_USE_EXISTING_CONFIG + ": " + providedArtemisConfig + Constants.LINE_SEPARATOR +
+                Constants.EV_TEST_FAIL_ABORT_COUNT + ": " + minFailedTestsAbort;
         LOGGER.info(envVars);
     }
 

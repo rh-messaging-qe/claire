@@ -37,12 +37,15 @@ public abstract class Environment {
     public abstract void setupDatabase();
 
     static final Logger LOGGER = LoggerFactory.getLogger(Environment.class);
+    private static boolean abortTestExecution = false;
+    private static Environment environment;
+
+    protected int minFailedTestsAbort;
     protected String databaseFile;
     protected String rapiDastSaFile;
     protected String testUpgradePlan;
     protected String testUpgradePackageManifest;
     private Database database;
-    private static Environment environment;
     private Properties appProperties;
     private String path = System.getenv("PATH") + ":/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin";
 
@@ -88,6 +91,18 @@ public abstract class Environment {
 
     public Boolean isLocalExecution() {
         return Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_LOCAL_EXEC, "false"));
+    }
+
+    public static boolean isAbortTestExecution() {
+        return abortTestExecution;
+    }
+
+    public static void setAbortTestExecution(boolean abortTestExecution) {
+        Environment.abortTestExecution = abortTestExecution;
+    }
+
+    public int getMinFailedTestsAbort() {
+        return minFailedTestsAbort;
     }
 
     public String getArtemisMajorMinorMicroVersion(String strVersion) {

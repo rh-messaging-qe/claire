@@ -75,6 +75,8 @@ operator-suite/container/scripts/run-test.sh --help
 | TESTS                                   | Which tests to execute (maven syntax)                           | not set                     | <mvn-regexp>                                     |
 | PLAYWRIGHT_DEBUG                        | Playwright will run in head mode (show browser) & record video  | `false`                     | `true`, `false`                                  |
 | TEST_LOCAL_EXEC                         | Execute locally - some tests work only in local execution (SPP) | `false`                     | `true`, `false`                                  |
+| TEST_FAIL_ABORT_COUNT                   | If first N tests fail, abort whole execution of test suite      | 4                          | `<int>`                                          |
+
 
 ## More information
 For more information about subprojects - refer to README.md files in `operator-suite` or `standalone-suite` folders, which contain more details about usage, more environment variables, etc.

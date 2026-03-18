@@ -18,6 +18,8 @@ import io.brokerqe.claire.clients.bundled.BundledArtemisClient;
 import io.brokerqe.claire.exception.ClaireNotImplementedException;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
 import io.brokerqe.claire.helpers.brokerproperties.BPActiveMQArtemisAddress;
+import io.brokerqe.claire.junit.AbortCondition;
+import io.brokerqe.claire.junit.OperatorExecutionListener;
 import io.brokerqe.claire.junit.TestSeparator;
 import io.brokerqe.claire.operator.ArtemisCloudClusterOperator;
 import io.brokerqe.claire.security.CertificateManager;
@@ -65,7 +67,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith({OperatorTestDataCollector.class})
+@ExtendWith({OperatorTestDataCollector.class, OperatorExecutionListener.class, AbortCondition.class})
 public abstract class AbstractSystemTests implements TestSeparator {
 
     static final Logger LOGGER = LoggerFactory.getLogger(AbstractSystemTests.class);

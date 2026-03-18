@@ -77,6 +77,7 @@ public class EnvironmentOperator extends Environment {
         serializationFormat = System.getenv().getOrDefault(Constants.EV_DUMP_FORMAT, Constants.DUMP_DEFAULT_TYPE);
         teardownEnv = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_TEARDOWN, "true"));
         playwrightDebug = Boolean.parseBoolean(System.getenv().getOrDefault(Constants.EV_PLAYWRIGHT_DEBUG, "false"));
+        minFailedTestsAbort = Integer.parseInt(System.getenv().getOrDefault(Constants.EV_TEST_FAIL_ABORT_COUNT, "4"));
 
         disabledRandomNs = Boolean.parseBoolean(System.getenv(Constants.EV_DISABLE_RANDOM_NAMESPACES));
         customExtraDelay = Integer.parseInt(System.getenv().getOrDefault(Constants.EV_CUSTOM_EXTRA_DELAY, "0"));
@@ -197,6 +198,7 @@ public class EnvironmentOperator extends Environment {
         if (sppUrl != null) {
             envVarsSB.append(Constants.EV_SPP_URL).append("=").append(sppUrl).append(Constants.LINE_SEPARATOR);
         }
+        envVarsSB.append(Constants.EV_TEST_FAIL_ABORT_COUNT).append("=").append(minFailedTestsAbort).append(Constants.LINE_SEPARATOR);
 
         LOGGER.info(envVarsSB.toString());
     }
