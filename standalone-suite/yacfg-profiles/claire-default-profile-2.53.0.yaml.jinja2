@@ -1,0 +1,118 @@
+---
+_defaults:
+  broker_name: artemis
+  broker_home: /opt/artemis
+  broker_instance: /var/lib/artemis-instance
+  journal_base_data_dir: data
+  boostrap_xml_bindings:
+    - name: artemis
+      uri: http://0.0.0.0:8161
+
+  user_address_settings:
+  - match: activemq.management#
+    dead_letter_address: DLQ
+    expiry_address: ExpiryQueue
+    redelivery_delay: 0
+    max_size_bytes: -1
+    message_counter_history_day_limit: 10
+    address_full_policy: PAGE
+    auto_create_queues: true
+    auto_create_addresses: true
+  - match: '#'
+    dead_letter_address: DLQ
+    expiry_address: ExpiryQueue
+    redelivery_delay: 0
+    max_size_bytes: -1
+    message_counter_history_day_limit: 10
+    address_full_policy: PAGE
+    auto_create_queues: true
+    auto_create_addresses: true
+    auto_delete_queues: false
+    auto_delete_addresses: false
+    max_size_messages: -1
+    page_size_bytes: 10M
+    max_read_page_messages: -1
+    max_read_page_bytes: 20M
+
+render:
+  generator_notice: true
+  licenses: true
+  template: artemis/
+
+broker_xml:
+  name: '{{ broker_name }}'
+
+{% include 'artemis/_modules/broker_xml/journal/user_journal.yaml.jinja2' %}
+
+  disk_scan_period: 5000
+  max_disk_usage: 90
+  page_sync_timeout: 732000
+  global_max_message: -1
+
+{% include 'artemis/_modules/broker_xml/store/user_jdbc_store.yaml.jinja2' %}
+
+{% include 'artemis/_modules/broker_xml/critical_analyzer/user_critical_analyzer.yaml.jinja2' %}
+
+{% if use_scram is sameas true -%}
+  {% include 'artemis/_modules/broker_xml/acceptors/scram.yaml.jinja2' %}
+{% else %}
+  {% include 'artemis/_modules/broker_xml/acceptors/default.yaml.jinja2' %}
+{% endif %}
+
+{% include 'artemis/_modules/broker_xml/connectors/user_connectors.yaml.jinja2' %}
+
+{% include 'artemis/_modules/broker_xml/broadcast_groups/user_broadcast_groups.yaml.jinja2' %}
+
+{% include 'artemis/_modules/broker_xml/discovery_groups/user_discovery_groups.yaml.jinja2' %}
+
+{% include 'artemis/_modules/broker_xml/cluster/user_cluster.yaml.jinja2' %}
+
+{% include 'artemis/_modules/broker_xml/cluster_connections/user_cluster_connections.yaml.jinja2' %}
+
+{% include 'artemis/_modules/broker_xml/ha_policy/user_ha_policy.yaml.jinja2' %}
+
+{% include 'artemis/_modules/users_roles_security/gssapi_security_settings.yaml.jinja2' %}
+
+{% include 'artemis/_modules/broker_xml/address_settings/user_address_settings.yaml.jinja2' %}
+
+{% if many_addresses is sameas true -%}
+  {% include 'artemis/_modules/broker_xml/addresses/custom_addresses.yaml.jinja2' %}
+{% else %}
+  {% include 'artemis/_modules/broker_xml/addresses/default.yaml.jinja2' %}
+{% endif %}
+
+# artemis.profile
+{% include 'artemis/_modules/artemis_profile/default_jmx.yaml.jinja2' %}
+
+# artemis-utility.profile
+{% include 'artemis/_modules/artemis_utility_profile/default.yaml.jinja2' %}
+
+# users and roles properties xml
+{% if use_scram is sameas true %}
+  {% include 'artemis/_modules/users_roles_security/scram_users.yaml.jinja2' %}
+{% else %}
+  {% include 'artemis/_modules/users_roles_security/default_test_users.yaml.jinja2' %}
+{% endif %}
+
+# bootstrap.xml
+{% include 'artemis/_modules/bootstrap_xml/default_240.yaml.jinja2' %}
+
+# jolokia-access.xml
+{% include 'artemis/_modules/jolokia_access/allow.yaml.jinja2' %}
+
+# log4j2.properties
+{% include 'artemis/_modules/log4j2/default.yaml.jinja2' %}
+
+# log4j2-utility.properties
+{% include 'artemis/_modules/log4j2_utility/default.yaml.jinja2' %}
+
+# login.config
+{% if use_scram is sameas true %}
+    {% include 'artemis/_modules/login_config/jaas_scram.yaml.jinja2' %}
+{% else %}
+    {% include 'artemis/_modules/login_config/jaas_default.yaml.jinja2' %}
+{% endif %}
+
+# management.xml
+{% include 'artemis/_modules/management_xml/unauthenticated_connector.yaml.jinja2' %}
+
