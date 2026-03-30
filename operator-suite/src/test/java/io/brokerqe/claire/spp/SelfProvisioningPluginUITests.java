@@ -185,7 +185,11 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         try {
             page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Kebab toggle")).click(clicker);
         } catch (TimeoutError e) {
-            page.getByLabel("Actions").click(clicker);
+            try {
+                page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Kebab dropdown")).click(clicker);
+            } catch (TimeoutError e1) {
+                page.getByLabel("Actions").click(clicker);
+            }
         }
         page.getByText("Delete Broker").click(clicker);
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Delete")).click(clicker);
@@ -316,7 +320,11 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         TestUtils.executeLocalCommand(20, "/bin/bash", "-lc", artemisDefaultDir + artemisMsgCheckCmd.substring(1));
 
         String addressName = "TEST"; // default address used in command
-        checkMessageCountInAddress(page, brokerName, addressName, 10);
+        int messagesExpected = 10;
+        if (acSelfProvisioningPlugin.isJolokiaUsed()) {
+            // Jolokia has been removed in 7.14.0
+            checkMessageCountInAddress(page, brokerName, addressName, messagesExpected);
+        }
 
         deleteBrokerSpp(page, brokerName, testNamespace);
     }

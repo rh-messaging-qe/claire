@@ -4,6 +4,7 @@
  */
 package io.brokerqe.claire.plugins;
 
+import io.brokerqe.claire.ArtemisVersion;
 import io.brokerqe.claire.Constants;
 import io.brokerqe.claire.CustomTool;
 import io.brokerqe.claire.KubeClient;
@@ -34,12 +35,15 @@ import java.util.concurrent.TimeUnit;
 public class ACSelfProvisioningPlugin implements CustomTool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ACSelfProvisioningPlugin.class);
-    protected static final String JOLOKIA_API_DEFAULT_NAMESPACE = "activemq-artemis-jolokia-api-server";
+
     protected static final String SPP_DEFAULT_NAMESPACE = "activemq-artemis-self-provisioning-plugin";
+    private static final List<URL> SPP_DEPLOYMENT_URLS;
     protected static KubeClient kubeClient = ResourceManager.getKubeClient();
     protected static List<HasMetadata> deployedResources = new ArrayList<>();
+
     private static final List<URL> JOLOKIA_API_DEPLOYMENT_URLS;
-    private static final List<URL> SPP_DEPLOYMENT_URLS;
+    protected static final String JOLOKIA_API_DEFAULT_NAMESPACE = "activemq-artemis-jolokia-api-server";
+
     static {
         try {
             SPP_DEPLOYMENT_URLS = List.of(
@@ -58,21 +62,30 @@ public class ACSelfProvisioningPlugin implements CustomTool {
         }
     }
 
+    public boolean isJolokiaUsed() {
+        int testVersionArtemis = ResourceManager.getEnvironment().getArtemisTestVersion().getVersionNumber();
+        return testVersionArtemis >= ArtemisVersion.VERSION_2_40.getVersionNumber() && testVersionArtemis <  ArtemisVersion.VERSION_2_51.getVersionNumber();
+    }
+
     @Override
     public ACSelfProvisioningPlugin deploy() {
-        kubeClient.createNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
+        if (isJolokiaUsed()) {
+            kubeClient.createNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
+        }
         kubeClient.createNamespace(SPP_DEFAULT_NAMESPACE);
 
         try {
-            LOGGER.info("[{}] Deploying ActiveMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
-            for (URL url : JOLOKIA_API_DEPLOYMENT_URLS) {
-                List<HasMetadata> resources = kubeClient.getKubernetesClient().load(url.openStream()).items();
-                resources = kubeClient.getKubernetesClient().resourceList(resources).inNamespace(JOLOKIA_API_DEFAULT_NAMESPACE).createOrReplace();
-                deployedResources.addAll(resources);
+            if (isJolokiaUsed()) {
+                LOGGER.info("[{}] Deploying ActiveMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
+                for (URL url : JOLOKIA_API_DEPLOYMENT_URLS) {
+                    List<HasMetadata> resources = kubeClient.getKubernetesClient().load(url.openStream()).items();
+                    resources = kubeClient.getKubernetesClient().resourceList(resources).inNamespace(JOLOKIA_API_DEFAULT_NAMESPACE).createOrReplace();
+                    deployedResources.addAll(resources);
+                }
+                Deployment jolokiaDeployment = ResourceManager.getKubeClient().getDeployment(JOLOKIA_API_DEFAULT_NAMESPACE, JOLOKIA_API_DEFAULT_NAMESPACE);
+                kubeClient.getKubernetesClient().resource(jolokiaDeployment).waitUntilReady(1, TimeUnit.MINUTES);
+                LOGGER.info("[{}] Successfully deployed Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
             }
-            Deployment jolokiaDeployment = ResourceManager.getKubeClient().getDeployment(JOLOKIA_API_DEFAULT_NAMESPACE, JOLOKIA_API_DEFAULT_NAMESPACE);
-            kubeClient.getKubernetesClient().resource(jolokiaDeployment).waitUntilReady(1, TimeUnit.MINUTES);
-            LOGGER.info("[{}] Successfully deployed Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
 
             LOGGER.info("[{}] Deploying ActiveMQ Artemis Self-provisioning Plugin", SPP_DEFAULT_NAMESPACE);
             for (URL url : SPP_DEPLOYMENT_URLS) {
@@ -117,7 +130,9 @@ public class ACSelfProvisioningPlugin implements CustomTool {
     public void undeploy() {
         LOGGER.info("[{}] Undeploying ActiveMQ Artemis Self-provisioning Plugin & ActiveMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
         kubeClient.getKubernetesClient().resourceList(deployedResources).delete();
-        kubeClient.deleteNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
+        if (isJolokiaUsed()) {
+            kubeClient.deleteNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
+        }
         kubeClient.deleteNamespace(SPP_DEFAULT_NAMESPACE);
         removePatch();
     }

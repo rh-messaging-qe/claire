@@ -38,27 +38,30 @@ public class AMQSelfProvisioningPlugin extends ACSelfProvisioningPlugin implemen
     @Override
     public AMQSelfProvisioningPlugin deploy() {
         String tmpDirLocation = Environment.get().getTmpDirLocation();
-        String jolokiaInstallZipUrl = ResourceManager.getEnvironment().getJolokiaApiUrl();
         String sppInstallZipUrl = ResourceManager.getEnvironment().getSppUrl();
-        String jolokiaZip = tmpDirLocation + Constants.FILE_SEPARATOR + "amq-broker-jolokia-api-server.zip";
         String sppZip = tmpDirLocation + Constants.FILE_SEPARATOR + "amq-broker-self-provisioning-plugin.zip";
 
-        jolokiaFolder = new File(jolokiaZip).getParent() + Constants.FILE_SEPARATOR + new File(jolokiaInstallZipUrl).getName().replace("-rhel9.zip", "");
         sppFolder = new File(sppZip).getParent() + Constants.FILE_SEPARATOR + new File(sppInstallZipUrl).getName().replace("-rhel9.zip", "");
-
-        LOGGER.info("[SPP] Downloading & unpacking \n{}\n{}", jolokiaInstallZipUrl, sppInstallZipUrl);
-        TestUtils.getFileFromUrl(jolokiaInstallZipUrl, jolokiaZip);
+        LOGGER.info("[SPP] Downloading & unpacking \n{}{}", sppInstallZipUrl);
         TestUtils.getFileFromUrl(sppInstallZipUrl, sppZip);
-        TestUtils.unzip(jolokiaZip, tmpDirLocation);
         TestUtils.unzip(sppZip, tmpDirLocation);
 
-        LOGGER.info("[{}] Deploying AMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
-        CommandResult cr = TestUtils.executeLocalCommand(120, new File(jolokiaFolder), "/bin/bash", "-lc", "bash ./deploy.sh -c cert-manager");
-        LOGGER.debug("Result [{}]: stdout:{}\nstderr:{}", cr.exitCode, cr.stdout, cr.stderr);
-        TestUtils.threadSleep(Constants.DURATION_30_SECONDS);
-        Pod jolokiaApiServerPod = kubeClient.getFirstPodByPrefixName(JOLOKIA_API_DEFAULT_NAMESPACE, JOLOKIA_API_DEFAULT_NAMESPACE);
-        // BUG pod is null?!
-        kubeClient.waitUntilPodIsReady(JOLOKIA_API_DEFAULT_NAMESPACE, jolokiaApiServerPod);
+        if (isJolokiaUsed()) {
+            String jolokiaInstallZipUrl = ResourceManager.getEnvironment().getJolokiaApiUrl();
+            String jolokiaZip = tmpDirLocation + Constants.FILE_SEPARATOR + "amq-broker-jolokia-api-server.zip";
+            jolokiaFolder = new File(jolokiaZip).getParent() + Constants.FILE_SEPARATOR + new File(jolokiaInstallZipUrl).getName().replace("-rhel9.zip", "");
+            LOGGER.info("[SPP] Downloading & unpacking \n{}", jolokiaInstallZipUrl);
+            TestUtils.getFileFromUrl(jolokiaInstallZipUrl, jolokiaZip);
+            TestUtils.unzip(jolokiaZip, tmpDirLocation);
+
+            LOGGER.info("[{}] Deploying AMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
+            CommandResult cr = TestUtils.executeLocalCommand(120, new File(jolokiaFolder), "/bin/bash", "-lc", "bash ./deploy.sh -c cert-manager");
+            LOGGER.debug("Result [{}]: stdout:{}\nstderr:{}", cr.exitCode, cr.stdout, cr.stderr);
+            TestUtils.threadSleep(Constants.DURATION_30_SECONDS);
+            Pod jolokiaApiServerPod = kubeClient.getFirstPodByPrefixName(JOLOKIA_API_DEFAULT_NAMESPACE, JOLOKIA_API_DEFAULT_NAMESPACE);
+            // BUG pod is null?!
+            kubeClient.waitUntilPodIsReady(JOLOKIA_API_DEFAULT_NAMESPACE, jolokiaApiServerPod);
+        }
 
         LOGGER.info("[{}] Deploying AMQ Artemis Self-provisioning Plugin", SPP_DEFAULT_NAMESPACE);
         TestUtils.executeLocalCommand(120, new File(sppFolder), "/bin/bash", "-lc", "bash ./deploy-plugin.sh");
@@ -73,10 +76,12 @@ public class AMQSelfProvisioningPlugin extends ACSelfProvisioningPlugin implemen
     public void undeploy() {
         LOGGER.info("[{}] Undeploying AMQ Artemis Self-provisioning Plugin", SPP_DEFAULT_NAMESPACE);
         TestUtils.executeLocalCommand(60, new File(sppFolder), "/bin/bash", "-lc", "bash ./undeploy-plugin.sh");
-        LOGGER.info("[{}] Undeploying AMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
-        TestUtils.executeLocalCommand(120, new File(jolokiaFolder), "/bin/bash", "-lc", "bash ./undeploy.sh -c cert-manager");
 
-        kubeClient.deleteNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
+        if (isJolokiaUsed()) {
+            LOGGER.info("[{}] Undeploying AMQ Artemis Jolokia API Server", JOLOKIA_API_DEFAULT_NAMESPACE);
+            TestUtils.executeLocalCommand(120, new File(jolokiaFolder), "/bin/bash", "-lc", "bash ./undeploy.sh -c cert-manager");
+            kubeClient.deleteNamespace(JOLOKIA_API_DEFAULT_NAMESPACE);
+        }
         kubeClient.deleteNamespace(SPP_DEFAULT_NAMESPACE);
     }
 
