@@ -6,6 +6,7 @@ package io.brokerqe.claire.spp;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.junit.UsePlaywright;
 import com.microsoft.playwright.options.AriaRole;
@@ -187,8 +188,11 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
         } catch (TimeoutError e) {
             try {
                 page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Kebab dropdown")).click(clicker);
-            } catch (TimeoutError e1) {
+            } catch (TimeoutError te) {
                 page.getByLabel("Actions").click(clicker);
+            } catch (PlaywrightException pe) {
+                // multiple dropdown menus found
+                page.getByTestId("broker-toggle-kebab").click(clicker);
             }
         }
         page.getByText("Delete Broker").click(clicker);
@@ -332,8 +336,10 @@ public class SelfProvisioningPluginUITests extends BaseWebUITests {
     String getBrokerSize(String brokerName) {
 //        if (ResourceManager.getEnvironment().isUpstreamArtemis()) {
         try {
+            page.getByPlaceholder("Search by name...").fill(brokerName);
             // upstream code <td id="Size" class="pf-v5-c-table__td" role="gridcell">1</td>
             Locator sizeCell = page.locator("#Size");
+            sizeCell.waitFor();
             return sizeCell.textContent();
         } catch (TimeoutError e) {
             // downstream code

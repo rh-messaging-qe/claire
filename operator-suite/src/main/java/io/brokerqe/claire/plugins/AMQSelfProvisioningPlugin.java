@@ -69,7 +69,7 @@ public class AMQSelfProvisioningPlugin extends ACSelfProvisioningPlugin implemen
         Pod sppPod = kubeClient.getFirstPodByPrefixName(SPP_DEFAULT_NAMESPACE, SPP_DEFAULT_NAMESPACE);
         kubeClient.waitUntilPodIsReady(JOLOKIA_API_DEFAULT_NAMESPACE, sppPod);
 
-        TestUtils.threadSleep(Constants.DURATION_10_SECONDS);
+        TestUtils.threadSleep(Constants.DURATION_30_SECONDS);
         return this;
     }
 
