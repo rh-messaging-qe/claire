@@ -84,26 +84,19 @@ public class WebConsoleTests extends AbstractSystemTests {
                 url = "https://" + serviceUrl + "/console/auth/login";
             }
             LOGGER.info("[{}] Probing https request on console should fail.", testNamespace);
-            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_UNAVAILABLE, "Application is not available");
+            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_UNAVAILABLE, List.of("Application is not available"));
 
             url = "http://" + serviceUrl;
             if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_40.getVersionNumber()) {
-                url = "http://" + serviceUrl + "/console/auth/login";
+                url += "/console/auth/login";
                 LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
-                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "hawtio-login");
-            } else if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_50.getVersionNumber()) {
-                // 2.40+
-                url = "http://" + serviceUrl + "/console/login";
-                LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
-                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "ActiveMQ Artemis Console");
+                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, List.of("hawtio-login"));
             } else {
-                // 2.50+
-                url = "http://" + serviceUrl + "/console/login";
+                // 2.40+, 2.50+
+                url += "/console/login";
                 LOGGER.info("[{}] Probing http request on console should pass", testNamespace);
-                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, "Apache Artemis Console");
+                checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, List.of("ActiveMQ Artemis Console", "Apache Artemis Console"));
             }
-
-
         }
         ResourceManager.deleteArtemis(testNamespace, artemis);
     }

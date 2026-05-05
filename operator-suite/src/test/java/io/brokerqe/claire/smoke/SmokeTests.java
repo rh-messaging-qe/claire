@@ -386,10 +386,10 @@ public class SmokeTests extends AbstractSystemTests {
 
         if (testEnvironmentOperator.getArtemisTestVersion().getVersionNumber() < ArtemisVersion.VERSION_2_40.getVersionNumber()) {
             String url = serviceUrl + "/redhat-branding/plugin/amq-broker-version";
-            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, testEnvironmentOperator.getArtemisVersion());
+            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, List.of(testEnvironmentOperator.getArtemisVersion()));
         } else {
             String url = serviceUrl + "/console/hawtconfig.json";
-            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, testEnvironmentOperator.getArtemisVersion());
+            checkHttpResponse(TestUtils.makeInsecureHttpsRequest(url), HttpURLConnection.HTTP_OK, List.of(testEnvironmentOperator.getArtemisVersion()));
         }
 
     }

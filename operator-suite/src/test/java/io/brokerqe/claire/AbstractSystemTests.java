@@ -34,6 +34,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.TLSConfigBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -61,6 +62,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -393,14 +395,16 @@ public abstract class AbstractSystemTests implements TestSeparator {
         return false;
     }
 
-    public void checkHttpResponse(URLConnection connection, int expectedCode, String expectedString) {
+    public void checkHttpResponse(URLConnection connection, int expectedCode, List<String> expectedStrings) {
         InputStream response = null;
         try {
             response = connection.getInputStream();
             assertThat(((HttpURLConnection) connection).getResponseCode(), equalTo(expectedCode));
             Scanner scanner = new Scanner(response);
             String responseBody = scanner.useDelimiter("\\A").next();
-            assertThat(responseBody, containsString(expectedString));
+            assertThat(responseBody,
+                    anyOf(
+                            expectedStrings.stream().map(Matchers::containsString).toArray(org.hamcrest.Matcher[]::new)));
             response.close();
         } catch (IOException e) {
             // carry on with execution, we've got expected exception

@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.hasItem;
 @DisableOnNoPackageManifestFile
 @TestMinimumKubernetesVersion(KubernetesVersion.VERSION_1_26)
 public class OperatorCheckFileVersionTests extends AbstractSystemTests {
-    // Test to check operator.yaml file from examples, which will make sure, that all supported/released + current_candidate versions of images are defined
+    // Test to check operator.yaml file from examples, which will make sure, that all supported/released + current_candidate versions of images are defined (in given stream)
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorCheckFileVersionTests.class);
 
     @Test
