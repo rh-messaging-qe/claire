@@ -69,7 +69,6 @@ public class MqttTests extends AbstractSystemTests {
     }
 
     @Test
-    @Disabled("ARTEMIS-4365")
     void brokerMqttV5ClientFullTest() {
         LOGGER.info("[{}] Starting MQTT V5 Broker test from hivemq mqtt client", testNamespace);
         Map<String, String> testOptions = Map.of(
