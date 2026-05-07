@@ -89,8 +89,6 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
 
     private void getPackageManifestChannel(boolean isLts) {
         String olmCSV;
-        PackageChannel nonLtsChannel;
-        PackageChannel ltsChannel;
         PackageManifest amqBrokerPM = kubeClient.getKubernetesClient().resources(PackageManifest.class, PackageManifestList.class)
             .inNamespace(sourceNamespace)
             .withName(getAmqOperatorName())
@@ -100,27 +98,44 @@ public class ArtemisCloudClusterOperatorOlm extends ArtemisCloudClusterOperator 
             LOGGER.error("[{}] Found unexpected CatalogSource for `amq-broker-rhel{8|9}` {}!", deploymentNamespace, amqBrokerPM.getStatus().getCatalogSource());
             throw new ClaireRuntimeException("Discovered unexpected CatalogSource " + amqBrokerPM.getStatus().getCatalogSource() + "!");
         }
-
         List<String> channels = amqBrokerPM.getStatus().getChannels().stream().map(PackageChannel::getName).toList();
-        List<String> orderedChannels = channels.stream().map(ModuleDescriptor.Version::parse).sorted().map(ModuleDescriptor.Version::toString).toList();
-        List<String> reverseOrderedChannels = new ArrayList<>(orderedChannels);
-        Collections.reverse(reverseOrderedChannels); // [7.13.x, 7.12.x, 7.11.x]
 
-        nonLtsChannel = amqBrokerPM.getStatus().getChannels().stream()
-                .filter(e -> e.getName().equals(reverseOrderedChannels.get(0)))
-                .findFirst()
-                .orElseThrow();
-        ltsChannel = amqBrokerPM.getStatus().getChannels().stream()
-                .filter(e -> e.getName().equals(orderedChannels.get(0)))
-                .findFirst()
-                .orElseThrow();
-
-        if (isLts) {
-            olmCSV = ltsChannel.getCurrentCSV();
-            this.olmChannel = ltsChannel.getName();
+        if (environmentOperator.getOlmChannel() != null) {
+            // if we have provided EV_OLM_CHANNEL
+            this.olmChannel = environmentOperator.getOlmChannel();
+            if (channels.contains(olmChannel)) {
+                PackageChannel foundChannel = amqBrokerPM.getStatus().getChannels().stream()
+                        .filter(e -> e.getName().equals(olmChannel))
+                        .findFirst()
+                        .orElseThrow();
+                olmCSV = foundChannel.getCurrentCSV();
+            } else {
+                throw new ClaireRuntimeException("Provided unknown channel: " + olmChannel);
+            }
         } else {
-            olmCSV = nonLtsChannel.getCurrentCSV();
-            this.olmChannel = nonLtsChannel.getName();
+            PackageChannel nonLtsChannel;
+            PackageChannel ltsChannel;
+
+            List<String> orderedChannels = channels.stream().map(ModuleDescriptor.Version::parse).sorted().map(ModuleDescriptor.Version::toString).toList();
+            List<String> reverseOrderedChannels = new ArrayList<>(orderedChannels);
+            Collections.reverse(reverseOrderedChannels); // [7.13.x, 7.12.x, 7.11.x]
+
+            nonLtsChannel = amqBrokerPM.getStatus().getChannels().stream()
+                    .filter(e -> e.getName().equals(reverseOrderedChannels.get(0)))
+                    .findFirst()
+                    .orElseThrow();
+            ltsChannel = amqBrokerPM.getStatus().getChannels().stream()
+                    .filter(e -> e.getName().equals(orderedChannels.get(0)))
+                    .findFirst()
+                    .orElseThrow();
+
+            if (isLts) {
+                olmCSV = ltsChannel.getCurrentCSV();
+                this.olmChannel = ltsChannel.getName();
+            } else {
+                olmCSV = nonLtsChannel.getCurrentCSV();
+                this.olmChannel = nonLtsChannel.getName();
+            }
         }
         LOGGER.info("[{}] Going to install {} from channel: {}", deploymentNamespace, olmCSV, olmChannel);
     }
