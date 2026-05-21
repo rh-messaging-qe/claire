@@ -21,22 +21,22 @@ echo ""
 echo "#######################################################################"
 echo "[Download JDK] openjdk-java-11"
 wget -nv -c -O openjdk-java-11.tar.xz \
-    https://download.engineering.redhat.com/released/OpenJDK/11.0.25/java-11-openjdk-11.0.25.0.9-1.portable.jdk.el.x86_64.tar.xz
+    https://download.engineering.redhat.com/released/middleware/openjdk/11.0.25/java-11-openjdk-11.0.25.0.9-1.portable.jdk.el.x86_64.tar.xz
 tar -Jtf openjdk-java-11.tar.xz > /dev/null
 
 echo "[Download JDK] openjdk-java-17"
 wget -nv -c -O openjdk-java-17.tar.xz \
-    https://download.engineering.redhat.com/released/OpenJDK/17.0.18/java-17-openjdk-17.0.18.0.8-1.portable.jdk.el.x86_64.tar.xz
+    https://download.engineering.redhat.com/released/middleware/openjdk/17.0.18/java-17-openjdk-17.0.18.0.8-1.portable.jdk.el.x86_64.tar.xz
 tar -Jtf openjdk-java-17.tar.xz > /dev/null
 
 echo "[Download JDK] openjdk-java-21"
 wget -nv -c -O openjdk-java-21.tar.xz \
-    https://download.engineering.redhat.com/released/OpenJDK/21.0.10/java-21-openjdk-21.0.10.0.7-1.portable.jdk.x86_64.tar.xz
+    https://download.engineering.redhat.com/released/middleware/openjdk/21.0.10/java-21-openjdk-21.0.10.0.7-1.portable.jdk.x86_64.tar.xz
 tar -Jtf openjdk-java-21.tar.xz > /dev/null
 
 echo "[Download JDK] openjdk-java-25"
 wget -nv -c -O openjdk-java-25.tar.xz \
-    https://download.engineering.redhat.com/released/OpenJDK/25.0.2/java-25-openjdk-25.0.2.0.10-2.portable.jdk.x86_64.tar.xz
+    https://download.engineering.redhat.com/released/middleware/openjdk/25.0.2/java-25-openjdk-25.0.2.0.10-2.portable.jdk.x86_64.tar.xz
 tar -Jtf openjdk-java-25.tar.xz > /dev/null
 
 echo "[Download JDK] oracle-java-11"

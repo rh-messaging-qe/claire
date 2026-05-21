@@ -47,7 +47,7 @@ echo ""
 echo "##########################################"
 echo -e "[${BASE_IMAGE}]\ninstalling openjdk java 21"
 echo "##########################################"
-if [[ "${BASE_IMAGE}" =~ .*ubi7:.* ]]; then
+if [[ "${BASE_IMAGE}" =~ .*ubi7:.* || "${BASE_IMAGE}" =~ fedora ]]; then
   mkdir -p /opt/openjdk-java-21
   tar -Jxf /tmp/openjdk-java-21.tar.xz -C /opt/openjdk-java-21 --strip-components=1
 else
