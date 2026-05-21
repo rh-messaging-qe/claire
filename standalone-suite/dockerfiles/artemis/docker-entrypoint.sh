@@ -42,8 +42,13 @@ function start_display {
 
 if [ $UID -eq 0 ]; then
   start_display
-  groupadd -g "${ARTEMIS_GROUP_GID}" "${ARTEMIS_GROUP}"
-  useradd -u "${ARTEMIS_USER_UID}" -d "${ARTEMIS_USER_HOME}" -m -g "${ARTEMIS_GROUP}" "${ARTEMIS_USER}"
+  if ! getent group "${ARTEMIS_GROUP_GID}" >/dev/null; then
+    groupadd -g "${ARTEMIS_GROUP_GID}" "${ARTEMIS_GROUP}"
+  fi
+
+  if ! id -u "${ARTEMIS_USER}" >/dev/null 2>&1; then
+    useradd -u "${ARTEMIS_USER_UID}" -d "${ARTEMIS_USER_HOME}" -m -g "${ARTEMIS_GROUP}" "${ARTEMIS_USER}"
+  fi
   env | grep -E -v "(^_|^TERM|^SHLVL|^LS_COLORS|^PWD|^HOME|^SHELL|^USER|^LOGNAME|^PATH)" > /tmp/initial_envvars
   sed -i -e 's/^/export /' /tmp/initial_envvars
   echo "export DISPLAY=:99" >> /tmp/initial_envvars

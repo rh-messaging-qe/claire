@@ -296,7 +296,13 @@ public final class ArtemisContainer extends AbstractGenericContainer {
         withFileSystemBind(getConfigLibDir(), ARTEMIS_INSTANCE_DIR + ArtemisConstants.LIB_DIR, BindMode.READ_WRITE);
         long uid = new UnixSystem().getUid();
         long gid = new UnixSystem().getGid();
-        withEnvVar(Map.of("ARTEMIS_GROUP_GID", String.valueOf(gid), "ARTEMIS_USER_UID", String.valueOf(uid)));
+        String username = new UnixSystem().getUsername();
+        String groupname = TestUtils.executeLocalCommand("id -gn").stdout;
+        withEnvVar(Map.of("ARTEMIS_GROUP_GID", String.valueOf(gid),
+                        "ARTEMIS_USER_UID", String.valueOf(uid),
+                        "ARTEMIS_USER",  username,
+                        "ARTEMIS_GROUP", groupname
+                ));
         super.start();
     }
 
