@@ -9,8 +9,9 @@ ROOT_DIR                                          = $(shell dirname $(realpath $
 # times in a short period causing maven to skip the download of the new dependencies.
 MVN_DEFAULT_CMD                                   = echo "MAVEN_OPTS: ${MAVEN_OPTS}" ; echo "MAVEN_ARGS: ${MAVEN_ARGS}" ; mvn -U --no-transfer-progress --batch-mode --update-snapshots -s ${ROOT_DIR}/settings.xml ${MVN_ADDITIONAL_PARAMS}
 MVN_TEST_CMD                                      = ${MVN_DEFAULT_CMD} failsafe:integration-test
-MVN_ADDITIONAL_PARAMS                            ?= 
+MVN_ADDITIONAL_PARAMS                            ?= -Drepo.login="${AMQ_ARTIFACTORY_USER}" -Drepo.password="${AMQ_ARTIFACTORY_TOKEN}"
 WGET_CMD                                          = wget -nv
+WGET_CMD_IBM                                      = $(WGET_CMD) --user "${AMQ_ARTIFACTORY_USER}" --password "${AMQ_ARTIFACTORY_TOKEN}"
 
 ARTEMIS_VERSION                                  ?= 7.13.3
 RELEASE_TYPE                                     ?= candidate
@@ -38,6 +39,7 @@ endif
 
 clean: clean_maven standalone_clean operator_clean
 	- rm -f ${ROOT_DIR}/{version_map.yaml,common.yaml}
+	 rm -rf /tmp/amq-ci /tmp/amq-broker-metadata
 
 clean_maven: get_settings_xml_file
 	${MVN_DEFAULT_CMD} --no-transfer-progress versions:revert clean
@@ -52,11 +54,12 @@ checkstyle: get_settings_xml_file
 	${MVN_DEFAULT_CMD} checkstyle:check
 
 get_settings_xml_file:
-	${WGET_CMD} --no-check-certificate "https://gitlab.cee.redhat.com/amq/amq-ci/-/raw/main/resources/claire/claire-settings.xml" -O "${ROOT_DIR}/settings.xml"
+	git clone --depth 1 git@github.ibm.com:AMQ/amq-ci.git /tmp/amq-ci || true
+	cd /tmp/amq-ci && git checkout dev && cp scripts/broker/claire/claire-settings.xml "${ROOT_DIR}/settings.xml"
 
 get_metadata_files:
-	${WGET_CMD} --no-check-certificate "https://github.ibm.com/AMQ/amq-broker-metadata/blob/main/broker_properties/amq_broker/version_map.yaml" -O "${ROOT_DIR}/version_map.yaml"
-	${WGET_CMD} --no-check-certificate "https://github.ibm.com/AMQ/amq-broker-metadata/blob/main/broker_properties/amq_broker/common.yaml" -O "${ROOT_DIR}/common.yaml"
+	git clone git@github.ibm.com:AMQ/amq-broker-metadata.git /tmp/amq-broker-metadata || true
+	cp /tmp/amq-broker-metadata/broker_properties/amq_broker/{common,version_map}.yaml "${ROOT_DIR}/"
 
 display_mvn_property_updates: get_settings_xml_file
 	${MVN_DEFAULT_CMD} versions:display-property-updates
@@ -66,10 +69,12 @@ standalone_clean:
 	- rm -rf ${STANDALONE_ARTEMIS_DIR}
 
 standalone_prepare_urls:
-	$(eval CR_VERSION := $(shell yq  '."${ARTEMIS_VERSION}".standalone.${RELEASE_TYPE}' "${ROOT_DIR}/version_map.yaml"))
+	$(eval CR_VERSION := $(shell yq eval '."${ARTEMIS_VERSION}".standalone.${RELEASE_TYPE}' "${ROOT_DIR}/version_map.yaml"))
 ifndef ARTEMIS_INSTALL_ZIP
-	$(eval BROKER_CANDIDATE_URL := $(shell yq  '.candidatesBaseUrl' "${ROOT_DIR}/common.yaml"))
-	$(eval ARTEMIS_INSTALL_ZIP :=  ${BROKER_CANDIDATE_URL}/amq-broker-${CR_VERSION}/amq-broker-${CR_VERSION}-bin.zip)
+	$(eval BROKER_CANDIDATE_URL := $(shell yq eval  '.candidatesBaseUrl' "${ROOT_DIR}/common.yaml"))
+	$(eval ARTEMIS_INSTALL_ZIP :=  ${BROKER_CANDIDATE_URL}/amq-broker-${ARTEMIS_VERSION}-bin.zip)
+## temporary solution until prod is resolved
+##	$(eval ARTEMIS_INSTALL_ZIP :=  ${BROKER_CANDIDATE_URL}/amq-broker-${CR_VERSION}/amq-broker-${CR_VERSION}-bin.zip)
 endif
 
 standalone_prepare: get_settings_xml_file get_metadata_files standalone_prepare_urls standalone_prepare_dirs standalone_download_zip standalone_generate_artemis_default_cfg
@@ -89,7 +94,7 @@ standalone_prepare_dirs:
 	mkdir -p ${STANDALONE_ARTEMIS_INSTALL_DIR}
 
 standalone_download_zip:
-	${WGET_CMD} ${ARTEMIS_INSTALL_ZIP} -P /tmp/
+	${WGET_CMD_IBM} ${ARTEMIS_INSTALL_ZIP} -P /tmp/
 	$(eval ARTEMIS_FILE := /tmp/$(shell basename ${ARTEMIS_INSTALL_ZIP}))
 	cp -f ${ARTEMIS_FILE} ${STANDALONE_ARTEMIS_DIR}/artemis.zip
 	rm -rf ${STANDALONE_ARTEMIS_INSTALL_DIR}/*
@@ -116,9 +121,9 @@ operator_prepare_dirs:
 
 operator_prepare_urls:
 	$(eval OPERATOR_CR_VERSION := $(shell \
-		yq '."dev.latest"' version_map.yaml | grep ${ARTEMIS_VERSION} > /dev/null && echo main \
-		|| yq .\"${ARTEMIS_VERSION}\".operator.${RELEASE_TYPE} version_map.yaml | grep ${ARTEMIS_VERSION} \
-		|| yq .\"${ARTEMIS_VERSION}\".upstream_operator version_map.yaml; \
+		yq eval '."dev.latest"' version_map.yaml | grep ${ARTEMIS_VERSION} > /dev/null && echo main \
+		|| yq eval .\"${ARTEMIS_VERSION}\".operator.${RELEASE_TYPE} version_map.yaml | grep ${ARTEMIS_VERSION} \
+		|| yq eval .\"${ARTEMIS_VERSION}\".upstream_operator version_map.yaml; \
 	))
 
 operator_prepare: get_settings_xml_file get_metadata_files operator_prepare_urls operator_prepare_dirs
