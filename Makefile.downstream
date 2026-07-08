@@ -55,8 +55,8 @@ get_settings_xml_file:
 	${WGET_CMD} --no-check-certificate "https://gitlab.cee.redhat.com/amq/amq-ci/-/raw/main/resources/claire/claire-settings.xml" -O "${ROOT_DIR}/settings.xml"
 
 get_metadata_files:
-	${WGET_CMD} --no-check-certificate "https://github.ibm.com/AMQ/amq-broker-metadata/blob/main/broker_properties/amq_broker/version_map.yaml" -O "${ROOT_DIR}/version_map.yaml"
-	${WGET_CMD} --no-check-certificate "https://github.ibm.com/AMQ/amq-broker-metadata/blob/main/broker_properties/amq_broker/common.yaml" -O "${ROOT_DIR}/common.yaml"
+	${WGET_CMD} --no-check-certificate "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/version_map.yaml" -O "${ROOT_DIR}/version_map.yaml"
+	${WGET_CMD} --no-check-certificate "https://gitlab.cee.redhat.com/amq-broker/amq-broker-metadata/-/raw/main/broker_properties/amq_broker/common.yaml" -O "${ROOT_DIR}/common.yaml"
 
 display_mvn_property_updates: get_settings_xml_file
 	${MVN_DEFAULT_CMD} versions:display-property-updates
