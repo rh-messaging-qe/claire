@@ -49,6 +49,14 @@ if [ $UID -eq 0 ]; then
   if ! id -u "${ARTEMIS_USER}" >/dev/null 2>&1; then
     useradd -u "${ARTEMIS_USER_UID}" -d "${ARTEMIS_USER_HOME}" -m -g "${ARTEMIS_GROUP}" "${ARTEMIS_USER}"
   fi
+  # Ensure 'artemis' always exists in /etc/passwd so docker exec --user artemis works
+  # regardless of the actual host username passed via ARTEMIS_USER.
+  if [[ "${ARTEMIS_USER}" != "artemis" ]] && ! id -u artemis >/dev/null 2>&1; then
+    # The key is -o (--non-unique) on useradd allows two usernames to share the same UID
+    useradd -u "${ARTEMIS_USER_UID}" -o -d "${ARTEMIS_USER_HOME}" -M -g "${ARTEMIS_GROUP}" artemis
+  fi
+
+  echo "${ARTEMIS_USER} ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount" > /etc/sudoers.d/${ARTEMIS_USER}
   env | grep -E -v "(^_|^TERM|^SHLVL|^LS_COLORS|^PWD|^HOME|^SHELL|^USER|^LOGNAME|^PATH)" > /tmp/initial_envvars
   sed -i -e 's/^/export /' /tmp/initial_envvars
   echo "export DISPLAY=:99" >> /tmp/initial_envvars
