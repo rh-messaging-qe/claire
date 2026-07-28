@@ -420,6 +420,7 @@ public class WebconsoleCommon {
             artemisPage.locator("div").filter(new Locator.FilterOptions().setHasText(operationFilterPattern)).click(clicker);
         } catch (TimeoutError e) {
             LOGGER.warn("Falling back to locator - menu-toggle nth-1");
+            moveMouseToCorner(artemisPage);
             artemisPage.locator("div.pf-m-search-filter > button.pf-v5-c-menu-toggle").nth(1).click(clicker);
         }
         TestUtils.threadSleep(Constants.DURATION_1_SECOND);
