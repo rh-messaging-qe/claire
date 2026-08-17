@@ -18,6 +18,7 @@ import io.brokerqe.claire.KubernetesVersion;
 import io.brokerqe.claire.ResourceManager;
 import io.brokerqe.claire.TestUtils;
 import io.brokerqe.claire.exception.ClaireRuntimeException;
+import io.brokerqe.claire.junit.TestMaximumKubernetesVersion;
 import io.brokerqe.claire.junit.TestMinimumKubernetesVersion;
 import io.brokerqe.claire.junit.TestOLMSupported;
 import io.brokerqe.claire.junit.TestValidSince;
@@ -43,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @TestOLMSupported
 @TestValidSince(ArtemisVersion.VERSION_2_40)
 @TestMinimumKubernetesVersion(KubernetesVersion.VERSION_1_29)
+//@TestDisabledOnKubernetesVersion(KubernetesVersion.VERSION_1_35)
+@TestMaximumKubernetesVersion(KubernetesVersion.VERSION_1_34)
 public class SelfProvisioningPluginUITests extends BaseWebUITests {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SelfProvisioningPluginUITests.class);
